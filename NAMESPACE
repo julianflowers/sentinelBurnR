@@ -3,6 +3,7 @@
 S3method(geometry,sbr_aoi)
 S3method(print,sbr_aoi)
 S3method(print,sbr_search)
+S3method(summary,sbr_search)
 export(geometry)
 export(read_aoi)
 export(search_s2)
