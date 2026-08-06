@@ -1,0 +1,30 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(sentinelBurnR)
+aoi <- read_aoi("sizewell.gpkg")
+
+images <- search_s2(
+    aoi,
+    start = "2026-05-01",
+    end = "2026-06-15"
+)
+
+summary(images)
+
+```
+
