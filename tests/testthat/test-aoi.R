@@ -1,104 +1,54 @@
 test_that("read_aoi accepts a SpatVector", {
 
-    aoi <- terra::vect(
-        terra::ext(
-            650000,
-            651000,
-            270000,
-            271000
-        ),
-        crs = "EPSG:27700"
+    result <- read_aoi(
+        make_test_aoi()
     )
 
-    result <- read_aoi(aoi)
+    expect_s3_class(
+        result,
+        "sbr_aoi"
+    )
 
     expect_s4_class(
-        result,
+        geometry(result),
         "SpatVector"
     )
 
     expect_equal(
-        nrow(result),
+        nrow(
+            geometry(result)
+        ),
         1
     )
+
 })
+
 
 
 test_that("read_aoi accepts an sf object", {
 
-    polygon <- sf::st_polygon(
-        list(
-            matrix(
-                c(
-                    0, 0,
-                    1, 0,
-                    1, 1,
-                    0, 1,
-                    0, 0
-                ),
-                ncol = 2,
-                byrow = TRUE
-            )
-        )
+    result <- read_aoi(
+        make_test_sf()
     )
 
-    aoi <- sf::st_sf(
-        id = 1,
-        geometry = sf::st_sfc(
-            polygon,
-            crs = 4326
-        )
+    expect_s3_class(
+        result,
+        "sbr_aoi"
     )
-
-    result <- read_aoi(aoi)
 
     expect_s4_class(
-        result,
+        geometry(result),
         "SpatVector"
     )
 
     expect_equal(
-        nrow(result),
-        1
-    )
-})
-
-
-test_that("read_aoi reads a vector file", {
-
-    aoi <- terra::vect(
-        terra::ext(
-            650000,
-            651000,
-            270000,
-            271000
+        nrow(
+            geometry(result)
         ),
-        crs = "EPSG:27700"
-    )
-
-    filename <- tempfile(
-        fileext = ".gpkg"
-    )
-
-    terra::writeVector(
-        aoi,
-        filename,
-        overwrite = TRUE
-    )
-
-    result <- read_aoi(filename)
-
-    expect_s4_class(
-        result,
-        "SpatVector"
-    )
-
-    expect_equal(
-        nrow(result),
         1
     )
-})
 
+})
 
 test_that("read_aoi dissolves multiple features", {
 
@@ -133,7 +83,7 @@ test_that("read_aoi dissolves multiple features", {
     )
 
     expect_equal(
-        nrow(result),
+        nrow(geometry(result)),
         1
     )
 })
@@ -172,7 +122,7 @@ test_that("read_aoi preserves features when dissolve is FALSE", {
     )
 
     expect_equal(
-        nrow(result),
+        nrow(geometry(result)),
         2
     )
 })
@@ -197,7 +147,7 @@ test_that("read_aoi can reproject an AOI", {
 
     expect_true(
         terra::same.crs(
-            result,
+            geometry(result),
             "EPSG:27700"
         )
     )
@@ -237,4 +187,30 @@ test_that("read_aoi rejects unsupported inputs", {
         read_aoi(42),
         "must be a vector filename"
     )
+})
+
+test_that("read_aoi reads a vector file", {
+
+    filename <- tempfile(
+        fileext = ".gpkg"
+    )
+
+    terra::writeVector(
+        make_test_aoi(),
+        filename,
+        overwrite = TRUE
+    )
+
+    result <- read_aoi(filename)
+
+    expect_s3_class(
+        result,
+        "sbr_aoi"
+    )
+
+    expect_s4_class(
+        geometry(result),
+        "SpatVector"
+    )
+
 })

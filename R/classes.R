@@ -15,22 +15,20 @@ new_aoi <- function(geometry) {
 
 
 # Constructor for a Sentinel-2 search
-new_s2_search <- function(
-        items,
-        aoi,
-        query
-) {
+new_s2_search <- function(items, aoi, start, end) {
 
     stopifnot(
-        inherits(aoi, "sbr_aoi")
+        inherits(aoi, "sbr_aoi"),
+        is.list(items)
     )
 
     structure(
         list(
             items = items,
             aoi = aoi,
-            query = query
+            start = as.Date(start),
+            end = as.Date(end)
         ),
-        class = "sbr_s2_search"
+        class = "sbr_search"
     )
 }
