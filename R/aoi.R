@@ -77,7 +77,7 @@ read_aoi <- function(
         )
     }
 
-    result
+    new_aoi(result)
 }
 
 
