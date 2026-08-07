@@ -31,4 +31,22 @@ new_s2_search <- function(items, aoi, start, end) {
         ),
         class = "sbr_search"
     )
+
+
 }
+
+new_s2_collection <- function(files) {
+
+    stopifnot(
+        is.data.frame(files)
+    )
+
+    structure(
+        list(
+            files = files
+        ),
+        class = "sbr_collection"
+    )
+
+}
+
