@@ -6,9 +6,9 @@
 \usage{
 download_s2(
   x,
-  limit = NULL,
   assets = s2_default_assets,
-  output_dir = tools::R_user_dir("sentinelBurnR", "cache"),
+  limit = NULL,
+  output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
   overwrite = FALSE
 )
 }
@@ -17,14 +17,15 @@ download_s2(
 
 \item{assets}{Character vector of asset names.}
 
+\item{limit}{Optional maximum number of scenes to download.}
+
 \item{output_dir}{Directory for downloaded files.}
 
 \item{overwrite}{Should existing files be overwritten?}
 }
 \value{
-A data.frame describing downloaded files.
+An \code{sbr_collection} object.
 }
 \description{
-Download selected assets from the scenes returned by
-\code{search_s2()}.
+Download selected assets from scenes returned by \code{search_s2()}.
 }

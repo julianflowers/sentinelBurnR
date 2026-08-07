@@ -16,7 +16,7 @@ s2_bands <- c(
     swir22    = "B12"
 )
 
-s2_default_assets <- c(
+s2_burn_assets <- c(
 
     "red",
 
