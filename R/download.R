@@ -1,12 +1,14 @@
 #' Download Sentinel-2 assets
 #'
-#' Download selected assets from scenes returned by `search_s2()`.
+#' Download selected Sentinel-2 assets from an `sbr_search` object.
+#' Existing cached files are skipped unless `overwrite = TRUE`.
 #'
 #' @param x An `sbr_search` object.
 #' @param assets Character vector of asset names.
 #' @param limit Optional maximum number of scenes to download.
-#' @param output_dir Directory for downloaded files.
-#' @param overwrite Should existing files be overwritten?
+#' @param output_dir Directory used to cache downloaded files.
+#' @param overwrite Logical. Overwrite existing files?
+#' @param workers Number of parallel download workers.
 #'
 #' @return An `sbr_collection` object.
 #'
@@ -19,12 +21,28 @@ download_s2 <- function(
             "sentinelBurnR",
             which = "cache"
         ),
-        overwrite = FALSE
+        overwrite = FALSE,
+        workers = 1
 ) {
 
-    stopifnot(
-        inherits(x, "sbr_search")
-    )
+    if (!inherits(x, "sbr_search")) {
+        stop(
+            "`x` must be an sbr_search object.",
+            call. = FALSE
+        )
+    }
+
+    if (!is.numeric(workers) ||
+        length(workers) != 1L ||
+        workers < 1) {
+
+        stop(
+            "`workers` must be a positive integer.",
+            call. = FALSE
+        )
+    }
+
+    workers <- as.integer(workers)
 
     invalid <- setdiff(
         assets,
@@ -54,129 +72,101 @@ download_s2 <- function(
         )
     }
 
-    downloads <- data.frame(
-        scene = character(),
-        tile = character(),
-        date = as.Date(character()),
-        satellite = character(),
-        asset = character(),
-        file = character(),
-        stringsAsFactors = FALSE
-    )
-
-    for (scene in scenes) {
-
-        scene_id <- scene$id
-
-        parts <- strsplit(
-            scene$id,
-            "_",
-            fixed = TRUE
-        )[[1]]
-
-        tile <- parts[2]
-
-        acquisition_date <- as.Date(
-            substr(
-                scene$properties$datetime,
-                1,
-                10
-            )
+    if (length(scenes) == 0L) {
+        stop(
+            "No scenes available to download.",
+            call. = FALSE
         )
-
-        satellite <- scene$properties$platform
-
-        if (is.null(satellite)) {
-            satellite <- NA_character_
-        }
-
-        scene_dir <- file.path(
-            output_dir,
-            scene_id
-        )
-
-        dir.create(
-            scene_dir,
-            recursive = TRUE,
-            showWarnings = FALSE
-        )
-
-        for (asset in assets) {
-
-            if (!asset %in% names(scene$assets)) {
-                warning(
-                    "Asset '",
-                    asset,
-                    "' not found in scene ",
-                    scene_id,
-                    call. = FALSE
-                )
-
-                next
-            }
-
-            url <- scene$assets[[asset]]$href
-
-            ext <- tools::file_ext(url)
-
-            if (!nzchar(ext)) {
-                ext <- "tif"
-            }
-
-            outfile <- file.path(
-                scene_dir,
-                paste0(
-                    asset,
-                    ".",
-                    ext
-                )
-            )
-
-            if (!file.exists(outfile) || overwrite) {
-
-                message(
-                    "Downloading ",
-                    scene_id,
-                    " / ",
-                    asset
-                )
-
-                utils::download.file(
-                    url = url,
-                    destfile = outfile,
-                    mode = "wb",
-                    quiet = TRUE
-                )
-            }
-
-            downloads <- rbind(
-                downloads,
-                data.frame(
-                    scene = scene_id,
-                    tile = as.character(tile),
-                    date = acquisition_date,
-                    satellite = as.character(satellite),
-                    asset = asset,
-                    file = outfile,
-                    stringsAsFactors = FALSE
-                )
-            )
-        }
     }
 
-    downloads <- downloads[
-        order(
-            downloads$date,
-            downloads$tile,
-            downloads$asset
-        ),
+    queue <- build_download_queue(
+        scenes = scenes,
+        assets = assets,
+        output_dir = output_dir
+    )
+
+    if (nrow(queue) == 0L) {
+        stop(
+            "No downloadable assets were found.",
+            call. = FALSE
+        )
+    }
+
+    message(
+        "Download queue: ",
+        nrow(queue),
+        " files from ",
+        length(unique(queue$scene)),
+        " scenes"
+    )
+
+
+
+    results <- future.apply::future_lapply(
+        seq_len(nrow(queue)),
+        function(i) {
+
+            download_s2_file(
+                job = queue[i, , drop = FALSE],
+                overwrite = overwrite
+            )
+        },
+        future.seed = TRUE
+    )
+
+    message(
+        "Downloading ",
+        nrow(queue),
+        " assets using ",
+        workers,
+        " worker(s)..."
+    )
+
+    results <- parallel_apply(
+
+        X = seq_len(nrow(queue)),
+
+        FUN = function(i) {
+
+            download_s2_file(
+
+                job = queue[i, , drop = FALSE],
+
+                overwrite = overwrite
+
+            )
+
+        },
+
+        workers = workers
+
+    )
+
+    results <- do.call(
+        rbind,
+        results
+    )
+
+    rownames(results) <- NULL
+
+    failed <- results$status == "failed"
+
+    if (any(failed)) {
+
+        warning(
+            sum(failed),
+            " download(s) failed.",
+            call. = FALSE
+        )
+    }
+
+    successful <- results[
+        !failed,
         ,
         drop = FALSE
     ]
 
-    rownames(downloads) <- NULL
-
     new_s2_collection(
-        downloads
+        successful
     )
 }

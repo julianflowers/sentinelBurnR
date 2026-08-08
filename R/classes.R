@@ -50,3 +50,31 @@ new_s2_collection <- function(files) {
 
 }
 
+
+# Constructor for an sbr_aoi object
+#
+# @param geometry A terra SpatVector.
+#
+# @return An sbr_aoi object.
+#
+# @keywords internal
+
+new_aoi <- function(geometry) {
+
+    stopifnot(
+        inherits(geometry, "SpatVector")
+    )
+
+    structure(
+
+        list(
+            geometry = geometry
+        ),
+
+        class = "sbr_aoi"
+
+    )
+
+}
+
+

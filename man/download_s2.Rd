@@ -9,7 +9,8 @@ download_s2(
   assets = s2_default_assets,
   limit = NULL,
   output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
-  overwrite = FALSE
+  overwrite = FALSE,
+  workers = 1
 )
 }
 \arguments{
@@ -19,13 +20,16 @@ download_s2(
 
 \item{limit}{Optional maximum number of scenes to download.}
 
-\item{output_dir}{Directory for downloaded files.}
+\item{output_dir}{Directory used to cache downloaded files.}
 
-\item{overwrite}{Should existing files be overwritten?}
+\item{overwrite}{Logical. Overwrite existing files?}
+
+\item{workers}{Number of parallel download workers.}
 }
 \value{
 An \code{sbr_collection} object.
 }
 \description{
-Download selected assets from scenes returned by \code{search_s2()}.
+Download selected Sentinel-2 assets from an \code{sbr_search} object.
+Existing cached files are skipped unless \code{overwrite = TRUE}.
 }
