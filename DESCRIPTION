@@ -9,7 +9,10 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
     parallel,
-    terra
+    terra, 
+    future,
+    future.apply, 
+    progressr,
 Suggests: 
     knitr,
     rmarkdown,

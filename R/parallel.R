@@ -16,37 +16,78 @@ parallel_apply <- function(
 
     if (workers <= 1) {
 
+        p <- progressr::progressor(
+            steps = length(X)
+        )
+
         return(
+
             lapply(
+
                 X,
-                FUN,
-                ...
+
+                function(x) {
+
+                    result <- FUN(
+                        x,
+                        ...
+                    )
+
+                    p()
+
+                    result
+
+                }
+
             )
+
         )
 
     }
 
-    if (.Platform$OS.type == "windows") {
+    old_plan <- future::plan()
 
-        message(
-            "Parallel downloads are currently disabled on Windows."
-        )
+    on.exit(
 
-        return(
-            lapply(
-                X,
-                FUN,
-                ...
-            )
-        )
+        future::plan(old_plan),
 
-    }
+        add = TRUE
 
-    parallel::mclapply(
+    )
+
+    future::plan(
+
+        future::multisession,
+
+        workers = workers
+
+    )
+
+    p <- progressr::progressor(
+        steps = length(X)
+    )
+
+    future.apply::future_lapply(
+
         X,
-        FUN,
-        ...,
-        mc.cores = workers
+
+        function(x) {
+
+            result <- FUN(
+                x,
+                ...
+            )
+
+            p()
+
+            result
+
+        },
+
+        future.seed = TRUE,
+
+        future.packages = "sentinelBurnR"
+
     )
 
 }

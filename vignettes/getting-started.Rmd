@@ -48,8 +48,8 @@ This vignette demonstrates the complete workflow:
 
 ```{r}
 
-lat <- 
-lon <- 
+lat <- 52.2522
+lon <- 1.6271
   
 buffer <- 1000
 
@@ -97,7 +97,7 @@ post_images <- search_s2(
 
 ## Download
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 
 ## Download imagery
 
@@ -120,7 +120,7 @@ post_collection <- download_s2(
 
 ## Composite
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 
 pre_comp <- build_composite(
     pre_collection

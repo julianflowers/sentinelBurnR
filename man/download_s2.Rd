@@ -6,7 +6,7 @@
 \usage{
 download_s2(
   x,
-  assets = s2_default_assets,
+  assets = NULL,
   limit = NULL,
   output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
   overwrite = FALSE,

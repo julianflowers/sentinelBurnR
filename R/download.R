@@ -15,7 +15,8 @@
 #' @export
 download_s2 <- function(
         x,
-        assets = s2_default_assets,
+        assets = NULL,
+
         limit = NULL,
         output_dir = tools::R_user_dir(
             "sentinelBurnR",
@@ -23,7 +24,11 @@ download_s2 <- function(
         ),
         overwrite = FALSE,
         workers = 1
-) {
+)   {
+
+    if (is.null(assets)) {
+        assets <- s2_default_assets
+    }
 
     if (!inherits(x, "sbr_search")) {
         stop(
@@ -79,7 +84,9 @@ download_s2 <- function(
         )
     }
 
-    queue <- build_download_queue(
+    start_time <- Sys.time()
+
+    queue <- build_s2_download_queue(
         scenes = scenes,
         assets = assets,
         output_dir = output_dir
@@ -100,20 +107,6 @@ download_s2 <- function(
         " scenes"
     )
 
-
-
-    results <- future.apply::future_lapply(
-        seq_len(nrow(queue)),
-        function(i) {
-
-            download_s2_file(
-                job = queue[i, , drop = FALSE],
-                overwrite = overwrite
-            )
-        },
-        future.seed = TRUE
-    )
-
     message(
         "Downloading ",
         nrow(queue),
@@ -122,29 +115,71 @@ download_s2 <- function(
         " worker(s)..."
     )
 
-    results <- parallel_apply(
+    for (attempt in 1:3) {
 
-        X = seq_len(nrow(queue)),
+        ok <- tryCatch({
 
-        FUN = function(i) {
+            utils::download.file(...)
 
-            download_s2_file(
+            TRUE
 
-                job = queue[i, , drop = FALSE],
+        }, error = function(e) FALSE)
 
-                overwrite = overwrite
+        if (ok)
+            break
 
-            )
+        Sys.sleep(attempt)
+    }
 
-        },
-
-        workers = workers
-
+    progressr::handlers(
+        progressr::handler_txtprogressbar(
+            style = 3
+        )
     )
+
+    results <- progressr::with_progress({
+
+        parallel_apply(
+
+            X = seq_len(
+                nrow(queue)
+            ),
+
+            FUN = function(i) {
+
+                download_s2_file(
+
+                    job = queue[
+                        i,
+                        ,
+                        drop = FALSE
+                    ],
+
+                    overwrite = overwrite
+
+                )
+
+            },
+
+            workers = workers
+
+        )
+
+    })
 
     results <- do.call(
         rbind,
         results
+    )
+
+    elapsed <- difftime(
+
+        Sys.time(),
+
+        start_time,
+
+        units = "secs"
+
     )
 
     rownames(results) <- NULL
@@ -165,6 +200,63 @@ download_s2 <- function(
         ,
         drop = FALSE
     ]
+
+    cat("\n")
+
+    cat("------------------------------------\n")
+
+    cat("Sentinel-2 download complete\n\n")
+
+    cat(
+        sprintf(
+            "Scenes       : %d\n",
+            length(unique(queue$scene))
+        )
+    )
+
+    cat(
+        sprintf(
+            "Files        : %d\n",
+            nrow(queue)
+        )
+    )
+
+    cat(
+        sprintf(
+            "Downloaded   : %d\n",
+            sum(results$status == "downloaded")
+        )
+    )
+
+    cat(
+        sprintf(
+            "Cached       : %d\n",
+            sum(results$status == "cached")
+        )
+    )
+
+    cat(
+        sprintf(
+            "Failed       : %d\n",
+            sum(results$status == "failed")
+        )
+    )
+
+    cat(
+        sprintf(
+            "Retries      : %d\n",
+            sum(results$attempts > 1)
+        )
+    )
+
+    cat(
+        sprintf(
+            "Elapsed      : %.1f sec\n",
+            format_elapsed(elapsed)
+        )
+    )
+
+    cat("------------------------------------\n\n")
 
     new_s2_collection(
         successful
