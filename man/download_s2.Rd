@@ -8,9 +8,10 @@ download_s2(
   x,
   assets = NULL,
   limit = NULL,
+  max_cloud = NULL,
   output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
   overwrite = FALSE,
-  workers = 1
+  workers = 4
 )
 }
 \arguments{

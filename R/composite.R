@@ -39,10 +39,57 @@ build_composite <- function(
             asset
         )
 
-        tile_composites <- lapply(
-            stacks,
-            median_stack
-        )
+        if (asset == "scl") {
+
+            #
+            # Don't mask the SCL itself.
+            #
+
+            tile_composites <- lapply(
+
+                stacks,
+
+                median_stack
+
+            )
+
+        } else {
+
+            scl_stacks <- read_band(
+
+                collection,
+
+                "scl"
+
+            )
+
+            tile_composites <- vector(
+
+                "list",
+
+                length(stacks)
+
+            )
+
+            for (i in seq_along(stacks)) {
+
+                masked <- mask_scl(
+
+                    stacks[[i]],
+
+                    scl_stacks[[i]]
+
+                )
+
+                tile_composites[[i]] <-
+
+                    median_stack(
+                        masked
+                    )
+
+            }
+
+        }
 
         band_rasters[[asset]] <-
             mosaic_tiles(

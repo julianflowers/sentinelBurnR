@@ -18,12 +18,13 @@ download_s2 <- function(
         assets = NULL,
 
         limit = NULL,
+        max_cloud = NULL,
         output_dir = tools::R_user_dir(
             "sentinelBurnR",
             which = "cache"
         ),
         overwrite = FALSE,
-        workers = 1
+        workers = 4
 )   {
 
     if (is.null(assets)) {
@@ -70,6 +71,48 @@ download_s2 <- function(
 
     scenes <- x$items$features
 
+    n_before <- length(scenes)
+
+    if (!is.null(max_cloud)) {
+
+        keep <- vapply(
+            scenes,
+            function(scene) {
+
+                cloud <- scene$properties[["eo:cloud_cover"]]
+
+                if (is.null(cloud) || is.na(cloud)) {
+                    return(FALSE)
+                }
+
+                cloud <= max_cloud
+            },
+            logical(1)
+        )
+
+        scenes <- scenes[keep]
+
+        message(
+
+            "Cloud filter (≤ ",
+
+            max_cloud,
+
+            "%): ",
+
+            length(scenes),
+
+            " of ",
+
+            n_before,
+
+            " scenes retained."
+
+        )
+
+
+    }
+
     if (!is.null(limit)) {
         scenes <- head(
             scenes,
@@ -115,21 +158,6 @@ download_s2 <- function(
         " worker(s)..."
     )
 
-    for (attempt in 1:3) {
-
-        ok <- tryCatch({
-
-            utils::download.file(...)
-
-            TRUE
-
-        }, error = function(e) FALSE)
-
-        if (ok)
-            break
-
-        Sys.sleep(attempt)
-    }
 
     progressr::handlers(
         progressr::handler_txtprogressbar(
@@ -147,7 +175,7 @@ download_s2 <- function(
 
             FUN = function(i) {
 
-                download_s2_file(
+                download_s2_asset(
 
                     job = queue[
                         i,
@@ -244,6 +272,20 @@ download_s2 <- function(
 
     cat(
         sprintf(
+            "Cache hit    : %.1f%%\n",
+            100 * sum(results$status == "cached") / nrow(results)
+        )
+    )
+
+    cat(
+        sprintf(
+            "Download hit : %.1f%%\n",
+            100 * sum(results$status == "downloaded") / nrow(results)
+        )
+    )
+
+    cat(
+        sprintf(
             "Retries      : %d\n",
             sum(results$attempts > 1)
         )
@@ -251,7 +293,7 @@ download_s2 <- function(
 
     cat(
         sprintf(
-            "Elapsed      : %.1f sec\n",
+            "Elapsed      : %s\n",
             format_elapsed(elapsed)
         )
     )

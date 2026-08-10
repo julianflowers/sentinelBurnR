@@ -2,6 +2,24 @@
 #
 # Maps user-friendly names to Sentinel-2 band identifiers.
 
+s2_downloadable_assets <- c(
+    "coastal",
+    "blue",
+    "green",
+    "red",
+    "rededge1",
+    "rededge2",
+    "rededge3",
+    "nir",
+    "nir08",
+    "nir09",
+    "swir16",
+    "swir22",
+    "scl",
+    "visual",
+    "thumbnail"
+)
+
 s2_bands <- c(
     coastal  = "B01",
     blue     = "B02",
@@ -13,7 +31,8 @@ s2_bands <- c(
     nir       = "B08",
     nir08     = "B8A",
     swir16    = "B11",
-    swir22    = "B12"
+    swir22    = "B12",
+    scl = "SCL"
 )
 
 s2_default_assets <- c(
@@ -22,8 +41,17 @@ s2_default_assets <- c(
 
     "nir08",
 
-    "swir22"
+    "swir22",
 
+    "scl"
+
+)
+
+s2_scl_keep <- c(
+    4L,  # vegetation
+    5L,  # bare soil
+    6L,  # water
+    7L   # unclassified
 )
 
 s2_burn_assets <- c(
