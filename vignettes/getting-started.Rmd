@@ -97,7 +97,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images,
+    pre_images, limit = 8, max_cloud = 30,
     
     workers = 6
 
@@ -105,9 +105,8 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images,
+    post_images, limit = 8, max_cloud = 30,
   
-
     workers = 6
 
 )

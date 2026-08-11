@@ -61,5 +61,14 @@ s2_scl_keep <- c(
 s2_burn_assets <- c(
     "red",
     "nir08",
-    "swir22"
+    "swir22",
+    "blue",
+    "green"
 )
+
+s2_rgb_bands <- c(
+    "red",
+    "green",
+    "blue"
+)
+

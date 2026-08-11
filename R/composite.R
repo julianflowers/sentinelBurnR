@@ -6,27 +6,28 @@
 #' @return A SpatRaster.
 #'
 #' @export
+
 build_composite <- function(
-        collection,
-        assets = s2_default_assets
+
+    collection,
+
+    assets = s2_burn_assets
+
 ) {
+
+    if (!inherits(collection, "sbr_collection")) {
+
+        stop(
+            "`collection` must be an sbr_collection.",
+            call. = FALSE
+        )
+
+    }
 
     band_rasters <- vector(
         "list",
         length(assets)
     )
-
-
-
-    cat("\nAFTER ALIGNMENT\n")
-
-    for (nm in names(band_rasters)) {
-
-        cat("\n", nm, "\n")
-
-        print(band_rasters[[nm]])
-
-    }
 
     names(band_rasters) <- assets
 
@@ -34,88 +35,43 @@ build_composite <- function(
 
         message("Building ", asset)
 
-        stacks <- read_band(
-            collection,
-            asset
+        band_rasters[[asset]] <- build_band(
+
+            collection = collection,
+
+            asset = asset
+
         )
-
-        if (asset == "scl") {
-
-            #
-            # Don't mask the SCL itself.
-            #
-
-            tile_composites <- lapply(
-
-                stacks,
-
-                median_stack
-
-            )
-
-        } else {
-
-            scl_stacks <- read_band(
-
-                collection,
-
-                "scl"
-
-            )
-
-            tile_composites <- vector(
-
-                "list",
-
-                length(stacks)
-
-            )
-
-            for (i in seq_along(stacks)) {
-
-                masked <- mask_scl(
-
-                    stacks[[i]],
-
-                    scl_stacks[[i]]
-
-                )
-
-                tile_composites[[i]] <-
-
-                    median_stack(
-                        masked
-                    )
-
-            }
-
-        }
-
-        band_rasters[[asset]] <-
-            mosaic_tiles(
-                tile_composites
-            )
 
     }
 
-band_rasters <- align_bands(
+    message("Aligning bands...")
+
+    band_rasters <- align_bands(
         band_rasters
     )
 
-    #browser()
+    message("Stacking composite...")
 
-composite <- band_rasters[[1]]
+    composite <- band_rasters[[1]]
 
-for (nm in names(band_rasters)[-1]) {
+    if (length(band_rasters) > 1) {
 
-    composite <- c(
-        composite,
-        band_rasters[[nm]]
-    )
+        for (nm in names(band_rasters)[-1]) {
 
-}
+            composite <- c(
 
-    names(composite) <- assets
+                composite,
+
+                band_rasters[[nm]]
+
+            )
+
+        }
+
+    }
+
+    names(composite) <- names(band_rasters)
 
     composite
 
