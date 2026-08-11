@@ -43,7 +43,11 @@ s2_default_assets <- c(
 
     "swir22",
 
-    "scl"
+    "scl",
+
+    "green",
+
+    "blue"
 
 )
 

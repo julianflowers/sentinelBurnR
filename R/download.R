@@ -19,6 +19,7 @@ download_s2 <- function(
 
         limit = NULL,
         max_cloud = NULL,
+        project = NULL,
         output_dir = tools::R_user_dir(
             "sentinelBurnR",
             which = "cache"
@@ -26,6 +27,18 @@ download_s2 <- function(
         overwrite = FALSE,
         workers = 4
 )   {
+
+    if (!is.null(project)) {
+
+        if (!inherits(project, "sbr_project")) {
+            stop(
+                "`project` must be an sbr_project.",
+                call. = FALSE
+            )
+        }
+
+        output_dir <- project$raw
+    }
 
     if (is.null(assets)) {
         assets <- s2_default_assets

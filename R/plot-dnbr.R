@@ -9,14 +9,27 @@
 
 plot_dnbr <- function(
         x,
-        title = "Differenced Normalized Burn Ratio"
+        title = "Differenced Normalized Burn Ratio",
+        subtitle = NULL
 ) {
 
     plot_index(
+
         x = x,
+
         title = title,
-        palette = sbr_palette_dnbr,
-        limits = NULL,
+
+        subtitle = subtitle,
+
+        palette = rev(
+            hcl.colors(
+                11,
+                "RdYlGn"
+            )
+        ),
+
         legend_title = "dNBR"
+
     )
+
 }

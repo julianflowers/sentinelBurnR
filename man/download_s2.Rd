@@ -9,6 +9,7 @@ download_s2(
   assets = NULL,
   limit = NULL,
   max_cloud = NULL,
+  project = NULL,
   output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
   overwrite = FALSE,
   workers = 4

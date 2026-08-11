@@ -8,7 +8,7 @@
 #' @export
 build_composite <- function(
         collection,
-        assets = s2_burn_assets
+        assets = s2_default_assets
 ) {
 
     band_rasters <- vector(

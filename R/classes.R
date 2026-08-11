@@ -1,17 +1,4 @@
-# Constructor for an AOI object
-new_aoi <- function(geometry) {
 
-    stopifnot(
-        inherits(geometry, "SpatVector")
-    )
-
-    structure(
-        list(
-            geometry = geometry
-        ),
-        class = "sbr_aoi"
-    )
-}
 
 
 # Constructor for a Sentinel-2 search

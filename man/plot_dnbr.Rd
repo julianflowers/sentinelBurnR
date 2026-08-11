@@ -4,7 +4,7 @@
 \alias{plot_dnbr}
 \title{Plot differenced Normalized Burn Ratio}
 \usage{
-plot_dnbr(x, title = "Differenced Normalized Burn Ratio")
+plot_dnbr(x, title = "Differenced Normalized Burn Ratio", subtitle = NULL)
 }
 \arguments{
 \item{x}{A single-layer dNBR SpatRaster.}

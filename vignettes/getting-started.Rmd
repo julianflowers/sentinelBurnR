@@ -76,8 +76,8 @@ aoi <- read_aoi(aoi$geometry)
 
 pre_images <- search_s2(
     aoi,
-    start = "2026-05-01",
-    end = "2026-06-15"
+    start = "2026-07-14",
+    end = "2026-07-29"
 )
 
 post_images <- search_s2(
@@ -99,8 +99,6 @@ pre_collection <- download_s2(
 
     pre_images,
     
-    limit = 2,
-
     workers = 6
 
 )
@@ -108,8 +106,7 @@ pre_collection <- download_s2(
 post_collection <- download_s2(
 
     post_images,
-    
-    limit = 2,
+  
 
     workers = 6
 
