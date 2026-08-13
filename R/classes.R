@@ -21,20 +21,28 @@ new_s2_search <- function(items, aoi, start, end) {
 
 
 }
-
-new_s2_collection <- function(files) {
+new_s2_collection <- function(
+        files,
+        aoi = NULL
+) {
 
     stopifnot(
         is.data.frame(files)
     )
 
+    if (!is.null(aoi)) {
+        stopifnot(
+            inherits(aoi, "sbr_aoi")
+        )
+    }
+
     structure(
         list(
-            files = files
+            files = files,
+            aoi = aoi
         ),
         class = "sbr_collection"
     )
-
 }
 
 

@@ -13,3 +13,12 @@ files <- function(x) {
 files.sbr_collection <- function(x) {
     x$files
 }
+
+
+aoi <- function(x) {
+    UseMethod("aoi")
+}
+
+aoi.sbr_collection <- function(x) {
+    x$aoi
+}

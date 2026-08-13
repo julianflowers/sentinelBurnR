@@ -10,7 +10,7 @@ download_s2(
   limit = NULL,
   max_cloud = NULL,
   project = NULL,
-  output_dir = tools::R_user_dir("sentinelBurnR", which = "cache"),
+  output_dir = cache_downloads(),
   overwrite = FALSE,
   workers = 4
 )

@@ -8,20 +8,39 @@
 #' @export
 calc_nbr <- function(x) {
 
-    stopifnot(
-        inherits(x, "SpatRaster")
-    )
-
-    if (!all(c("nir08", "swir22") %in% names(x))) {
+    if (!inherits(x, "SpatRaster")) {
         stop(
-            "Composite must contain 'nir08' and 'swir22' bands.",
+            "`x` must be a SpatRaster.",
             call. = FALSE
         )
     }
 
-    nbr <-
-        (x[["nir08"]] - x[["swir22"]]) /
-        (x[["nir08"]] + x[["swir22"]])
+    required <- c(
+        "nir08",
+        "swir22"
+    )
+
+    missing <- setdiff(
+        required,
+        names(x)
+    )
+
+    if (length(missing) > 0) {
+        stop(
+            "Missing required band(s): ",
+            paste(missing, collapse = ", "),
+            call. = FALSE
+        )
+    }
+
+    nir <- x[["nir08"]]
+    swir <- x[["swir22"]]
+
+    nbr <- (
+        nir - swir
+    ) / (
+        nir + swir
+    )
 
     names(nbr) <- "nbr"
 

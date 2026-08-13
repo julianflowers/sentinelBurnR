@@ -70,7 +70,7 @@ sbr_options <- function(
         )
 
         terra::terraOptions(
-            tempdir = temp_dir
+            tempdir = cache_temp()
         )
 
     }

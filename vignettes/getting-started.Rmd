@@ -51,7 +51,7 @@ This vignette demonstrates the complete workflow:
 lat <- 52.2522
 lon <- 1.6271
   
-buffer <- 1000
+buffer <- 2000
 
 ```
 
@@ -83,7 +83,7 @@ pre_images <- search_s2(
 post_images <- search_s2(
     aoi,
     start = "2026-07-30",
-    end = "2026-08-09"
+    end = "2026-08-11"
 )
 
 
@@ -97,7 +97,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, limit = 8, max_cloud = 30,
+    pre_images, limit = 10, max_cloud = 30,
     
     workers = 6
 
@@ -105,7 +105,9 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images, limit = 8, max_cloud = 30,
+    post_images,
+    
+    max_cloud = 40,
   
     workers = 6
 
@@ -121,6 +123,7 @@ pre_comp <- build_composite(
 )
 
 post_comp <- build_composite(
+    assets = c("red", "nir08", "swir22"),
     post_collection
 )
 
@@ -135,7 +138,8 @@ pre_nbr <- calc_nbr(
 )
 
 post_nbr <- calc_nbr(
-    post_comp
+    post_comp,
+
 )
 
 ```

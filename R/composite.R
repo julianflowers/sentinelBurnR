@@ -8,11 +8,8 @@
 #' @export
 
 build_composite <- function(
-
-    collection,
-
-    assets = s2_burn_assets
-
+        collection,
+        assets = s2_burn_assets
 ) {
 
     if (!inherits(collection, "sbr_collection")) {
@@ -21,7 +18,6 @@ build_composite <- function(
             "`collection` must be an sbr_collection.",
             call. = FALSE
         )
-
     }
 
     band_rasters <- vector(
@@ -36,13 +32,9 @@ build_composite <- function(
         message("Building ", asset)
 
         band_rasters[[asset]] <- build_band(
-
             collection = collection,
-
             asset = asset
-
         )
-
     }
 
     message("Aligning bands...")
@@ -60,19 +52,31 @@ build_composite <- function(
         for (nm in names(band_rasters)[-1]) {
 
             composite <- c(
-
                 composite,
-
                 band_rasters[[nm]]
-
             )
-
         }
-
     }
 
     names(composite) <- names(band_rasters)
 
-    composite
+    if (!is.null(collection$aoi)) {
 
+        aoi <- collection$aoi$geometry
+
+        if (!terra::same.crs(aoi, composite)) {
+
+            aoi <- terra::project(
+                aoi,
+                terra::crs(composite)
+            )
+        }
+
+        composite <- terra::mask(
+            composite,
+            aoi
+        )
+    }
+
+    composite
 }

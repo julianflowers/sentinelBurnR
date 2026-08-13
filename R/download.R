@@ -20,10 +20,7 @@ download_s2 <- function(
         limit = NULL,
         max_cloud = NULL,
         project = NULL,
-        output_dir = tools::R_user_dir(
-            "sentinelBurnR",
-            which = "cache"
-        ),
+        output_dir = cache_downloads(),
         overwrite = FALSE,
         workers = 4
 )   {
@@ -314,6 +311,7 @@ download_s2 <- function(
     cat("------------------------------------\n\n")
 
     new_s2_collection(
-        successful
+        files = successful,
+        aoi = x$aoi
     )
 }

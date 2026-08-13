@@ -1,15 +1,16 @@
 test_that("calc_dnbr subtracts correctly", {
 
     pre <- terra::rast(
-        nrows = 1,
-        ncols = 1,
-        vals = 0.7
+        nrows = 2,
+        ncols = 2,
+        vals = c(0.8, 0.6, 0.4, 0.2)
+
     )
 
     post <- terra::rast(
-        nrows = 1,
-        ncols = 1,
-        vals = 0.3
+        nrows = 2,
+        ncols = 2,
+        vals = c(0.3, 0.5, 0.4, 0.1)
     )
 
     dnbr <- calc_dnbr(
@@ -17,12 +18,14 @@ test_that("calc_dnbr subtracts correctly", {
         post
     )
 
+
     expect_equal(
-        unname(
-        terra::values(dnbr)[1, 1]
-        ),
-        0.4,
-        tolerance = 1e-6
+        as.numeric(terra::values(dnbr)),
+        c(0.5, 0.1, 0, 0.1)
     )
 
+    expect_equal(
+        names(dnbr),
+        "dnbr"
+    )
 })
