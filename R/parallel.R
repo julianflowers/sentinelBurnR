@@ -1,9 +1,10 @@
-# Run a function sequentially or in parallel
-#
-# @param X Input vector.
-# @param FUN Function to apply.
-# @param workers Number of workers.
+#' Run a function sequentially or in parallel
+#' parallel_apply
+#' @param X Input vector.
+#' @param FUN Function to apply.
+#' @param workers Number of workers.
 #' @keywords internal
+#' @export
 
 parallel_apply <- function(
         X,

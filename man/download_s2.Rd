@@ -22,6 +22,10 @@ download_s2(
 
 \item{limit}{Optional maximum number of scenes to download.}
 
+\item{max_cloud}{Set numerical value for cloud cover cut off.}
+
+\item{project}{Project name description}
+
 \item{output_dir}{Directory used to cache downloaded files.}
 
 \item{overwrite}{Logical. Overwrite existing files?}

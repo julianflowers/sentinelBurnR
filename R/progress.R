@@ -85,7 +85,7 @@ print_progress <- function(path) {
 
     )
 
-    flush.console()
+    utils::flush.console()
 
 }
 

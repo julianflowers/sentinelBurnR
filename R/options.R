@@ -29,6 +29,13 @@
 
 }
 
+#' Configure sentinelBurnR
+#'
+#' @param project_dir Project directory
+#' @param cache_dir cache directory
+#' @param temp_dir temporary directory
+#' @export
+
 sbr_options <- function(
 
     project_dir = NULL,
@@ -39,8 +46,7 @@ sbr_options <- function(
 
 ) {
 
-    if (!is.null(project_dir))
-
+    if (!is.null(project_dir)) {
 
         dir.create(
             project_dir,
@@ -52,10 +58,21 @@ sbr_options <- function(
             sbr.project_dir = project_dir
         )
 
-    if (!is.null(cache_dir))
+    }
+
+    if (!is.null(cache_dir)) {
+
+        dir.create(
+            cache_dir,
+            recursive = TRUE,
+            showWarnings = FALSE
+        )
+
         options(
             sbr.cache_dir = cache_dir
         )
+
+    }
 
     if (!is.null(temp_dir)) {
 
@@ -70,11 +87,35 @@ sbr_options <- function(
         )
 
         terra::terraOptions(
-            tempdir = cache_temp()
+            tempdir = temp_dir
         )
 
     }
 
-    invisible(NULL)
+    invisible(
+        list(
+
+            project_dir = getOption("sbr.project_dir"),
+
+            cache_dir = getOption("sbr.cache_dir"),
+
+            temp_dir = getOption("sbr.temp_dir")
+
+        )
+    )
+
+}
+
+sbr_config <- function() {
+
+    list(
+
+        project_dir = getOption("sbr.project_dir"),
+
+        cache_dir = getOption("sbr.cache_dir"),
+
+        temp_dir = getOption("sbr.temp_dir")
+
+    )
 
 }

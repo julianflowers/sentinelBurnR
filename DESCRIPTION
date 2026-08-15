@@ -8,11 +8,16 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
-    parallel,
     terra, 
     future,
     future.apply, 
     progressr,
+    ggplot2,
+    rstac, 
+    tidyterra,
+    utils,
+    grDevices,
+    sf
 Suggests: 
     knitr,
     rmarkdown,
