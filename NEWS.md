@@ -1,9 +1,19 @@
-# sentinelBurnR (development version)
+# sentinelBurnR 0.3.0
 
-# sentinelBurnR 0.0.0.9000
+## New
 
-## Added
+- Project management
+- Cache management
+- SCL masking
+- Multi-tile compositing
+- NBR/dNBR calculation
+- Burn area estimation
+- Plotting functions
+- Download summaries
 
-- Added `new_aoi()` constructor.
-- Added `print.sbr_aoi()`.
-- Added first unit tests.
+## Internal
+
+- Reorganised source tree
+- Added S3 classes
+- Improved package documentation
+- Clean R CMD check
