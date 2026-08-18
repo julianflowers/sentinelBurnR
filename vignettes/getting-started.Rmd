@@ -51,7 +51,7 @@ This vignette demonstrates the complete workflow:
 lat <- 52.2522
 lon <- 1.6271
   
-buffer <- 2500
+buffer <- 2000
 
 ```
 
@@ -97,7 +97,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, limit = 2, max_cloud = 30,
+    pre_images, limit = 10, max_cloud = 30,
     
     workers = 6
 
@@ -105,9 +105,9 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images, limit = 2,
+    post_images, limit = 10,
     
-    max_cloud = 40,
+    max_cloud = 30,
   
     workers = 6
 

@@ -1,4 +1,11 @@
-# sentinelBurnR 0.3.0
+## sentinelBurnR 0.0.1.9000
+
+### Performance
+
+* Improved Sentinel-2 compositing performance by caching prepared SCL
+  masks by raster grid, avoiding repeated nearest-neighbour resampling
+  across spectral bands.
+* Scientific behaviour and resulting burn analysis are unchanged.
 
 ## New
 
