@@ -60,7 +60,6 @@ remotes::install_github("julianflowers/sentinelBurnR")
 ## Example workflow
 
 ```r
-
 library(sentinelBurnR)
 
 #
@@ -80,7 +79,7 @@ sbr_options(
 #
 
 project <- create_project(
-    "Fire_2026"
+    "Brandon_2026"
 )
 
 #
@@ -116,83 +115,25 @@ fire <- detect_burn(
 
     post = date_range(
         "2026-07-29",
-        "2026-08-16"
+        "2026-08-09"
     ),
 
-    max_cloud = 30,
+    max_cloud = 40,
 
     workers = 6
 
 )
 ```
-#
-# Plot results
-#
 
-p1 <- plot_rgb(
-    pre_comp,
-    title = "Pre-fire RGB",
-    subtitle = "July 2026"
+## Plot results
+
+```r
+plot_nbr(
+    fire$nbr_pre
 )
 
-p2 <- plot_rgb(
-    post_comp,
-    title = "Post-fire RGB",
-    subtitle = "August 2026"
-)
-
-p3 <- plot_dnbr(
-    dnbr,
-    title = "Difference NBR"
-)
-
-p4 <- plot_severity(
-    severity,
-    title = "Burn severity"
+plot_dnbr(
+    fire$dnbr
 )
 
 ```
-
-library(patchwork)
-
-figure <-
-
-    (p1 | p2) /
-
-    (p3 | p4) +
-
-    patchwork::plot_layout(
-        guides = "collect"
-    ) +
-
-    patchwork::plot_annotation(
-
-        title = "Wildfire burn assessment",
-
-        subtitle = "Sentinel-2 composite imagery and burn severity",
-
-        theme = ggplot2::theme(
-
-            plot.title = ggplot2::element_text(
-                face = "bold",
-                size = 18
-            ),
-
-            plot.subtitle = ggplot2::element_text(
-                size = 12
-            )
-
-        )
-
-    )
-    
-ggplot2::ggsave(
-    "man/figures/workflow.png",
-    figure,
-    width = 12,
-    height = 10,
-    dpi = 300
-)    
-
-figure
-

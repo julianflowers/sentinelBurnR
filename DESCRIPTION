@@ -17,7 +17,7 @@ Imports:
     tidyterra,
     utils,
     grDevices,
-    patchwork
+    sf
 Suggests: 
     knitr,
     rmarkdown,

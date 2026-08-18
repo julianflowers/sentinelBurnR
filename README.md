@@ -1,164 +1,132 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # sentinelBurnR
 
-**Detect and map wildfire burn scars from Sentinel-2 imagery using a simple end-to-end workflow.**
+<!-- badges: start -->
 
-`sentinelBurnR` automates the process of:
+[![R-CMD-check](https://github.com/julianflowers/sentinelBurnR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/julianflowers/sentinelBurnR/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
 
-- searching for Sentinel-2 imagery
-- downloading cloud-filtered scenes
-- building cloud-masked composites
-- calculating NBR and dNBR
-- classifying burn severity
-- estimating burned area
-- producing publication-quality maps
+# sentinelBurnR
 
----
+An R package for detecting and mapping wildfire impacts from Sentinel-2
+imagery.
 
-## Installation
+sentinelBurnR provides an end-to-end workflow for wildfire analysis
+using Sentinel-2 Level-2A imagery. It handles image discovery, download,
+cloud masking, compositing, burn index calculation and visualisation,
+allowing users to move from an area of interest to burn severity
+products with only a few lines of code.
 
-```r
-# install.packages("pak")
+Features
 
-pak::pak("julianflowers/sentinelBurnR")
+Create areas of interest from coordinates or spatial objects
+
+Search Sentinel-2 STAC catalogues
+
+Parallel image downloads
+
+Local or project-based image storage
+
+Pixel-level cloud masking using the Sentinel-2 Scene Classification
+Layer (SCL)
+
+Multi-date median compositing
+
+Multi-tile mosaicking
+
+Calculate:
+
+Normalized Burn Ratio (NBR)
+
+Differenced Normalized Burn Ratio (dNBR)
+
+Publication-quality plotting using ggplot2 and tidyterra
+
+Project-based workflow for reproducible analyses \## Installation
+
+``` r
+# install.packages("remotes")
+remotes::install_github("julianflowers/sentinelBurnR")
 ```
 
----
+## Example workflow
 
-## Quick start
-
-```r
-
+``` r
 library(sentinelBurnR)
 
+#
+# Configure package
+#
+
 sbr_options(
-    project_dir = "~/Projects/sentinelBurnR",
+
+    project_dir = "~/sentinelBurnR",
+
     temp_dir = "~/Library/Caches/sentinelBurnR/tmp"
+
 )
 
-aoi <- create_aoi(  
+#
+# Create a project
+#
+
+project <- create_project(
+    "Brandon_2026"
+)
+
+#
+# Create an AOI
+#
+
+aoi <- create_aoi(
+
     xmin = 1.618117,
+
     ymin = 52.246700,
+
     xmax = 1.636083,
+
     ymax = 52.257699
+
 )
 
-pre_images <- search_s2(
-    aoi,
-    start = "2026-07-14",
-    end = "2026-07-29"
-)
+#
+# Run the complete workflow
+#
 
-post_images <- search_s2(
-    aoi,
-    start = "2026-07-29",
-    end = "2026-08-16"
-)
+fire <- detect_burn(
 
-pre_collection <- download_s2( pre_images, limit = 10, max_cloud = 30, workers = 6)
+    project = project,
 
-post_collection <- download_s2(
-    post_images, limit = 20,
-    max_cloud = 30,
+    aoi = aoi,
+
+    pre = date_range(
+        "2026-07-01",
+        "2026-07-28"
+    ),
+
+    post = date_range(
+        "2026-07-29",
+        "2026-08-09"
+    ),
+
+    max_cloud = 40,
+
     workers = 6
-    )
 
-fire <- analyse_burn(
-    pre_collection,
-    post_collection
+)
+```
+
+## Plot results
+
+``` r
+plot_nbr(
+    fire$nbr_pre
 )
 
-severity <- classify_dnbr(
+plot_dnbr(
     fire$dnbr
 )
-
-plot_severity(severity)
-
-area_by_class(severity)
 ```
-
----
-
-## Workflow
-
-```
-AOI
- │
- ▼
-Search Sentinel-2
- │
- ▼
-Download imagery
- │
- ▼
-Cloud masking (SCL)
- │
- ▼
-Temporal composites
- │
- ▼
-NBR
- │
- ▼
-dNBR
- │
- ▼
-Burn severity
- │
- ▼
-Area statistics & maps
-```
-
----
-
-## Features
-
-- Sentinel-2 STAC search
-- Parallel downloads
-- Automatic cloud masking using Scene Classification Layer (SCL)
-- Multi-scene compositing
-- Multi-tile mosaicking
-- NBR and dNBR calculation
-- Burn severity classification
-- Burned area estimation
-- Publication-quality plotting
-- Project and cache management
-
----
-
-## Example outputs
-
-*(We'll replace this section with real screenshots once we've generated them.)*
-
-- RGB composite
-- dNBR map
-- Burn severity map
-- Area summary
-
----
-
-## Documentation
-
-```r
-vignette("getting-started", package = "sentinelBurnR")
-```
-
----
-
-## Development status
-
-The package is under active development.
-
-Current functionality includes:
-
-- complete Sentinel-2 download workflow
-- burn severity mapping
-- plotting
-- project management
-- automated caching
-
-Planned features include:
-
-- validation against reference fire perimeters
-- HTML reporting
-- recovery monitoring
-- additional burn indices

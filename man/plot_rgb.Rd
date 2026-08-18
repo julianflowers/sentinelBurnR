@@ -2,31 +2,20 @@
 % Please edit documentation in R/plotting.R
 \name{plot_rgb}
 \alias{plot_rgb}
-\title{Plot an RGB composite}
+\title{Plot differenced Normalized Burn Ratio}
 \usage{
-plot_rgb(
-  x,
-  title = "Sentinel-2 RGB composite",
-  subtitle = NULL,
-  rgb_stretch = c("lin", "hist", "none")
-)
+plot_rgb(x, title = "RGB composite", subtitle = NULL)
 }
 \arguments{
-\item{x}{A composite containing red, green and blue bands.}
+\item{x}{A single-layer dNBR SpatRaster.}
 
 \item{title}{Plot title.}
 
-\item{subtitle}{Optional subtitle.}
-
-\item{stretch}{Apply percentile contrast stretch?}
-
-\item{lower}{Lower percentile.}
-
-\item{upper}{Upper percentile.}
+\item{subtitle}{Plot subtitle}
 }
 \value{
 A ggplot object.
 }
 \description{
-Plot an RGB composite
+Plot differenced Normalized Burn Ratio
 }

@@ -18,7 +18,6 @@ knitr::opts_chunk$set(
 
 library(sentinelBurnR)
 library(terra)
-library(patchwork)
 
 cache_dir <- file.path(
     path.expand("~"),
@@ -84,7 +83,7 @@ pre_images <- search_s2(
 post_images <- search_s2(
     aoi,
     start = "2026-07-29",
-    end = "2026-08-16"
+    end = "2026-08-12"
 )
 
 
@@ -98,7 +97,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, limit = 10, max_cloud = 30,
+    pre_images, limit = 2, max_cloud = 30,
     
     workers = 6
 
@@ -106,7 +105,7 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images, limit = 20,
+    post_images, limit = 2,
     
     max_cloud = 40,
   
@@ -117,15 +116,15 @@ post_collection <- download_s2(
 
 ## Composite
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 
 pre_comp <- build_composite(
-    assets = c("red", "nir08", "swir22", "green", "blue"),
+    assets = c("red", "nir08", "swir22"),
     pre_collection
 )
 
 post_comp <- build_composite(
-    assets = c("red", "nir08", "swir22", "green", "blue"),
+    assets = c("red", "nir08", "swir22"),
     post_collection
 )
 
@@ -155,7 +154,6 @@ dnbr <- calc_dnbr(
     pre_nbr,
 
     post_nbr
-  
 
 )
 
@@ -164,116 +162,4 @@ plot(dnbr)
 
 ```
 
-## Classify
-
-```{r}
-
-severity <- classify_dnbr(dnbr) 
-
-severity|>
-  plot()
-
-```
-
-
-
-```{r}
-
-p1 <- plot_rgb(
-    pre_comp,
-    title = "Pre-fire RGB",
-    subtitle = "July 2026"
-)
-
-p2 <- plot_rgb(
-    post_comp,
-    title = "Post-fire RGB",
-    subtitle = "August 2026"
-)
-
-p3 <- plot_dnbr(
-    dnbr,
-    title = "Difference NBR"
-)
-
-p4 <- plot_severity(
-    severity,
-    title = "Burn severity"
-)
-
-p1 <- p1 +
-    ggplot2::theme(
-        legend.position = "none"
-    )
-
-p2 <- p2 +
-    ggplot2::theme(
-        legend.position = "none"
-    )
-
-```
-
-
-```{r}
-
-
-
-figure <- patchwork::wrap_plots(
-    p1,
-    p2,
-    p3,
-    p4,
-    ncol = 2,
-    guides = "collect"
-) +
-    
-    patchwork::plot_layout(
-        guides = "collect"
-    ) +
-
-    patchwork::plot_annotation(
-
-        title = "Wildfire burn assessment",
-
-        subtitle = "Sentinel-2 composite imagery and burn severity",
-
-        theme = ggplot2::theme(
-
-            plot.title = ggplot2::element_text(
-                face = "bold",
-                size = 18
-            ),
-
-            plot.subtitle = ggplot2::element_text(
-                size = 12
-            )
-
-        )
-
-    )
-
-
-
-```
-
-```{r, eval=FALSE}
-
-figure
-
-ggplot2::ggsave(
-    "man/figures/workflow.png",
-    figure,
-    width = 10,
-    height = 8,
-    dpi = 200
-)
-
-ggplot2::ggsave(
-    "man/figures/workflow.pdf",
-    figure,
-    width = 10,
-    height = 8
-)
-
-```
 
