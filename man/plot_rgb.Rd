@@ -2,20 +2,27 @@
 % Please edit documentation in R/plotting.R
 \name{plot_rgb}
 \alias{plot_rgb}
-\title{Plot differenced Normalized Burn Ratio}
+\title{Plot an RGB composite}
 \usage{
-plot_rgb(x, title = "RGB composite", subtitle = NULL)
+plot_rgb(
+  x,
+  title = "Sentinel-2 RGB composite",
+  subtitle = NULL,
+  rgb_stretch = c("lin", "hist", "none")
+)
 }
 \arguments{
-\item{x}{A single-layer dNBR SpatRaster.}
+\item{x}{A composite containing red, green and blue bands.}
 
 \item{title}{Plot title.}
 
-\item{subtitle}{Plot subtitle}
+\item{subtitle}{Optional subtitle.}
+
+\item{rgb_stretch}{Apply stretch - linear, histogram or none}
 }
 \value{
 A ggplot object.
 }
 \description{
-Plot differenced Normalized Burn Ratio
+Plot an RGB composite
 }

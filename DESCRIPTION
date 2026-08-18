@@ -16,8 +16,7 @@ Imports:
     rstac, 
     tidyterra,
     utils,
-    grDevices,
-    sf
+    grDevices
 Suggests: 
     knitr,
     rmarkdown,

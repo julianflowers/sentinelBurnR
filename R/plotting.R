@@ -7,9 +7,7 @@
 #' @param x A composite containing red, green and blue bands.
 #' @param title Plot title.
 #' @param subtitle Optional subtitle.
-#' @param stretch Apply percentile contrast stretch?
-#' @param lower Lower percentile.
-#' @param upper Upper percentile.
+#' @param rgb_stretch Apply stretch - linear, histogram or none
 #'
 #' @return A ggplot object.
 #'
