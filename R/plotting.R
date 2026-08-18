@@ -2,86 +2,78 @@
 
 
 #----plot rgb -----------------------------------
-#' Plot differenced Normalized Burn Ratio
+#' Plot an RGB composite
 #'
-#' @param x A single-layer dNBR SpatRaster.
+#' @param x A composite containing red, green and blue bands.
 #' @param title Plot title.
-#' @param subtitle Plot subtitle
+#' @param subtitle Optional subtitle.
+#' @param stretch Apply percentile contrast stretch?
+#' @param lower Lower percentile.
+#' @param upper Upper percentile.
 #'
 #' @return A ggplot object.
+#'
 #' @export
 plot_rgb <- function(
-        x,
-        title = "RGB composite",
-        subtitle = NULL
+
+    x,
+
+    title = "Sentinel-2 RGB composite",
+
+    subtitle = NULL,
+
+    rgb_stretch = c(
+        "lin",
+        "hist",
+        "none"
+    )
+
 ) {
 
     if (!inherits(x, "SpatRaster")) {
-
         stop(
             "`x` must be a SpatRaster.",
             call. = FALSE
         )
-
     }
 
-    needed <- c(
+    rgb_stretch <- match.arg(rgb_stretch)
+
+    rgb <- x[[c(
         "red",
         "green",
         "blue"
-    )
+    )]]
 
-    missing <- setdiff(
-        needed,
-        names(x)
-    )
+    p <- ggplot2::ggplot()
 
-    if (length(missing) > 0) {
+    if (rgb_stretch == "none") {
 
-        stop(
-            "Composite is missing: ",
-            paste(
-                missing,
-                collapse = ", "
-            ),
-            call. = FALSE
-        )
+        p <- p +
+            tidyterra::geom_spatraster_rgb(
+                data = rgb
+            )
+
+    } else {
+
+        p <- p +
+            tidyterra::geom_spatraster_rgb(
+                data = rgb,
+                stretch = rgb_stretch
+            )
 
     }
 
-    rgb <- x[[
-
-        c(
-            "red",
-            "green",
-            "blue"
-        )
-
-    ]]
-
-
-    ggplot2::ggplot() +
-
-        tidyterra::geom_spatraster_rgb(
-            data = rgb
-        ) +
-
+    p +
         ggplot2::coord_sf(
             expand = FALSE
         ) +
-
         ggplot2::labs(
-
             title = title,
-
             subtitle = subtitle
-
         ) +
-
         theme_sbr()
-
 }
-
 
 #------ theme sbr ------------------------------------
 
@@ -287,5 +279,45 @@ plot_scl <- function(
 
 }
 
+# plot severity -----------------------------------------------------------
+
+#' Plot Burn severity
+#'
+#' @param x A single-layer dNBR SpatRaster.
+#' @param title Plot title.
+#' @param subtitle Plot subtitle
+#' @return A ggplot object.
+#' @export
+
+plot_severity <- function(
+        x,
+        title = "Burn severity",
+        subtitle = NULL
+) {
+
+    x <- terra::as.factor(x)
+
+    ggplot2::ggplot() +
+
+        tidyterra::geom_spatraster(
+            data = x
+        ) +
+
+        ggplot2::scale_fill_manual(
+            values = burn_palette,
+            drop = FALSE,
+            name = "Burn severity"
+        ) +
+
+        ggplot2::coord_sf(expand = FALSE) +
+
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle
+        ) +
+
+        theme_sbr()
+
+}
 
 

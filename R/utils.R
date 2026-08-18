@@ -71,3 +71,29 @@ new_sbr_result <- function(
     )
 
 }
+
+time_step <- function(label, expr) {
+
+    cat(
+        sprintf(
+            "%-30s",
+            paste0(label, "...")
+        )
+    )
+
+    t0 <- proc.time()
+
+    result <- force(expr)
+
+    elapsed <- (proc.time() - t0)[["elapsed"]]
+
+    cat(
+        sprintf(
+            "%6.1f s\n",
+            elapsed
+        )
+    )
+
+    result
+
+}

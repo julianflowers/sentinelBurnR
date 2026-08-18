@@ -110,3 +110,45 @@ s2_scl_colours <- c(
 
 )
 
+
+# USGS burn thresholds ----------------------------------------------------
+
+dnbr_thresholds <- c(
+    -0.25,
+    -0.10,
+    0.10,
+    0.27,
+    0.44,
+    0.66
+)
+
+dnbr_labels <- c(
+    "Enhanced regrowth, high",
+    "Enhanced regrowth, low",
+    "Unburned",
+    "Low severity",
+    "Moderate-low severity",
+    "Moderate-high severity",
+    "High severity"
+)
+
+# burn palette ------------------------------------------------------------
+
+
+burn_palette <- c(
+
+    "#1a9850",
+
+    "#66bd63",
+
+    "#f7f7f7",
+
+    "#fee08b",
+
+    "#fdae61",
+
+    "#f46d43",
+
+    "#d73027"
+
+)

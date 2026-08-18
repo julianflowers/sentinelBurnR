@@ -20,12 +20,28 @@ build_composite <- function(
         )
     }
 
-    band_rasters <- vector(
-        "list",
-        length(assets)
+    band_stacks <- stats::setNames(
+        lapply(assets, function(asset) read_band(collection, asset)),
+        assets
     )
 
-    names(band_rasters) <- assets
+    scl_masks <- NULL
+    asset_table <- files(collection)
+
+    if ("scl" %in% asset_table$asset && any(assets != "scl")) {
+        scl_stacks <- if ("scl" %in% assets) {
+            band_stacks[["scl"]]
+        } else {
+            read_band(collection, "scl")
+        }
+
+        scl_masks <- prepare_scl_masks(
+            scl_stacks = scl_stacks,
+            band_stacks = band_stacks[assets != "scl"]
+        )
+    }
+
+    band_rasters <- stats::setNames(vector("list", length(assets)), assets)
 
     for (asset in assets) {
 
@@ -33,7 +49,9 @@ build_composite <- function(
 
         band_rasters[[asset]] <- build_band(
             collection = collection,
-            asset = asset
+            asset = asset,
+            stacks = band_stacks[[asset]],
+            scl_masks = scl_masks[[asset]]
         )
     }
 
@@ -176,14 +194,23 @@ read_band <- function(
 build_band <- function(
         collection,
         asset,
-        scl_stacks = NULL
+        stacks = read_band(collection, asset),
+        scl_masks
 
 ) {
 
-    stacks <- read_band(
-        collection,
-        asset
-    )
+    if (missing(scl_masks)) {
+        has_scl <- "scl" %in% files(collection)$asset
+        scl_masks <- NULL
+
+        if (asset != "scl" && has_scl) {
+            one_band <- stats::setNames(list(stacks), asset)
+            scl_masks <- prepare_scl_masks(
+                scl_stacks = read_band(collection, "scl"),
+                band_stacks = one_band
+            )[[asset]]
+        }
+    }
 
     if (asset == "scl") {
 
@@ -194,32 +221,22 @@ build_band <- function(
 
     } else {
 
-        has_scl <- "scl" %in% files(collection)$asset
-
-        if (has_scl) {
-
-            scl_stacks <- read_band(
-                collection,
-                "scl"
-            )
-
-        } else {
-
-            scl_stacks <- NULL
-        }
-
         tile_composites <- vector(
             "list",
             length(stacks)
         )
 
+        names(tile_composites) <- names(stacks)
+
         for (i in seq_along(stacks)) {
 
-            if (!is.null(scl_stacks)) {
+            tile <- names(stacks)[[i]]
+
+            if (!is.null(scl_masks)) {
 
                 masked <- mask_scl(
                     stacks[[i]],
-                    scl_stacks[[i]]
+                    scl_masks[[tile]]
                 )
 
             } else {
@@ -302,12 +319,104 @@ build_band <- function(
 }
 
 
+# Prepare SCL masks -------------------------------------------------------
+
+prepare_scl_masks <- function(
+        scl_stacks,
+        band_stacks,
+        keep = s2_scl_keep
+) {
+
+    stopifnot(is.list(scl_stacks), is.list(band_stacks))
+
+    prepared <- stats::setNames(
+        vector("list", length(band_stacks)),
+        names(band_stacks)
+    )
+    cache <- list()
+    n_prepared <- 0L
+
+    for (asset in names(band_stacks)) {
+        prepared[[asset]] <- list()
+
+        for (tile in names(band_stacks[[asset]])) {
+            image <- band_stacks[[asset]][[tile]]
+            scl <- scl_stacks[[tile]]
+
+            if (is.null(scl)) {
+                stop("No SCL stack is available for tile '", tile, "'.",
+                     call. = FALSE)
+            }
+
+            tile_cache <- cache[[tile]]
+            match_index <- integer()
+
+            if (length(tile_cache)) {
+                matches <- vapply(
+                    tile_cache,
+                    function(x) terra::compareGeom(
+                        image,
+                        x$template,
+                        lyrs = FALSE,
+                        stopOnError = FALSE
+                    ),
+                    logical(1)
+                )
+                match_index <- which(matches)[1]
+            }
+
+            if (length(match_index) == 0L || is.na(match_index)) {
+                mask <- prepare_scl_mask(scl, image, keep = keep)
+                tile_cache[[length(tile_cache) + 1L]] <- list(
+                    template = image,
+                    mask = mask
+                )
+                match_index <- length(tile_cache)
+                cache[[tile]] <- tile_cache
+                n_prepared <- n_prepared + 1L
+            }
+
+            prepared[[asset]][[tile]] <- tile_cache[[match_index]]$mask
+        }
+    }
+
+    attr(prepared, "n_prepared") <- n_prepared
+    prepared
+}
+
+
+prepare_scl_mask <- function(
+        scl,
+        template,
+        keep = s2_scl_keep
+) {
+
+    stopifnot(
+        inherits(scl, "SpatRaster"),
+        inherits(template, "SpatRaster")
+    )
+
+    if (!terra::compareGeom(
+        scl,
+        template,
+        lyrs = FALSE,
+        stopOnError = FALSE
+    )) {
+        scl <- terra::resample(scl, template, method = "near")
+    }
+
+    Reduce(
+        `|`,
+        lapply(keep, function(value) scl == value)
+    )
+}
+
+
 #------------mask scl-------------------------------------
 
 mask_scl <- function(
         image,
-        scl,
-        keep = s2_scl_keep
+        mask
 ) {
 
     stopifnot(
@@ -315,35 +424,20 @@ mask_scl <- function(
     )
 
     stopifnot(
-        inherits(scl, "SpatRaster")
+        inherits(mask, "SpatRaster")
     )
 
-    if (
-        nrow(image) != nrow(scl) ||
-        ncol(image) != ncol(scl)
-    ) {
-
-        scl <- terra::resample(
-            scl,
-            image,
-            method = "near"
-        )
-
+    if (!terra::compareGeom(
+        image,
+        mask,
+        lyrs = FALSE,
+        stopOnError = FALSE
+    )) {
+        stop("`mask` must already match the geometry of `image`.",
+             call. = FALSE)
     }
 
-    keep_mask <- Reduce(
-        `|`,
-        lapply(
-            keep,
-            function(x) scl == x
-        )
-    )
-
-    out <- image
-
-    out[!keep_mask] <- NA
-
-    out
+    terra::mask(image, mask, maskvalues = 0)
 
 }
 
@@ -409,7 +503,5 @@ mosaic_tiles <- function(tiles) {
         tiles
     )
 }
-
-
 
 

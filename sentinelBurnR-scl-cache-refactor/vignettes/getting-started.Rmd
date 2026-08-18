@@ -1,0 +1,165 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+
+library(sentinelBurnR)
+library(terra)
+
+cache_dir <- file.path(
+    path.expand("~"),
+    "Library",
+    "CloudStorage",
+    "GoogleDrive-julian.flowers12@gmail.com",
+    "My Drive",
+    "Sentinel2",
+    "cache"
+)
+
+```
+
+# Introduction
+
+`sentinelBurnR` provides an end-to-end workflow for producing burn severity maps from Sentinel-2 imagery.
+
+This vignette demonstrates the complete workflow:
+
+1. Create and read an Area of Interest (AOI)
+2. Search the Sentinel-2 catalogue
+3. Download imagery
+4. Build cloud-free composites
+5. Calculate NBR
+6. Calculate dNBR
+
+## Create an AOI
+
+```{r}
+
+lat <- 52.2522
+lon <- 1.6271
+  
+buffer <- 2500
+
+```
+
+
+```{r}
+aoi <- create_aoi(lat = lat, lon = lon, radius = buffer)
+```
+
+
+## Read an AOI
+
+```{r}
+
+
+aoi <- read_aoi(aoi$geometry)
+
+```
+
+## Search Sentinel-2
+
+```{r}
+
+pre_images <- search_s2(
+    aoi,
+    start = "2026-07-14",
+    end = "2026-07-29"
+)
+
+post_images <- search_s2(
+    aoi,
+    start = "2026-07-29",
+    end = "2026-08-12"
+)
+
+
+```
+
+## Download
+
+```{r, eval = TRUE}
+
+## Download imagery
+
+pre_collection <- download_s2(
+
+    pre_images, limit = 2, max_cloud = 30,
+    
+    workers = 6
+
+)
+
+post_collection <- download_s2(
+
+    post_images, limit = 2,
+    
+    max_cloud = 40,
+  
+    workers = 6
+
+)
+```
+
+## Composite
+
+```{r, eval=TRUE}
+
+pre_comp <- build_composite(
+    assets = c("red", "nir08", "swir22"),
+    pre_collection
+)
+
+post_comp <- build_composite(
+    assets = c("red", "nir08", "swir22"),
+    post_collection
+)
+
+```
+
+## NBR
+
+```{r}
+
+pre_nbr <- calc_nbr(
+    pre_comp
+)
+
+post_nbr <- calc_nbr(
+    post_comp
+
+)
+
+```
+
+## dNBR
+
+```{r}
+
+dnbr <- calc_dnbr(
+
+    pre_nbr,
+
+    post_nbr
+
+)
+
+plot(dnbr)
+
+
+```
+
+
