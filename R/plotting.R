@@ -23,8 +23,10 @@ plot_rgb <- function(
     rgb_stretch = c(
         "lin",
         "hist",
-        "none"
-    )
+        "none"),
+
+    boundary = NULL
+
 
 ) {
 
@@ -71,6 +73,12 @@ plot_rgb <- function(
             subtitle = subtitle
         ) +
         theme_sbr()
+
+    overlay_boundary(
+        p,
+        boundary,
+        rgb
+    )
 }
 
 #------ theme sbr ------------------------------------
@@ -189,7 +197,14 @@ plot_nbr <- function(
         title = title,
         palette = sbr_palette_nbr,
         limits = c(-1, 1),
-        legend_title = "NBR"
+        legend_title = "NBR",
+        boundary = NULL
+    )
+
+    overlay_boundary(
+        p,
+        boundary,
+        rgb
     )
 }
 
@@ -203,31 +218,67 @@ plot_nbr <- function(
 #' @export
 plot_dnbr <- function(
         x,
-        title = "Differenced Normalized Burn Ratio",
-        subtitle = NULL
+        title = "dNBR",
+        subtitle = NULL,
+        boundary = NULL
 ) {
 
-    plot_index(
+    ## checks...
 
-        x = x,
+    p <- ggplot2::ggplot() +
 
-        title = title,
+        tidyterra::geom_spatraster(
+            data = x
+        ) +
 
-        subtitle = subtitle,
+        ggplot2::scale_fill_gradient2(
+            low = "#2166ac",
+            mid = "white",
+            high = "#b2182b",
+            midpoint = 0,
+            name = "dNBR"
+        ) +
 
-        palette = rev(
-            grDevices::hcl.colors(
-                11,
-                "RdYlGn"
+        ggplot2::coord_sf(
+            expand = FALSE
+        ) +
+
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle
+        ) +
+
+        theme_sbr()
+
+    if (!is.null(boundary)) {
+
+        boundary <- read_boundary(boundary)
+
+        if (!terra::same.crs(
+            boundary,
+            x
+        )) {
+
+            boundary <- terra::project(
+                boundary,
+                terra::crs(x)
             )
-        ),
 
-        legend_title = "dNBR"
+        }
 
-    )
+        p <- p +
+
+            tidyterra::geom_spatvector(
+                data = boundary,
+                fill = NA,
+                colour = "black",
+                linewidth = 0.6
+            )
+    }
+
+    p
 
 }
-
 #------- plot scl -------------------------------
 plot_scl <- function(
         collection,
@@ -290,12 +341,13 @@ plot_scl <- function(
 plot_severity <- function(
         x,
         title = "Burn severity",
-        subtitle = NULL
+        subtitle = NULL,
+        boundary = NULL
 ) {
 
     x <- terra::as.factor(x)
 
-    ggplot2::ggplot() +
+    p <- ggplot2::ggplot() +
 
         tidyterra::geom_spatraster(
             data = x
@@ -316,6 +368,67 @@ plot_severity <- function(
 
         theme_sbr()
 
+    if (!is.null(boundary)) {
+
+        boundary <- read_boundary(boundary)
+
+        if (!terra::same.crs(
+            boundary,
+            x
+        )) {
+
+            boundary <- terra::project(
+                boundary,
+                terra::crs(x)
+            )
+
+        }
+
+        p <- p +
+
+            tidyterra::geom_spatvector(
+                data = boundary,
+                fill = NA,
+                colour = "black",
+                linewidth = 0.6
+            )
+    }
+
+    p
+
 }
 
+
+# overlay boundary --------------------------------------------------------
+
+overlay_boundary <- function(
+        p,
+        boundary,
+        raster
+) {
+
+    if (is.null(boundary)) {
+        return(p)
+    }
+
+    boundary <- read_boundary(boundary)
+
+    if (!terra::same.crs(
+        boundary,
+        raster
+    )) {
+
+        boundary <- terra::project(
+            boundary,
+            terra::crs(raster)
+        )
+    }
+
+    p +
+        tidyterra::geom_spatvector(
+            data = boundary,
+            fill = NA,
+            linewidth = 0.6
+        )
+}
 

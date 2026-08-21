@@ -4,7 +4,7 @@
 \alias{plot_severity}
 \title{Plot Burn severity}
 \usage{
-plot_severity(x, title = "Burn severity", subtitle = NULL)
+plot_severity(x, title = "Burn severity", subtitle = NULL, boundary = NULL)
 }
 \arguments{
 \item{x}{A single-layer dNBR SpatRaster.}

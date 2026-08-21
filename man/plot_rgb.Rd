@@ -8,7 +8,8 @@ plot_rgb(
   x,
   title = "Sentinel-2 RGB composite",
   subtitle = NULL,
-  rgb_stretch = c("lin", "hist", "none")
+  rgb_stretch = c("lin", "hist", "none"),
+  boundary = NULL
 )
 }
 \arguments{

@@ -44,14 +44,14 @@ This vignette demonstrates the complete workflow:
 5. Calculate NBR
 6. Calculate dNBR
 
-## Create an AOI
+## Create an AOI (Holme Fen)
 
 ```{r}
 
-lat <- 52.2522
-lon <- 1.6271
+lat <- 52.486
+lon <- -0.224
   
-buffer <- 2000
+buffer <- 1000
 
 ```
 
@@ -70,6 +70,17 @@ aoi <- read_aoi(aoi$geometry)
 
 ```
 
+
+## Read boundary
+
+```{r}
+boundary <- read_boundary("https://www.planning.data.gov.uk/entity/45001161.geojson")
+st_centroid(st_as_sf(boundary))
+
+```
+
+
+
 ## Search Sentinel-2
 
 ```{r}
@@ -83,7 +94,7 @@ pre_images <- search_s2(
 post_images <- search_s2(
     aoi,
     start = "2026-07-29",
-    end = "2026-08-12"
+    end = "2026-08-19"
 )
 
 
@@ -97,7 +108,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, limit = 10, max_cloud = 30,
+    pre_images, limit = 10, max_cloud = 20,
     
     workers = 6
 
@@ -105,7 +116,7 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images, limit = 10,
+    post_images, limit = 20,
     
     max_cloud = 30,
   
@@ -119,12 +130,12 @@ post_collection <- download_s2(
 ```{r, eval=TRUE}
 
 pre_comp <- build_composite(
-    assets = c("red", "nir08", "swir22"),
+    #assets = c("red", "nir08", "swir22"),
     pre_collection
 )
 
 post_comp <- build_composite(
-    assets = c("red", "nir08", "swir22"),
+    #assets = c("red", "nir08", "swir22"),
     post_collection
 )
 
@@ -159,7 +170,15 @@ dnbr <- calc_dnbr(
 
 plot(dnbr)
 
+plot_rgb(pre_comp, boundary = boundary)
+plot_rgb(post_comp)
 
 ```
 
+```{r}
+
+b <- analyse_burn(pre_collection, post_collection)
+
+
+```
 
