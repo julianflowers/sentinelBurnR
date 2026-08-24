@@ -48,10 +48,9 @@ This vignette demonstrates the complete workflow:
 
 ```{r}
 
-lat <- 52.486
-lon <- -0.224
-  
-buffer <- 1000
+lat <- 52.25
+lon <- 1.626
+buffer <- 4000
 
 ```
 
@@ -74,8 +73,13 @@ aoi <- read_aoi(aoi$geometry)
 ## Read boundary
 
 ```{r}
-boundary <- read_boundary("https://www.planning.data.gov.uk/entity/45001161.geojson")
-st_centroid(st_as_sf(boundary))
+dunwich <- read_boundary("~/Projects/sentinelBurnR/data/National_Trust_Open_Data_Land_Always_Open_4840618072701526178.gpkg")
+
+dunwich <- boundary[450]
+
+minsmere <- read_boundary("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/services/RSPB_Public_Reserves/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
+
+minsmere <- minsmere[minsmere$Name == "MINSMERE"]
 
 ```
 
@@ -94,7 +98,7 @@ pre_images <- search_s2(
 post_images <- search_s2(
     aoi,
     start = "2026-07-29",
-    end = "2026-08-19"
+    end = "2026-08-22"
 )
 
 
@@ -108,7 +112,7 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, limit = 10, max_cloud = 20,
+    pre_images, max_cloud = 20,
     
     workers = 6
 
@@ -116,9 +120,9 @@ pre_collection <- download_s2(
 
 post_collection <- download_s2(
 
-    post_images, limit = 20,
+    post_images,
     
-    max_cloud = 30,
+    max_cloud = 20,
   
     workers = 6
 
@@ -139,6 +143,8 @@ post_comp <- build_composite(
     post_collection
 )
 
+plot(post_comp)
+
 ```
 
 ## NBR
@@ -151,7 +157,7 @@ pre_nbr <- calc_nbr(
 
 post_nbr <- calc_nbr(
     post_comp
-
+ca
 )
 
 ```
@@ -168,16 +174,12 @@ dnbr <- calc_dnbr(
 
 )
 
-plot(dnbr)
-
-plot_rgb(pre_comp, boundary = boundary)
-plot_rgb(post_comp)
 
 ```
 
 ```{r}
 
-b <- analyse_burn(pre_collection, post_collection)
+b <- analyse_burn(pre_collection, post_collection, boundary = minsmere)
 
 
 ```

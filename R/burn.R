@@ -1,5 +1,3 @@
-
-
 #----- calculate dnbr-----------------------------
 
 #' Calculate differenced Normalized Burn Ratio
@@ -33,96 +31,6 @@ calc_dnbr <- function(
 
 }
 
-#------cacl nbr---------------------------------
-
-#' Calculate the Normalized Burn Ratio
-#'
-#' @param x A composite SpatRaster containing
-#'   "nir08" and "swir22".
-#'
-#' @return A single-layer SpatRaster.
-#' @export
-calc_nbr <- function(x) {
-
-    if (!inherits(x, "SpatRaster")) {
-        stop(
-            "`x` must be a SpatRaster.",
-            call. = FALSE
-        )
-    }
-
-    required <- c(
-        "nir08",
-        "swir22"
-    )
-
-    missing <- setdiff(
-        required,
-        names(x)
-    )
-
-    if (length(missing) > 0) {
-        stop(
-            "Missing required band(s): ",
-            paste(missing, collapse = ", "),
-            call. = FALSE
-        )
-    }
-
-    nir <- x[["nir08"]]
-    swir <- x[["swir22"]]
-
-    nbr <- (
-        nir - swir
-    ) / (
-        nir + swir
-    )
-
-    names(nbr) <- "nbr"
-
-    nbr
-}
-
-#----- burn area -------------------------
-' Detect burned area from dNBR
-#'
-#' Creates a burned / not-burned raster from a dNBR raster.
-#'
-#' @param x A single-layer dNBR SpatRaster.
-#' @param unit Area units to return (e.g. "ha", "m2", "km2").
-#'
-#' @return A single-layer SpatRaster named `burned`.
-#'
-#' @export
-burn_area <- function(x, unit = "ha") {
-
-    if (!inherits(x, "SpatRaster")) {
-        stop(
-            "`x` must be a SpatRaster.",
-            call. = FALSE
-        )
-    }
-
-    area <- terra::cellSize(
-        x,
-        unit = unit
-    )
-
-    area <- terra::mask(
-        area,
-        x,
-        maskvalues = 0
-    )
-
-    as.numeric(
-        terra::global(
-            area,
-            "sum",
-            na.rm = TRUE
-        )[1, 1]
-    )
-}
-
 # analyse burn ------------------------------------------------------------
 
 #' Analyse burned area from pre- and post-fire Sentinel-2 collections
@@ -143,7 +51,8 @@ analyse_burn <- function(
         pre,
         post,
         threshold = 0.27,
-        assets = s2_burn_assets
+        assets = s2_burn_assets,
+        boundary = NULL
 ) {
 
     if (!inherits(pre, "sbr_collection")) {
@@ -361,6 +270,51 @@ detect_burn <- function(
 }
 
 
+# burn area ---------------------------------------------------------------
+
+#----- burn area -------------------------
+#' Detect burned area from dNBR
+#'
+#' Creates a burned / not-burned raster from a dNBR raster.
+#'
+#' @param x A single-layer dNBR SpatRaster.
+#' @param unit Area units to return (e.g. "ha", "m2", "km2").
+#'
+#' @return A single-layer SpatRaster named `burned`.
+#'
+#' @export
+burn_area <- function(x, unit = "ha") {
+
+    if (!inherits(x, "SpatRaster")) {
+        stop(
+            "`x` must be a SpatRaster.",
+            call. = FALSE
+        )
+    }
+
+    area <- terra::cellSize(
+        x,
+        unit = unit
+    )
+
+    area <- terra::mask(
+        area,
+        x,
+        maskvalues = 0
+    )
+
+    as.numeric(
+        terra::global(
+            area,
+            "sum",
+            na.rm = TRUE
+        )[1, 1]
+    )
+}
+
+
+
+
 # summary sbr collection --------------------------------------------------
 
 
@@ -370,3 +324,4 @@ summary.sbr_collection <- function(object, ...) {
     files(object)
 
 }
+

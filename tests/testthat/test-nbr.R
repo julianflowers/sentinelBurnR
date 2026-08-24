@@ -1,37 +1,22 @@
 test_that("calc_nbr returns a raster", {
 
-    nir <- terra::rast(
-        nrows = 5,
-        ncols = 5,
-        vals = 0.8
-    )
+        comp <- make_test_composite()
 
-    swir <- terra::rast(
-        nrows = 5,
-        ncols = 5,
-        vals = 0.2
-    )
+        out <- calc_nbr(comp)
 
-    comp <- c(
-        nir,
-        swir
-    )
+        expect_s4_class(
+            out,
+            "SpatRaster"
+        )
 
-    names(comp) <- c(
-        "nir08",
-        "swir22"
-    )
-
-    nbr <- calc_nbr(
-        comp
-    )
-
-    expect_s4_class(
-        nbr,
-        "SpatRaster"
-    )
+        expect_equal(
+            names(out),
+            "nbr"
+        )
 
 })
+
+
 
 test_that("calc_nbr produces expected values", {
 
