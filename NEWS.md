@@ -1,26 +1,17 @@
-## sentinelBurnR 0.0.1.9000
+# sentinelBurnR 0.0.2 (development)
 
-### Performance
+## Performance
 
-* Improved Sentinel-2 compositing performance by caching prepared SCL
-  masks by raster grid, avoiding repeated nearest-neighbour resampling
-  across spectral bands.
-* Scientific behaviour and resulting burn analysis are unchanged.
+* Cached SCL masks reduce compositing time by ~75%.
 
-## New
+## New features
 
-- Project management
-- Cache management
-- SCL masking
-- Multi-tile compositing
-- NBR/dNBR calculation
-- Burn area estimation
-- Plotting functions
-- Download summaries
+* Added NDVI.
+* Added NDMI.
+* Refactored spectral index calculations.
+* Added generic normalized-difference helper.
 
 ## Internal
 
-- Reorganised source tree
-- Added S3 classes
-- Improved package documentation
-- Clean R CMD check
+* Improved test coverage.
+* Simplified index implementation.
