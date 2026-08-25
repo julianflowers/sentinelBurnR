@@ -389,18 +389,21 @@ cache_size <- function(path) {
 }
 
 
-# cache rainfall ----------------------------------------------------------
+# cache climate ----------------------------------------------------------
 
-cache_rainfall <- function() {
+cache_climate <- function() {
 
     path <- file.path(
         tools::R_user_dir(
             "sentinelBurnR",
             "cache"
         ),
-        "rainfall"
+        "climate"
     )
-
+    dir.create(
+        path,
+        recursive = TRUE,
+    )
     dir.create(
         path,
         recursive = TRUE,

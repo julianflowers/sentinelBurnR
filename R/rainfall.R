@@ -88,7 +88,7 @@ get_rainfall <- function(
                 by = "day"
             ),
 
-            rainfall_mm = NA_real_
+            precipitation_mm = NA_real_
 
         )
 

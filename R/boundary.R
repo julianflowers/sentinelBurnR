@@ -90,3 +90,37 @@ prepare_boundary <- function(
 
     boundary
 }
+
+
+#-----------------------------------------
+# Create bounding box
+#-----------------------------------------
+boundary_bbox <- function(boundary) {
+
+    boundary <- read_boundary(boundary)
+
+    boundary <- terra::project(
+        boundary,
+        "EPSG:4326"
+    )
+
+    e <- terra::ext(boundary)
+
+    c(
+        e$ymax,
+        e$xmin,
+        e$ymin,
+        e$xmax
+    )
+
+}
+
+era5_bbox <- function(boundary) {
+
+    expand_bbox(
+        boundary_bbox(boundary),
+        min_width = 0.5,
+        min_height = 0.5
+    )
+
+}
