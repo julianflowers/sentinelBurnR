@@ -4,7 +4,7 @@
 \alias{read_boundary}
 \title{Read a boundary}
 \usage{
-read_boundary(x)
+read_boundary(x, template = NULL)
 }
 \arguments{
 \item{x}{A file path, an sf object or a terra::SpatVector.}

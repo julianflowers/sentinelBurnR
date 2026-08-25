@@ -49,8 +49,8 @@ This vignette demonstrates the complete workflow:
 ```{r}
 
 lat <- 52.25
-lon <- 1.626
-buffer <- 4000
+lon <- 1.6183
+buffer <- 3000
 
 ```
 
@@ -112,9 +112,13 @@ post_images <- search_s2(
 
 pre_collection <- download_s2(
 
-    pre_images, max_cloud = 20,
+    pre_images, 
     
-    workers = 6
+    max_cloud = 20, 
+    
+    limit = 4,
+    
+    workers = 4
 
 )
 
@@ -123,8 +127,10 @@ post_collection <- download_s2(
     post_images,
     
     max_cloud = 20,
+    
+    limit = 4,
   
-    workers = 6
+    workers = 4
 
 )
 ```

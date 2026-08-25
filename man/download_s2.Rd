@@ -7,7 +7,7 @@
 download_s2(
   x,
   assets = NULL,
-  limit = NULL,
+  limit = 2,
   max_cloud = NULL,
   project = NULL,
   output_dir = cache_downloads(),

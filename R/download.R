@@ -18,7 +18,7 @@
 download_s2 <- function(
         x,
         assets = NULL,
-        limit = NULL,
+        limit = 2,
         max_cloud = NULL,
         project = NULL,
         output_dir = cache_downloads(),
@@ -105,7 +105,7 @@ download_s2 <- function(
 
         message(
 
-            "Cloud filter (<e2><89><a4> ",
+            "Cloud filter (<= ",
 
             max_cloud,
 
@@ -448,10 +448,16 @@ extract_s2_tile <- function(scene) {
 download_s2_asset <- function(
         job,
         overwrite = FALSE,
-        retries = 4
+        retries = 4,
+        timeout = 300
 ) {
     outfile <- job$file[[1]]
     url <- job$url[[1]]
+
+    debug_downloads <- getOption(
+        "sentinelBurnR.debug.downloads",
+        FALSE
+    )
 
     # ------------------------------------------------------------
     # Existing cached file
@@ -499,15 +505,46 @@ download_s2_asset <- function(
             unlink(tmpfile)
         }
 
+        if (debug_downloads) {
+
+            message(
+                sprintf(
+                    "[Attempt %d/%d] %s : %s",
+                    attempt,
+                    retries,
+                    job$scene[[1]],
+                    job$asset[[1]]
+                )
+            )
+
+        }
+
+        old_timeout <- getOption("timeout")
+
+        options(
+            timeout = max(
+                timeout,
+                old_timeout
+            )
+        )
+
         result <- tryCatch({
 
-            utils::download.file(
+            status <- utils::download.file(
                 url = url,
                 destfile = tmpfile,
                 mode = "wb",
                 quiet = TRUE,
                 method = "libcurl"
             )
+
+            if (!identical(status, 0L)) {
+                stop(
+                    "Download returned status ",
+                    status,
+                    "."
+                )
+            }
 
             if (!file.exists(tmpfile)) {
                 stop(
@@ -516,6 +553,14 @@ download_s2_asset <- function(
             }
 
             size <- file.info(tmpfile)$size
+
+            message(
+                sprintf(
+                    "Downloaded %-8s %8.1f MB",
+                    job$asset[[1]],
+                    size / 1024^2
+                )
+            )
 
             if (is.na(size) || size <= 0) {
                 stop(
@@ -530,13 +575,31 @@ download_s2_asset <- function(
             last_error <<- conditionMessage(e)
 
             FALSE
+        }, finally = {
+
+            options(
+                timeout = old_timeout
+            )
         })
+
 
         if (isTRUE(result)) {
 
             success <- TRUE
 
             break
+
+            if (debug_downloads) {
+
+                message(
+                    sprintf(
+                        "✓ %s : %s",
+                        job$scene[[1]],
+                        job$asset[[1]]
+                    )
+                )
+
+            }
         }
 
         # Exponential-ish backoff:
