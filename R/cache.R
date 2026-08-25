@@ -387,3 +387,26 @@ cache_size <- function(path) {
     )
 
 }
+
+
+# cache rainfall ----------------------------------------------------------
+
+cache_rainfall <- function() {
+
+    path <- file.path(
+        tools::R_user_dir(
+            "sentinelBurnR",
+            "cache"
+        ),
+        "rainfall"
+    )
+
+    dir.create(
+        path,
+        recursive = TRUE,
+        showWarnings = FALSE
+    )
+
+    path
+
+}
