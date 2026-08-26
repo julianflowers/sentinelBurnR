@@ -84,3 +84,20 @@ test_that("returns data frame", {
 
 })
 
+test_that("rainfall object has expected structure", {
+
+    expect_s3_class(
+        rain,
+        "sbr_rainfall"
+    )
+
+    expect_true(
+        all(c("date", "precipitation_mm") %in% names(rain))
+    )
+
+    expect_true(
+        inherits(rain$date, "Date")
+    )
+
+})
+

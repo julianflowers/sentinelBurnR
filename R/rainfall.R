@@ -1,97 +1,114 @@
 #==========================================================
-# Rainfall
+# Retrieve daily precipitation
 #==========================================================
 
-#' Retrieve rainfall data
+#' Daily precipitation
 #'
-#' Retrieves daily rainfall for a boundary and date range.
+#' Retrieve daily precipitation for a boundary.
 #'
 #' @param boundary Boundary polygon.
-#' @param start Start date.
-#' @param end End date.
-#' @param project Optional sbr_project.
+#' @param start,end Date range.
+#' @param source Climate source.
 #'
-#' @return A data.frame.
+#' @return A data.frame with daily precipitation (mm).
 #'
 #' @export
 
 get_rainfall <- function(
-
-    boundary,
-
-    start,
-
-    end,
-
-    project = NULL
-
+        boundary,
+        start,
+        end,
+        source = "era5"
 ) {
 
-    boundary <- read_boundary(
-        boundary
+    boundary <- read_boundary(boundary)
+
+    files <- download_climate(
+        boundary = boundary,
+        start = start,
+        end = end,
+        source = source
     )
 
-    start <- as.Date(start)
-    end <- as.Date(end)
+    r <- read_climate(files)
 
-    if (start > end) {
+    boundary <- prepare_boundary(
+        boundary,
+        r
+    )
 
-        stop(
-            "`start` must be before `end`.",
-            call. = FALSE
-        )
+    vals <- terra::extract(
+        r,
+        boundary,
+        fun = mean,
+        na.rm = TRUE
+    )
 
-    }
+    vals <- vals[, -1, drop = FALSE]
+    out <- data.frame(
 
-    cache <- if (is.null(project)) {
+        date = terra::time(r),
 
-        cache_rainfall()
+        precipitation_mm =
+            as.numeric(vals[1, ]) * 1000,
 
-    } else {
-
-        file.path(
-            project$cache,
-            "rainfall"
-        )
-
-    }
-
-    dir.create(
-
-        cache,
-
-        recursive = TRUE,
-
-        showWarnings = FALSE
+        stringsAsFactors = FALSE
 
     )
 
-    message(
-        "Rainfall cache: ",
-        cache
+    out <- out[
+        out$date >= as.Date(start) &
+            out$date <= as.Date(end),
+    ]
+
+    class(out) <- c(
+        "sbr_rainfall",
+        class(out)
     )
 
-    message(
-        "Date range: ",
-        start,
-        " to ",
-        end
-    )
+    attr(
+        out,
+        "source"
+    ) <- source
 
-    invisible(
+    attr(
+        out,
+        "units"
+    ) <- "mm"
 
-        data.frame(
+    attr(
+        out,
+        "boundary"
+    ) <- boundary
 
-            date = seq(
-                start,
-                end,
-                by = "day"
-            ),
-
-            precipitation_mm = NA_real_
-
-        )
-
-    )
+    out
 
 }
+
+
+read_climate <- function(files) {
+
+    terra::rast(files)
+
+}
+
+#' @export
+print.sbr_rainfall <- function(x, ...) {
+
+    cat("\n")
+    cat("sentinelBurnR rainfall\n")
+    cat("----------------------\n")
+    cat(sprintf("Days        : %d\n", nrow(x)))
+    cat(sprintf("Total rain  : %.1f mm\n", sum(x$precipitation_mm, na.rm = TRUE)))
+    cat(sprintf("Mean/day    : %.2f mm\n", mean(x$precipitation_mm, na.rm = TRUE)))
+    cat(sprintf("Maximum day : %.1f mm\n", max(x$precipitation_mm, na.rm = TRUE)))
+    cat("\n")
+
+    print.data.frame(
+        utils::head(x),
+        row.names = FALSE
+    )
+
+    invisible(x)
+}
+

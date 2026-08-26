@@ -173,7 +173,7 @@ download_era5_month <- function(
         boundary
     )
 
-    request$target <- outfile
+    request$target <- basename(outfile)
 
     message(
         "Submitting ERA5 request for ",
@@ -183,6 +183,10 @@ download_era5_month <- function(
     )
 
     print(request$area)
+    print(outfile)
+    print(dirname(outfile))
+    print(basename(outfile))
+    print(request$target)
 
     ecmwfr::wf_request(
         request = request,
