@@ -2,22 +2,41 @@
 % Please edit documentation in R/rainfall.R
 \name{get_rainfall}
 \alias{get_rainfall}
-\title{Retrieve rainfall data}
+\title{Retrieve daily precipitation from ERA5.}
 \usage{
-get_rainfall(boundary, start, end, project = NULL)
+get_rainfall(boundary, start, end, source = "era5")
 }
 \arguments{
 \item{boundary}{Boundary polygon.}
 
-\item{start}{Start date.}
+\item{start, end}{Date range.}
 
-\item{end}{End date.}
-
-\item{project}{Optional sbr_project.}
+\item{source}{Climate source.}
 }
 \value{
-A data.frame.
+A data.frame with daily precipitation (mm).
 }
 \description{
-Retrieves daily rainfall for a boundary and date range.
+Downloads (or reuses cached) ERA5 daily precipitation data for a
+boundary and returns the mean daily precipitation over the area in
+millimetres.
+}
+\examples{
+\dontrun{
+
+burn <- detect_burns(
+    pre = pre,
+    post = post,
+    boundary = boundary
+)
+
+rain <- get_rainfall(
+    boundary = boundary,
+    start = "2024-07-01",
+    end = "2024-07-31"
+)
+
+head(rain)
+
+}
 }

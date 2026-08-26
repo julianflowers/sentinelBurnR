@@ -86,6 +86,16 @@ test_that("returns data frame", {
 
 test_that("rainfall object has expected structure", {
 
+    rain <- get_rainfall(
+
+        boundary = make_test_boundary(),
+
+        start = "2024-01-01",
+
+        end = "2024-01-31"
+
+    )
+
     expect_s3_class(
         rain,
         "sbr_rainfall"

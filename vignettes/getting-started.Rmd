@@ -149,7 +149,6 @@ post_comp <- build_composite(
     post_collection
 )
 
-plot(post_comp)
 
 ```
 
@@ -163,7 +162,6 @@ pre_nbr <- calc_nbr(
 
 post_nbr <- calc_nbr(
     post_comp
-ca
 )
 
 ```

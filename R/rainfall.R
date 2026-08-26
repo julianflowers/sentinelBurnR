@@ -1,18 +1,35 @@
 #==========================================================
 # Retrieve daily precipitation
 #==========================================================
-
-#' Daily precipitation
+#' Retrieve daily precipitation from ERA5.
 #'
-#' Retrieve daily precipitation for a boundary.
-#'
+#' Downloads (or reuses cached) ERA5 daily precipitation data for a
+#' boundary and returns the mean daily precipitation over the area in
+#' millimetres.
 #' @param boundary Boundary polygon.
 #' @param start,end Date range.
 #' @param source Climate source.
+#' @examples
+#' \dontrun{
 #'
+#' burn <- detect_burns(
+#'     pre = pre,
+#'     post = post,
+#'     boundary = boundary
+#' )
+#'
+#' rain <- get_rainfall(
+#'     boundary = boundary,
+#'     start = "2024-07-01",
+#'     end = "2024-07-31"
+#' )
+#'
+#' head(rain)
+#'
+#' }
 #' @return A data.frame with daily precipitation (mm).
-#'
 #' @export
+
 
 get_rainfall <- function(
         boundary,
