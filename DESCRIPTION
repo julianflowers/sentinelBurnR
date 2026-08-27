@@ -16,7 +16,8 @@ Imports:
     rstac, 
     tidyterra,
     utils,
-    grDevices
+    ecmwfr,
+    rlang
 Suggests: 
     knitr,
     rmarkdown,

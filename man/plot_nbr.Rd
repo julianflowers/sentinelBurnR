@@ -4,12 +4,14 @@
 \alias{plot_nbr}
 \title{Plot Normalized Burn Ratio}
 \usage{
-plot_nbr(x, title = "Normalized Burn Ratio")
+plot_nbr(x, title = "Normalized Burn Ratio", boundary = NULL)
 }
 \arguments{
 \item{x}{A single-layer NBR SpatRaster.}
 
 \item{title}{Plot title.}
+
+\item{boundary}{Optional boundary to overlay on the plot.}
 }
 \value{
 A ggplot object.

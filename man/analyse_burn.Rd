@@ -21,6 +21,8 @@ analyse_burn(
 pixels. Default is 0.27.}
 
 \item{assets}{Sentinel-2 assets used to build the composites.}
+
+\item{boundary}{Optional analysis boundary.}
 }
 \value{
 An object of class \code{sbr_burn}.

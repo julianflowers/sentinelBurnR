@@ -593,7 +593,7 @@ download_s2_asset <- function(
 
                 message(
                     sprintf(
-                        "✓ %s : %s",
+                        "[OKs] %s : %s",
                         job$scene[[1]],
                         job$asset[[1]]
                     )

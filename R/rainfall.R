@@ -1,34 +1,65 @@
-#==========================================================
-# Retrieve daily precipitation
-#==========================================================
-#' Retrieve daily precipitation from ERA5.
+#' Extract rainfall time series
 #'
-#' Downloads (or reuses cached) ERA5 daily precipitation data for a
-#' boundary and returns the mean daily precipitation over the area in
-#' millimetres.
+#' Extract the mean daily precipitation for a boundary from an ERA5
+#' precipitation raster.
+#'
+#' @param climate A SpatRaster returned by \code{read_climate()}.
 #' @param boundary Boundary polygon.
-#' @param start,end Date range.
-#' @param source Climate source.
-#' @examples
-#' \dontrun{
+#' @param fun Summary function used when extracting rainfall.
+#' @return An object of class \code{sbr_rainfall}.
 #'
-#' burn <- detect_burns(
-#'     pre = pre,
-#'     post = post,
-#'     boundary = boundary
-#' )
-#'
-#' rain <- get_rainfall(
-#'     boundary = boundary,
-#'     start = "2024-07-01",
-#'     end = "2024-07-31"
-#' )
-#'
-#' head(rain)
-#'
-#' }
-#' @return A data.frame with daily precipitation (mm).
 #' @export
+
+extract_rainfall <- function(
+        climate,
+        boundary,
+        fun = mean) {
+
+    stopifnot(
+        inherits(
+            climate,
+            "SpatRaster"
+        )
+    )
+
+    boundary <- prepare_boundary(
+        boundary,
+        climate
+    )
+
+    vals <- terra::extract(
+        climate,
+        boundary,
+        fun = fun,
+        na.rm = TRUE
+    )
+
+    vals <- vals[, -1, drop = FALSE]
+
+    out <- data.frame(
+
+        date = as.Date(
+            terra::time(climate)
+        ),
+
+        precipitation_mm =
+            as.numeric(vals[1, ]) * 1000,
+
+        stringsAsFactors = FALSE
+
+    )
+
+    class(out) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    attr(out, "units") <- "mm"
+
+    out
+
+}
+
 
 
 get_rainfall <- function(
@@ -37,7 +68,6 @@ get_rainfall <- function(
         end,
         source = "era5"
 ) {
-
     boundary <- read_boundary(boundary)
 
     files <- download_climate(
@@ -47,30 +77,12 @@ get_rainfall <- function(
         source = source
     )
 
-    r <- read_climate(files)
+    climate <- read_climate(files)
 
-    boundary <- prepare_boundary(
-        boundary,
-        r
-    )
 
-    vals <- terra::extract(
-        r,
-        boundary,
-        fun = mean,
-        na.rm = TRUE
-    )
-
-    vals <- vals[, -1, drop = FALSE]
-    out <- data.frame(
-
-        date = terra::time(r),
-
-        precipitation_mm =
-            as.numeric(vals[1, ]) * 1000,
-
-        stringsAsFactors = FALSE
-
+    out <- extract_rainfall(
+        climate,
+        boundary
     )
 
     out <- out[
@@ -78,31 +90,26 @@ get_rainfall <- function(
             out$date <= as.Date(end),
     ]
 
-    class(out) <- c(
-        "sbr_rainfall",
-        class(out)
-    )
+    attr(out, "source") <- source
+    attr(out, "boundary") <- boundary
 
-    attr(
-        out,
-        "source"
-    ) <- source
 
-    attr(
-        out,
-        "units"
-    ) <- "mm"
 
-    attr(
-        out,
-        "boundary"
-    ) <- boundary
+
 
     out
 
 }
 
-
+#' Read climate data
+#'
+#' Read a climate raster from a NetCDF file.
+#'
+#' @param files Path to one or more NetCDF files.
+#'
+#' @return A SpatRaster.
+#'
+#' @export
 read_climate <- function(files) {
 
     terra::rast(files)

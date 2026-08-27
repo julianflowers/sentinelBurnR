@@ -12,6 +12,8 @@ plot_severity(x, title = "Burn severity", subtitle = NULL, boundary = NULL)
 \item{title}{Plot title.}
 
 \item{subtitle}{Plot subtitle}
+
+\item{boundary}{Optional boundary to overlay on the plot.}
 }
 \value{
 A ggplot object.

@@ -50,7 +50,7 @@ test_that("missing band throws an error", {
             "nd"
         ),
 
-        "Band"
+        "Missing required band"
 
     )
 

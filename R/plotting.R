@@ -1,6 +1,3 @@
-
-
-
 #----plot rgb -----------------------------------
 #' Plot an RGB composite
 #'
@@ -8,7 +5,7 @@
 #' @param title Plot title.
 #' @param subtitle Optional subtitle.
 #' @param rgb_stretch Apply stretch - linear, histogram or none
-#'
+#' @param boundary Optional boundary to overlay on the plot.
 #' @return A ggplot object.
 #'
 #' @export
@@ -64,7 +61,7 @@ plot_rgb <- function(
 
     }
 
-    p +
+    p <- p +
         ggplot2::coord_sf(
             expand = FALSE
         ) +
@@ -72,21 +69,29 @@ plot_rgb <- function(
             title = title,
             subtitle = subtitle
         ) +
-        theme_sbr()
+        theme_sbr_map()
 
-    overlay_boundary(
+    p <- overlay_boundary(
         p,
         boundary,
         rgb
     )
+
+    p
 }
 
 #------ theme sbr ------------------------------------
+#' Theme for spatial plots
+#'
+#' @keywords internal
 
-theme_sbr <- function() {
+theme_sbr_map <- function() {
+
+
 
     ggplot2::theme_minimal(
         base_size = 12
+
     ) +
 
         ggplot2::theme(
@@ -117,6 +122,60 @@ theme_sbr <- function() {
         )
 }
 
+#' Theme for charts
+#'
+#' @keywords internal
+
+theme_sbr_plot <- function() {
+
+    ggplot2::theme_minimal(
+        base_size = 12
+    ) +
+
+        ggplot2::theme(
+
+            panel.grid.minor =
+                ggplot2::element_blank(),
+
+            panel.grid.major.x =
+                ggplot2::element_blank(),
+
+            panel.grid.major.y =
+                ggplot2::element_line(
+                    colour = "grey85"
+                ),
+
+            axis.title =
+                ggplot2::element_text(),
+
+            axis.text =
+                ggplot2::element_text(),
+
+            axis.ticks =
+                ggplot2::element_line(),
+
+            plot.title =
+                ggplot2::element_text(
+                    face = "bold",
+                    size = 14
+                ),
+
+            plot.subtitle =
+                ggplot2::element_text(
+                    size = 11
+                ),
+
+            legend.position = "right",
+
+            legend.title =
+                ggplot2::element_text(
+                    face = "bold"
+                )
+
+        )
+
+}
+
 #-----plot index ----------------------------------------
 
 plot_index <- function(
@@ -125,7 +184,8 @@ plot_index <- function(
         subtitle = NULL,
         palette = sbr_palette_nbr,
         limits = NULL,
-        legend_title = NULL
+        legend_title = NULL,
+        boundary = NULL
 ) {
 
     if (!inherits(x, "SpatRaster")) {
@@ -142,10 +202,7 @@ plot_index <- function(
         )
     }
 
-
-    return(
-
-        ggplot2::ggplot() +
+    p <- ggplot2::ggplot() +
 
             tidyterra::geom_spatraster(
 
@@ -174,9 +231,54 @@ plot_index <- function(
 
             ) +
 
-            theme_sbr()
+            theme_sbr_map()
 
+    p <- overlay_boundary(
+        p,
+        boundary,
+        x
     )
+
+    p
+
+}
+
+#' @importFrom graphics par
+#' @importFrom rlang .data
+#' @export
+plot.sbr_rainfall <- function(
+        x,
+        title = "Daily rainfall",
+        subtitle = NULL,
+        ...
+) {
+
+    stopifnot(
+        inherits(x, "sbr_rainfall")
+    )
+
+    ggplot2::ggplot(
+        x,
+        ggplot2::aes(
+            x = .data$date,
+            y = .data$precipitation_mm
+        )
+    ) +
+
+        ggplot2::geom_col(
+            fill = "#4C78A8",
+            width = 0.9
+        ) +
+
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle,
+            x = NULL,
+            y = "Rainfall (mm)"
+        ) +
+
+        theme_sbr_plot()
+
 }
 
 #------plot nbr --------------------------------
@@ -186,13 +288,15 @@ plot_index <- function(
 #' @param x A single-layer NBR SpatRaster.
 #' @param title Plot title.
 #' @return A ggplot object.
+#' @param boundary Optional boundary to overlay on the plot.
 #' @export
 plot_nbr <- function(
         x,
-        title = "Normalized Burn Ratio"
+        title = "Normalized Burn Ratio",
+        boundary = NULL
 ) {
 
-    plot_index(
+    p <- plot_index(
         x = x,
         title = title,
         palette = sbr_palette_nbr,
@@ -201,11 +305,12 @@ plot_nbr <- function(
         boundary = NULL
     )
 
-    overlay_boundary(
+    p <- overlay_boundary(
         p,
-        boundary,
-        rgb
+        boundary
     )
+
+    p
 }
 
 #-------plot dnbr------------------------------------
@@ -214,6 +319,7 @@ plot_nbr <- function(
 #' @param x A single-layer dNBR SpatRaster.
 #' @param title Plot title.
 #' @param subtitle Plot subtitle
+#' @param boundary Optional boundary to overlay on the plot.
 #' @return A ggplot object.
 #' @export
 plot_dnbr <- function(
@@ -248,7 +354,7 @@ plot_dnbr <- function(
             subtitle = subtitle
         ) +
 
-        theme_sbr()
+        theme_sbr_map()
 
     if (!is.null(boundary)) {
 
@@ -335,6 +441,7 @@ plot_scl <- function(
 #' @param x A single-layer dNBR SpatRaster.
 #' @param title Plot title.
 #' @param subtitle Plot subtitle
+#' @param boundary Optional boundary to overlay on the plot.
 #' @return A ggplot object.
 #' @export
 
@@ -366,7 +473,7 @@ plot_severity <- function(
             subtitle = subtitle
         ) +
 
-        theme_sbr()
+        theme_sbr_map()
 
     if (!is.null(boundary)) {
 
@@ -431,4 +538,5 @@ overlay_boundary <- function(
             linewidth = 0.6
         )
 }
+
 

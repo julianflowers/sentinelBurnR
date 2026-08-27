@@ -20,6 +20,8 @@ plot_rgb(
 \item{subtitle}{Optional subtitle.}
 
 \item{rgb_stretch}{Apply stretch - linear, histogram or none}
+
+\item{boundary}{Optional boundary to overlay on the plot.}
 }
 \value{
 A ggplot object.

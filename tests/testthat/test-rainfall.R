@@ -1,30 +1,3 @@
-make_test_boundary <- function() {
-
-    terra::vect(
-
-        matrix(
-
-            c(
-                0, 0,
-                100, 0,
-                100, 100,
-                0, 100,
-                0, 0
-            ),
-
-            ncol = 2,
-            byrow = TRUE
-
-        ),
-
-        type = "polygons",
-        crs = "EPSG:3857"
-
-    )
-
-}
-
-
 
 test_that("dates are returned", {
 

@@ -182,11 +182,6 @@ download_era5_month <- function(
         sprintf("%02d", month)
     )
 
-    print(request$area)
-    print(outfile)
-    print(dirname(outfile))
-    print(basename(outfile))
-    print(request$target)
 
     ecmwfr::wf_request(
         request = request,
@@ -198,12 +193,12 @@ download_era5_month <- function(
 
 }
 
-cds_download <- function(request) {
-
-    ecmwfr::wf_request(
-        request = request
-    )
-
-}
+# cds_download <- function(request) {
+#
+#     ecmwfr::wf_request(
+#         request = request
+#     )
+#
+# }
 
 

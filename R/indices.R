@@ -77,7 +77,9 @@ calc_ndmi <- function(x) {
 #' @param x A `SpatRaster` containing `band1` and `band2`.
 #'
 #' @return A single-layer `SpatRaster` named `ndvi`.
-#'
+#' @param band1 Name of the numerator band.
+#' @param band2 Name of the denominator band.
+#' @param name Name of the output layer.
 #' @export
 .normalised_difference <- function(
         x,
@@ -123,8 +125,7 @@ calc_ndmi <- function(x) {
 
 # get band ----------------------------------------------------------------
 
-#' @export
-get_band <- function(
+.get_band <- function(
         x,
         band
 ) {

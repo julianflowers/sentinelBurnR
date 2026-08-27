@@ -44,7 +44,7 @@ calc_dnbr <- function(
 #' @param threshold Numeric dNBR threshold used to identify burned
 #'   pixels. Default is 0.27.
 #' @param assets Sentinel-2 assets used to build the composites.
-#'
+#' @param boundary Optional analysis boundary.
 #' @return An object of class `sbr_burn`.
 #' @export
 analyse_burn <- function(

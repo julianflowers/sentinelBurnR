@@ -6,7 +6,7 @@
 #' @param x A file path, an sf object or a terra::SpatVector.
 #'
 #' @return A terra::SpatVector.
-#'
+#' @param template Optional raster used to define the output CRS.
 #' @export
 read_boundary <- function(
         x,

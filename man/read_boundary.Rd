@@ -8,6 +8,8 @@ read_boundary(x, template = NULL)
 }
 \arguments{
 \item{x}{A file path, an sf object or a terra::SpatVector.}
+
+\item{template}{Optional raster used to define the output CRS.}
 }
 \value{
 A terra::SpatVector.

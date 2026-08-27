@@ -1,4 +1,4 @@
-toy_burn <- function() {
+make_test_burn <- function() {
 
     r <- terra::rast(
         ncols = 10,
@@ -57,11 +57,11 @@ toy_burn <- function() {
 
 test_that("burn_summary returns correct area", {
 
-    burn <- toy_burn()
+    burn <- make_test_burn()
 
     s <- burn_summary(
         burn,
-        toy_boundary()
+        make_test_boundary()
     )
 
     expect_equal(
