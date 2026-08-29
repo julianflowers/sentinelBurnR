@@ -66,16 +66,6 @@ search_provenance <- function(x) {
 
     )
 
-    message("Cloud cover summary")
-    print(summary(scene_table$cloud_cover))
-
-    message("Largest values")
-    print(
-        tail(
-            sort(unique(scene_table$cloud_cover)),
-            20
-        )
-    )
 
     ## ------------------------------------------------------------
     ## Clean obvious missing values

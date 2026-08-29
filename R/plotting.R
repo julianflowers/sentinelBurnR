@@ -314,6 +314,7 @@ plot.sbr_rainfall <- function(
 #' @param x A single-layer NBR SpatRaster.
 #' @param title Plot title.
 #' @return A ggplot object.
+#' @param caption Plot caption.
 #' @param boundary Optional boundary to overlay on the plot.
 #' @export
 plot_nbr <- function(

@@ -40,11 +40,11 @@ burn_caption <- function(x) {
 
         paste(
 
-            "Pre-fire: %d acquisitions (%s–%s), mean cloud %.1f%%",
+            "Pre-fire: %d acquisitions (%s-%s), mean cloud %.1f%%",
 
             "\n",
 
-            "Post-fire: %d acquisitions (%s–%s), mean cloud %.1f%%"
+            "Post-fire: %d acquisitions (%s-%s), mean cloud %.1f%%"
 
         ),
 
