@@ -121,7 +121,7 @@ pre_collection <- download_s2(
     
     max_cloud = 20, 
     
-    limit = 2,
+    limit = 1,
     
     workers = 4
 
@@ -133,7 +133,7 @@ post_collection <- download_s2(
     
     max_cloud = 20,
     
-    limit = 2,
+    limit = 1,
   
     workers = 4
 
@@ -150,13 +150,12 @@ burn <- analyse_burn(
     boundary = aoi
 )
 
-plot_dnbr(burn$dnbr)
 
 ```
 
 ## Get rainfall
 
-```{r}
+```{r, fig.width=9, fig.height=6}
 r <- terra::rast(rainfile)
 
 rain <- extract_rainfall(
@@ -168,4 +167,17 @@ plot(rain)
 ```
 
 Burn severity depends not only on vegetation but also on recent weather conditions. Rainfall in the days and weeks before a fire influences fuel moisture and can help explain patterns of burn severity observed in satellite imagery.
+
+## Plot indices
+
+```{r, fig.width=9, fig.height=6}
+
+plot_index(
+    burn$dnbr,
+    index = "dnbr",
+    boundary = boundary,
+    caption = burn_caption(burn)
+)
+
+```
 

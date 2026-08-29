@@ -125,7 +125,7 @@ test_that("burn caption returns a single string", {
 test_that("plot_dnbr returns ggplot", {
 
     expect_s3_class(
-        plot_dnbr(burn),
+        plot_dnbr(burn$dnbr),
         "ggplot"
     )
 
@@ -134,8 +134,20 @@ test_that("plot_dnbr returns ggplot", {
 test_that("plot_rgb returns ggplot", {
 
     expect_s3_class(
-        plot_rgb(burn),
+        plot_rgb(burn$pre_composite),
         "ggplot"
     )
 
 })
+
+expect_s3_class(
+    rain,
+    "sbr_rainfall"
+)
+
+expect_true(
+    all(
+        c("date","precipitation_mm") %in%
+            names(rain)
+    )
+)

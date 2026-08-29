@@ -13,8 +13,8 @@ calc_nbr <- function(x) {
 
     .normalised_difference(
         x,
-        band1 = "nir08",
-        band2 = "swir22",
+        numerator = "nir08",
+        denominator = "swir22",
         name = "nbr"
     )
 
@@ -37,8 +37,8 @@ calc_ndvi <- function(x) {
 
     .normalised_difference(
         x,
-        band1 = "nir08",
-        band2 = "red",
+        numerator = "nir08",
+        denominator = "red",
         name = "ndvi"
     )
 
@@ -61,8 +61,8 @@ calc_ndmi <- function(x) {
 
     .normalised_difference(
         x,
-        band1 = "nir08",
-        band2 = "swir22",
+        numerator = "nir08",
+        denominator = "swir16",
         name = "ndmi"
     )
 
@@ -83,8 +83,8 @@ calc_ndmi <- function(x) {
 #' @export
 .normalised_difference <- function(
         x,
-        band1,
-        band2,
+        numerator,
+        denominator,
         name
 ) {
 
@@ -96,8 +96,8 @@ calc_ndmi <- function(x) {
     }
 
     required <- c(
-        band1,
-        band2
+        numerator,
+        denominator
     )
 
     missing <- setdiff(
@@ -113,12 +113,37 @@ calc_ndmi <- function(x) {
         )
     }
 
-    a <- x[[band1]]
-    b <- x[[band2]]
+    a <- x[[numerator]]
+    b <- x[[denominator]]
 
     out <- (a - b) / (a + b)
 
     names(out) <- name
+
+    out
+}
+
+#-----------------------------------------------
+# Calculate MSI
+# ----------------------------------------------
+
+calc_msi <- function(x) {
+
+    stopifnot(
+        inherits(x, "SpatRaster")
+    )
+
+    stopifnot(
+        all(
+            c("nir08", "swir16") %in%
+                names(x)
+        )
+    )
+
+    out <- x[["swir16"]] /
+        x[["nir08"]]
+
+    names(out) <- "msi"
 
     out
 }

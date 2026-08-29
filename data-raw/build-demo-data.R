@@ -35,13 +35,16 @@ post_search <- search_s2(
 pre_collection <- download_s2(
     pre_search,
     limit = 2,
-    workers = 1
+    workers = 1,
+    assets = s2_burn_assets
+
 )
 
 post_collection <- download_s2(
     post_search,
     limit = 2,
-    workers = 1
+    workers = 1,
+    assets = s2_burn_assets
 )
 
 ## ------------------------------------------------------------------

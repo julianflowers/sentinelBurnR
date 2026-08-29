@@ -47,7 +47,9 @@ s2_default_assets <- c(
 
     "green",
 
-    "blue"
+    "blue",
+
+    "swir16"
 
 )
 
@@ -63,7 +65,8 @@ s2_burn_assets <- c(
     "nir08",
     "swir22",
     "blue",
-    "green"
+    "green",
+    "swir16"
 )
 
 s2_rgb_bands <- c(

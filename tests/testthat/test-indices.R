@@ -15,6 +15,42 @@ test_that("calc_ndvi returns a raster", {
 
 })
 
+test_that("calc_ndmi returns a SpatRaster", {
+
+    ndmi <- calc_ndmi(
+        burn$pre_composite
+    )
+
+    expect_s4_class(
+        ndmi,
+        "SpatRaster"
+    )
+
+    expect_equal(
+        names(ndmi),
+        "ndmi"
+    )
+
+})
+
+test_that("calc_msi returns a SpatRaster", {
+
+    msi <- calc_msi(
+        burn$pre_composite
+    )
+
+    expect_s4_class(
+        msi,
+        "SpatRaster"
+    )
+
+    expect_equal(
+        names(msi),
+        "msi"
+    )
+
+})
+
 test_that("NDMI matches NBR calculation", {
 
     comp <- make_test_composite()

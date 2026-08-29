@@ -338,7 +338,7 @@ burn_area <- function(x, unit = "ha") {
 
 
 # summary sbr collection --------------------------------------------------
-
+#' @export
 
 
 summary.sbr_collection <- function(object, ...) {

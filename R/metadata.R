@@ -1,3 +1,4 @@
+#' @export
 build_provenance <- function(pre, post, threshold, assets) {
 
     list(
@@ -27,6 +28,17 @@ build_provenance <- function(pre, post, threshold, assets) {
 }
 
 
+
+# burn caption ------------------------------------------------------------
+
+
+#' Create a caption describing a burn analysis
+#'
+#' @param x A burn analysis object.
+#'
+#' @return A character string suitable for use as a plot caption.
+#'
+#' @export
 burn_caption <- function(x) {
 
     stopifnot(
