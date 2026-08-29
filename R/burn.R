@@ -129,20 +129,42 @@ analyse_burn <- function(
         unit = "ha"
     )
 
-    structure(
+    burn <- structure(
+
         list(
+
             pre_composite = pre_composite,
+
             post_composite = post_composite,
+
             pre_nbr = pre_nbr,
+
             post_nbr = post_nbr,
+
             dnbr = dnbr,
+
             burned = burned,
+
             severity = severity,
+
             area_ha = area_ha,
+
             threshold = threshold
+
         ),
+
         class = "sbr_burn"
+
     )
+
+    burn$provenance <- build_provenance(
+        pre,
+        post,
+        threshold,
+        assets)
+
+    burn
+
 }
 
 #' @export

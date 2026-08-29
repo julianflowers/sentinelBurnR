@@ -313,6 +313,7 @@ download_s2 <- function(
 
     new_s2_collection(
         files = successful,
+        search = x,
         aoi = x$aoi
     )
 }
@@ -710,31 +711,4 @@ download_s2_asset <- function(
 files <- function(x) {
     UseMethod("files")
 }
-
-#------- new s2 collection -----------------------------
-
-new_s2_collection <- function(
-        files,
-        aoi = NULL
-) {
-
-    stopifnot(
-        is.data.frame(files)
-    )
-
-    if (!is.null(aoi)) {
-        stopifnot(
-            inherits(aoi, "sbr_aoi")
-        )
-    }
-
-    structure(
-        list(
-            files = files,
-            aoi = aoi
-        ),
-        class = "sbr_collection"
-    )
-}
-
 

@@ -4,7 +4,7 @@
 \alias{plot_nbr}
 \title{Plot Normalized Burn Ratio}
 \usage{
-plot_nbr(x, title = "Normalized Burn Ratio", boundary = NULL)
+plot_nbr(x, title = "Normalized Burn Ratio", boundary = NULL, caption = NULL)
 }
 \arguments{
 \item{x}{A single-layer NBR SpatRaster.}

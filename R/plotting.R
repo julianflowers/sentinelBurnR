@@ -67,7 +67,8 @@ plot_rgb <- function(
         ) +
         ggplot2::labs(
             title = title,
-            subtitle = subtitle
+            subtitle = subtitle,
+
         ) +
         theme_sbr_map()
 
@@ -113,6 +114,16 @@ theme_sbr_map <- function() {
                 size = 11
             ),
 
+            plot.caption = ggplot2::element_text(
+
+                size = 9,
+
+                colour = "grey40",
+
+                hjust = 0
+
+            ),
+
             legend.position = "right",
 
             legend.title = ggplot2::element_text(
@@ -144,6 +155,16 @@ theme_sbr_plot <- function() {
                 ggplot2::element_line(
                     colour = "grey85"
                 ),
+
+            plot.caption = ggplot2::element_text(
+
+                size = 9,
+
+                colour = "grey40",
+
+                hjust = 0
+
+            ),
 
             axis.title =
                 ggplot2::element_text(),
@@ -185,7 +206,8 @@ plot_index <- function(
         palette = sbr_palette_nbr,
         limits = NULL,
         legend_title = NULL,
-        boundary = NULL
+        boundary = NULL,
+        caption = NULL
 ) {
 
     if (!inherits(x, "SpatRaster")) {
@@ -210,8 +232,8 @@ plot_index <- function(
 
             ) +
 
-            ggplot2::scale_fill_viridis_c(
-                option = "viridis",
+            ggplot2::scale_fill_gradientn(
+                colours = palette,
                 na.value = "transparent",
                 limits = limits,
                 name = legend_title
@@ -221,7 +243,11 @@ plot_index <- function(
 
                 title = title,
 
-                subtitle = subtitle
+                subtitle = subtitle,
+
+                caption = caption
+
+
 
             ) +
 
@@ -293,8 +319,19 @@ plot.sbr_rainfall <- function(
 plot_nbr <- function(
         x,
         title = "Normalized Burn Ratio",
-        boundary = NULL
+        boundary = NULL,
+        caption = NULL
 ) {
+
+    caption <- NULL
+
+    if (inherits(x, "sbr_burn")) {
+
+        if (is.null(boundary))
+            boundary <- x$boundary
+
+        x <- x$nbr
+    }
 
     p <- plot_index(
         x = x,
@@ -320,13 +357,15 @@ plot_nbr <- function(
 #' @param title Plot title.
 #' @param subtitle Plot subtitle
 #' @param boundary Optional boundary to overlay on the plot.
+#' @param caption Optional caption
 #' @return A ggplot object.
 #' @export
 plot_dnbr <- function(
         x,
         title = "dNBR",
         subtitle = NULL,
-        boundary = NULL
+        boundary = NULL,
+        caption = NULL
 ) {
 
     ## checks...
@@ -351,7 +390,9 @@ plot_dnbr <- function(
 
         ggplot2::labs(
             title = title,
-            subtitle = subtitle
+            subtitle = subtitle,
+            caption = caption
+
         ) +
 
         theme_sbr_map()
@@ -449,61 +490,75 @@ plot_severity <- function(
         x,
         title = "Burn severity",
         subtitle = NULL,
+        caption = NULL,
         boundary = NULL
 ) {
 
-    x <- terra::as.factor(x)
-
-    p <- ggplot2::ggplot() +
-
-        tidyterra::geom_spatraster(
-            data = x
-        ) +
-
-        ggplot2::scale_fill_manual(
-            values = burn_palette,
-            drop = FALSE,
-            name = "Burn severity"
-        ) +
-
-        ggplot2::coord_sf(expand = FALSE) +
-
-        ggplot2::labs(
-            title = title,
-            subtitle = subtitle
-        ) +
-
-        theme_sbr_map()
-
-    if (!is.null(boundary)) {
-
-        boundary <- read_boundary(boundary)
-
-        if (!terra::same.crs(
-            boundary,
-            x
-        )) {
-
-            boundary <- terra::project(
-                boundary,
-                terra::crs(x)
-            )
-
-        }
-
-        p <- p +
-
-            tidyterra::geom_spatvector(
-                data = boundary,
-                fill = NA,
-                colour = "black",
-                linewidth = 0.6
-            )
-    }
-
-    p
+    plot_index(
+        x = x,
+        title = title,
+        subtitle = subtitle,
+        caption = caption,
+        palette = sbr_palette_dnbr,
+        legend_title = "dNBR",
+        boundary = boundary
+    )
 
 }
+
+#     x <- terra::as.factor(x)
+#
+#     p <- ggplot2::ggplot() +
+#
+#         tidyterra::geom_spatraster(
+#             data = x
+#         ) +
+#
+#         ggplot2::scale_fill_manual(
+#             values = burn_palette,
+#             drop = FALSE,
+#             name = "Burn severity"
+#         ) +
+#
+#         ggplot2::coord_sf(expand = FALSE) +
+#
+#         ggplot2::labs(
+#             title = title,
+#             subtitle = subtitle,
+#             caption = caption
+#         ) +
+#
+#         theme_sbr_map()
+#
+#     if (!is.null(boundary)) {
+#
+#         boundary <- read_boundary(boundary)
+#
+#         if (!terra::same.crs(
+#             boundary,
+#             x
+#         )) {
+#
+#             boundary <- terra::project(
+#                 boundary,
+#                 terra::crs(x)
+#             )
+#
+#         }
+#
+#         p <- p +
+#
+#             tidyterra::geom_spatvector(
+#                 data = boundary,
+#                 fill = NA,
+#                 colour = "black",
+#                 linewidth = 0.6
+#             )
+#     }
+#
+#     p
+#
+# }
 
 
 # overlay boundary --------------------------------------------------------
@@ -538,5 +593,6 @@ overlay_boundary <- function(
             linewidth = 0.6
         )
 }
+
 
 

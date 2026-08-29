@@ -4,7 +4,7 @@
 \alias{plot_dnbr}
 \title{Plot differenced Normalized Burn Ratio}
 \usage{
-plot_dnbr(x, title = "dNBR", subtitle = NULL, boundary = NULL)
+plot_dnbr(x, title = "dNBR", subtitle = NULL, boundary = NULL, caption = NULL)
 }
 \arguments{
 \item{x}{A single-layer dNBR SpatRaster.}
@@ -14,6 +14,8 @@ plot_dnbr(x, title = "dNBR", subtitle = NULL, boundary = NULL)
 \item{subtitle}{Plot subtitle}
 
 \item{boundary}{Optional boundary to overlay on the plot.}
+
+\item{caption}{Optional caption}
 }
 \value{
 A ggplot object.

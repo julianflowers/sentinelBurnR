@@ -33,53 +33,43 @@ cache_dir <- file.path(
 
 # Introduction
 
-`sentinelBurnR` provides an end-to-end workflow for producing burn severity maps from Sentinel-2 imagery.
+`sentinelBurnR` provides tools for detecting and summarising burned areas from Sentinel-2 imagery, together with environmental context such as rainfall from ERA5.
 
-This vignette demonstrates the complete workflow:
-
-1. Create and read an Area of Interest (AOI)
-2. Search the Sentinel-2 catalogue
-3. Download imagery
-4. Build cloud-free composites
-5. Calculate NBR
-6. Calculate dNBR
-
-## Create an AOI (Dunwich)
-
-```{r}
-
-lat <- 52.25
-lon <- 1.6183
-buffer <- 3000
-
-```
+Boundary
+    │
+    ▼
+search_s2()
+    │
+    ▼
+download_s2()
+    │
+    ▼
+detect_burns()
+    │
+    ▼
+burn_summary()
+    │
+    └──────────────► get_rainfall()
 
 
-```{r}
-aoi <- create_aoi(lat = lat, lon = lon, radius = buffer)
-```
 
 
-## Read an AOI
+## Load data
 
 ```{r}
-
-
-aoi <- read_aoi(aoi$geometry)
-
-```
-
-
-## Read data
-
-```{r}
-boundary <- read_boundary(
+aoi <- read_aoi(
     system.file(
         "extdata",
         "dunwich.gpkg",
         package = "sentinelBurnR"
     )
 )
+
+boundary <- read_boundary(system.file(
+        "extdata",
+        "dunwich.gpkg",
+        package = "sentinelBurnR"
+    ))
 
 rainfile <- system.file(
     "extdata",
@@ -100,9 +90,9 @@ burn <- readRDS(
 
 
 
-## Search Sentinel-2
+## Search Sentinel-2 satellite imagery
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 
 pre_images <- search_s2(
     aoi,
@@ -119,9 +109,9 @@ post_images <- search_s2(
 
 ```
 
-## Download
+## Download image
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 
 ## Download imagery
 
@@ -131,7 +121,7 @@ pre_collection <- download_s2(
     
     max_cloud = 20, 
     
-    limit = 4,
+    limit = 2,
     
     workers = 4
 
@@ -143,65 +133,24 @@ post_collection <- download_s2(
     
     max_cloud = 20,
     
-    limit = 4,
+    limit = 2,
   
     workers = 4
 
 )
 ```
 
-## Composite
-
-```{r, eval=FALSE}
-
-pre_comp <- build_composite(
-    #assets = c("red", "nir08", "swir22"),
-    pre_collection
-)
-
-post_comp <- build_composite(
-    #assets = c("red", "nir08", "swir22"),
-    post_collection
-)
-
-
-```
-
-## NBR
-
-```{r, eval=FALSE}
-
-pre_nbr <- calc_nbr(
-    pre_comp
-)
-
-post_nbr <- calc_nbr(
-    post_comp
-)
-
-```
-
-## dNBR
-
-```{r, eval=FALSE}
-
-dnbr <- calc_dnbr(
-
-    pre_nbr,
-
-    post_nbr
-
-)
-
-
-```
-
 ## Burn analysis
 
 ```{r}
 
-burn
+burn <- analyse_burn(
+    pre = pre_collection,
+    post = post_collection,
+    boundary = aoi
+)
 
+plot_dnbr(burn$dnbr)
 
 ```
 
@@ -212,9 +161,11 @@ r <- terra::rast(rainfile)
 
 rain <- extract_rainfall(
     r,
-    boundary
+    boundary = boundary
 )
 
 plot(rain)
 ```
+
+Burn severity depends not only on vegetation but also on recent weather conditions. Rainfall in the days and weeks before a fire influences fuel moisture and can help explain patterns of burn severity observed in satellite imagery.
 

@@ -23,6 +23,7 @@ new_s2_search <- function(items, aoi, start, end) {
 }
 new_s2_collection <- function(
         files,
+        search = NULL,
         aoi = NULL
 ) {
 
@@ -39,7 +40,14 @@ new_s2_collection <- function(
     structure(
         list(
             files = files,
-            aoi = aoi
+            aoi = aoi,
+            search = search,
+            provenance =
+
+                if (!is.null(search))
+                    search_provenance(search)
+            else
+                NULL
         ),
         class = "sbr_collection"
     )
@@ -61,15 +69,13 @@ new_aoi <- function(geometry) {
     )
 
     structure(
-
         list(
             geometry = geometry
         ),
-
         class = "sbr_aoi"
-
     )
-
 }
+
+
 
 
