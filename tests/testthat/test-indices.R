@@ -17,9 +17,8 @@ test_that("calc_ndvi returns a raster", {
 
 test_that("calc_ndmi returns a SpatRaster", {
 
-    ndmi <- calc_ndmi(
-        burn$pre_composite
-    )
+    comp <- make_test_composite()
+    ndmi <- calc_ndmi(comp)
 
     expect_s4_class(
         ndmi,
@@ -35,9 +34,8 @@ test_that("calc_ndmi returns a SpatRaster", {
 
 test_that("calc_msi returns a SpatRaster", {
 
-    msi <- calc_msi(
-        burn$pre_composite
-    )
+    comp <- make_test_composite()
+    msi <- calc_msi(comp)
 
     expect_s4_class(
         msi,
@@ -51,29 +49,22 @@ test_that("calc_msi returns a SpatRaster", {
 
 })
 
-test_that("NDMI matches NBR calculation", {
+test_that("NDMI uses nir08 and swir16", {
 
     comp <- make_test_composite()
 
-    nbr <- calc_nbr(comp)
-
     ndmi <- calc_ndmi(comp)
 
-    expect_equal(
-        names(nbr),
-        "nbr"
+    expected <- (
+        comp[["nir08"]] - comp[["swir16"]]
+    ) / (
+        comp[["nir08"]] + comp[["swir16"]]
     )
 
     expect_equal(
-        names(ndmi),
-        "ndmi"
+        as.vector(terra::values(ndmi)),
+        as.vector(terra::values(expected))
     )
-
-    expect_equal(
-        as.vector(terra::values(nbr)),
-        as.vector(terra::values(ndmi))
-    )
-
 })
 
 test_that("NDVI uses different bands", {

@@ -400,10 +400,7 @@ cache_climate <- function() {
         ),
         "climate"
     )
-    dir.create(
-        path,
-        recursive = TRUE,
-    )
+
     dir.create(
         path,
         recursive = TRUE,

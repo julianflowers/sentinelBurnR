@@ -352,11 +352,10 @@ plot_severity <- function(
 
     plot_index(
         x = x,
+        index = "dnbr",
         title = title,
         subtitle = subtitle,
         caption = caption,
-        palette = sbr_palette_dnbr,
-        legend_title = "Severty",
         boundary = boundary
     )
 

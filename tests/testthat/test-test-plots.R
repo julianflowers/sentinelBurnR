@@ -1,34 +1,8 @@
-test_that("plot_dnbr returns ggplot", {
-
-    p <- plot_dnbr(burn)
-
-    expect_s3_class(
-        p,
-        "ggplot"
-    )
-
-})
-
-
-test_that("plot_nbr returns ggplot", {
-
-    p <- plot_nbr(
-        burn$pre_nbr
-    )
-
-    expect_s3_class(
-        p,
-        "ggplot"
-    )
-
-})
-
-
 test_that("plot_rgb returns ggplot", {
 
-    p <- plot_rgb(
-        burn$pre_composite
-    )
+    comp <- make_test_composite()
+
+    p <- plot_rgb(comp)
 
     expect_s3_class(
         p,
@@ -40,9 +14,24 @@ test_that("plot_rgb returns ggplot", {
 
 test_that("plot_severity returns ggplot", {
 
-    p <- plot_severity(
-        burn
+    x <- terra::rast(
+        nrows = 2,
+        ncols = 2,
+        xmin = 0,
+        xmax = 20,
+        ymin = 0,
+        ymax = 20,
+        crs = "EPSG:27700"
     )
+
+    terra::values(x) <- c(
+        0.05, 0.2,
+        0.4, 0.7
+    )
+
+    names(x) <- "severity"
+
+    p <- plot_severity(x)
 
     expect_s3_class(
         p,

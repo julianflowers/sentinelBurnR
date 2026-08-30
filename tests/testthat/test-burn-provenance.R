@@ -30,10 +30,7 @@ test_that("analyse_burn stores provenance", {
 
 test_that("burn caption returns a single character string", {
 
-    burn <- analyse_burn(
-        pre_collection,
-        post_collection
-    )
+    burn <- make_test_burn()
 
     caption <- burn_caption(
         burn

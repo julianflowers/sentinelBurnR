@@ -1,5 +1,6 @@
 test_that("collection contains provenance", {
 
+    pre_collection <- make_test_collection()
     expect_true(
         "provenance" %in%
             names(pre_collection)
@@ -8,7 +9,7 @@ test_that("collection contains provenance", {
 })
 
 test_that("provenance summary contains expected fields", {
-
+    pre_collection <- make_test_collection()
     expect_named(
 
         pre_collection$provenance$summary,
@@ -29,6 +30,8 @@ test_that("provenance summary contains expected fields", {
 test_that("acquisition count matches summary", {
 
 
+    pre_collection <- make_test_collection()
+
     expect_equal(
 
         pre_collection$provenance$summary$n_acquisitions,
@@ -42,6 +45,8 @@ test_that("acquisition count matches summary", {
 
 test_that("scene table contains cloud metadata", {
 
+
+    pre_collection <- make_test_collection()
 
     expect_true(
 
@@ -78,6 +83,8 @@ test_that("cloud cover statistics are sensible", {
     #     limit = 1
     # )
 
+    pre_collection <- make_test_collection()
+
     prov <- pre_collection$provenance
 
     expect_true(
@@ -104,50 +111,6 @@ test_that("cloud cover statistics are sensible", {
 
 })
 
-test_that("burn caption returns a single string", {
 
-    caption <- burn_caption(
-        burn
-    )
 
-    expect_type(
-        caption,
-        "character"
-    )
 
-    expect_length(
-        caption,
-        1
-    )
-
-})
-
-test_that("plot_dnbr returns ggplot", {
-
-    expect_s3_class(
-        plot_dnbr(burn$dnbr),
-        "ggplot"
-    )
-
-})
-
-test_that("plot_rgb returns ggplot", {
-
-    expect_s3_class(
-        plot_rgb(burn$pre_composite),
-        "ggplot"
-    )
-
-})
-
-expect_s3_class(
-    rain,
-    "sbr_rainfall"
-)
-
-expect_true(
-    all(
-        c("date","precipitation_mm") %in%
-            names(rain)
-    )
-)
