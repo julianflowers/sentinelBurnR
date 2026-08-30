@@ -200,8 +200,12 @@ theme_sbr_plot <- function() {
 #-----plot index ----------------------------------------
 #' Plot a continuous raster index
 #'
-#' @param x A SpatRaster with one layer.
-#' @param index Name of the registered index.
+#' @param x A `SpatRaster` containing the index to plot.
+#' @param index Character name of the spectral index.
+#' @param title Optional plot title.
+#' @param subtitle Optional plot subtitle.
+#' @param boundary Optional spatial boundary to overlay on the plot.
+#' @param caption Optional plot caption.
 #' @export
 plot_index <- function(
         x,
@@ -338,6 +342,7 @@ plot.sbr_rainfall <- function(
 #' @param x A single-layer dNBR SpatRaster.
 #' @param title Plot title.
 #' @param subtitle Plot subtitle
+#' @param caption Optional plot caption
 #' @param boundary Optional boundary to overlay on the plot.
 #' @return A ggplot object.
 #' @export
@@ -454,13 +459,19 @@ add_boundary <- function(
         boundary
 ) {
 
-    if (is.null(boundary))
+    if (is.null(boundary)){
         return(p)
+
+}
+if (inherits(boundary, "SpatVector")) {
+    boundary <- sf::st_as_sf(boundary)
+}
 
     p +
 
-        geom_sf(
-            ...
+        ggplot2::geom_sf(
+            data = boundary,
+            fill = NA
         )
 
 }
@@ -475,7 +486,7 @@ add_caption <- function(
 
     p +
 
-        labs(
+        ggplot2::labs(
             caption = caption
         )
 

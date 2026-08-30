@@ -1,9 +1,6 @@
 test_that("analyse_burn stores provenance", {
 
-    burn <- analyse_burn(
-        pre_collection,
-        post_collection
-    )
+    burn <- make_test_burn()
 
     expect_true(
 

@@ -1,4 +1,11 @@
-#' @export
+#' Spectral index metadata
+#'
+#' Internal metadata defining plotting and display properties for
+#' supported spectral indices.
+#'
+#' @format A named list.
+#'
+#' @keywords internal
 index_info <- list(
 
     nbr = list(

@@ -14,9 +14,17 @@ plot_index(
 )
 }
 \arguments{
-\item{x}{A SpatRaster with one layer.}
+\item{x}{A \code{SpatRaster} containing the index to plot.}
 
-\item{index}{Name of the registered index.}
+\item{index}{Character name of the spectral index.}
+
+\item{title}{Optional plot title.}
+
+\item{subtitle}{Optional plot subtitle.}
+
+\item{boundary}{Optional spatial boundary to overlay on the plot.}
+
+\item{caption}{Optional plot caption.}
 }
 \description{
 Plot a continuous raster index

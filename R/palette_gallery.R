@@ -2,13 +2,13 @@ palette_gallery <- function() {
 
     palettes <- list(
 
-        Burn = burn_palette(256),
+        Burn = sbr_palette_burn(256),
 
-        Moisture = moisture_palette(256),
+        Moisture = sbr_palette_moisture(256),
 
-        Stress = stress_palette(256),
+        Stress = sbr_palette_stress(256),
 
-        Vegetation = vegetation_palette(256)
+        Vegetation = sbr_palette_vegetation(256)
 
     )
 
@@ -144,7 +144,7 @@ palette_lookup <- function(name, n = 256) {
 
         burn = sbr_palette_burn(n),
 
-        moisture = sbr_palette_moistur(n),
+        moisture = sbr_palette_moisture(n),
 
         stress = sbr_palette_stress(n),
 

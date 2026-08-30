@@ -1,4 +1,15 @@
-#' @export
+#' Build burn provenance
+#'
+#' Construct provenance metadata for a burn analysis.
+#'
+#' @param pre Pre-fire Sentinel-2 collection.
+#' @param post Post-fire Sentinel-2 collection.
+#' @param threshold Burn detection threshold.
+#' @param assets Spectral assets used in the analysis.
+#'
+#' @return A list containing provenance information.
+#'
+#' @keywords internal
 build_provenance <- function(pre, post, threshold, assets) {
 
     list(
@@ -31,14 +42,13 @@ build_provenance <- function(pre, post, threshold, assets) {
 
 # burn caption ------------------------------------------------------------
 
-
 #' Create a caption describing a burn analysis
 #'
 #' @param x A burn analysis object.
 #'
 #' @return A character string suitable for use as a plot caption.
-#'
 #' @export
+#'
 burn_caption <- function(x) {
 
     stopifnot(

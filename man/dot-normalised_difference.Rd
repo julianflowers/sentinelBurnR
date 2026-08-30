@@ -9,11 +9,11 @@
 \arguments{
 \item{x}{A \code{SpatRaster} containing \code{band1} and \code{band2}.}
 
+\item{numerator}{Name of the numerator band.}
+
+\item{denominator}{Name of the denominator band.}
+
 \item{name}{Name of the output layer.}
-
-\item{band1}{Name of the numerator band.}
-
-\item{band2}{Name of the denominator band.}
 }
 \value{
 A single-layer \code{SpatRaster} named \code{ndvi}.

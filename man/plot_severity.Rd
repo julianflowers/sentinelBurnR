@@ -19,6 +19,8 @@ plot_severity(
 
 \item{subtitle}{Plot subtitle}
 
+\item{caption}{Optional plot caption}
+
 \item{boundary}{Optional boundary to overlay on the plot.}
 }
 \value{
