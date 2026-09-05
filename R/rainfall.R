@@ -76,6 +76,14 @@ get_rainfall <- function(
         end = end,
         source = source
     )
+    boundary <- read_boundary(boundary)
+
+    files <- download_climate(
+        boundary = boundary,
+        start = start,
+        end = end,
+        source = source
+    )
 
     climate <- read_climate(files)
 
@@ -100,6 +108,81 @@ get_rainfall <- function(
     out
 
 }
+
+extract_temperature <- function(
+        climate,
+        boundary,
+        fun = mean
+) {
+    stopifnot(inherits(climate, "SpatRaster"))
+
+    boundary <- prepare_boundary(boundary, climate)
+
+    vals <- terra::extract(
+        climate,
+        boundary,
+        fun = fun,
+        na.rm = TRUE
+    )
+
+    vals <- vals[, -1, drop = FALSE]
+
+    out <- data.frame(
+        date = as.Date(terra::time(climate)),
+        temperature_c =
+            as.numeric(vals[1, ]) - 273.15,
+        stringsAsFactors = FALSE
+    )
+
+    class(out) <- c(
+        "sbr_temperature",
+        "data.frame"
+    )
+
+    attr(out, "units") <- "degrees C"
+
+    out
+}
+
+get_temperature <- function(
+        boundary,
+        start,
+        end,
+        statistic = "daily_mean",
+        source = "era5"
+) {
+    boundary <- read_boundary(boundary)
+
+    files <- download_climate(
+        boundary = boundary,
+        start = start,
+        end = end,
+        source = source,
+        variable = "2m_temperature",
+        statistic = statistic
+    )
+
+    climate <- read_climate(files)
+
+    out <- extract_temperature(
+        climate,
+        boundary
+    )
+
+    out <- out[
+        out$date >= as.Date(start) &
+            out$date <= as.Date(end),
+        ,
+        drop = FALSE
+    ]
+
+    attr(out, "source") <- source
+    attr(out, "boundary") <- boundary
+    attr(out, "statistic") <- statistic
+
+    out
+}
+
 
 #' Read climate data
 #'
@@ -135,4 +218,169 @@ print.sbr_rainfall <- function(x, ...) {
 
     invisible(x)
 }
+
+relative_humidity <- function(
+        temperature_c,
+        dewpoint_c
+) {
+    100 *
+        exp(
+            (17.625 * dewpoint_c) /
+                (243.04 + dewpoint_c) -
+                (17.625 * temperature_c) /
+                (243.04 + temperature_c)
+        )
+}
+
+relative_humidity <- function(
+        temperature_c,
+        dewpoint_c
+) {
+    rh <- 100 *
+        exp(
+            (17.625 * dewpoint_c) /
+                (243.04 + dewpoint_c) -
+                (17.625 * temperature_c) /
+                (243.04 + temperature_c)
+        )
+
+    pmin(
+        100,
+        pmax(0, rh)
+    )
+}
+
+extract_temperature <- function(
+        climate,
+        boundary,
+        name = "temperature_c",
+        fun = mean
+) {
+    stopifnot(inherits(climate, "SpatRaster"))
+
+    boundary <- prepare_boundary(
+        boundary,
+        climate
+    )
+
+    vals <- terra::extract(
+        climate,
+        boundary,
+        fun = fun,
+        na.rm = TRUE
+    )
+
+    vals <- vals[, -1, drop = FALSE]
+
+    out <- data.frame(
+        date = as.Date(terra::time(climate)),
+        value = as.numeric(vals[1, ]) - 273.15,
+        stringsAsFactors = FALSE
+    )
+
+    names(out)[2] <- name
+
+    class(out) <- c(
+        "sbr_temperature",
+        "data.frame"
+    )
+
+    attr(out, "units") <- "degrees C"
+
+    out
+}
+
+
+get_humidity <- function(
+        boundary,
+        start,
+        end,
+        source = "era5"
+) {
+    boundary <- read_boundary(boundary)
+
+    temp_files <- download_climate(
+        boundary = boundary,
+        start = start,
+        end = end,
+        source = source,
+        variable = "2m_temperature",
+        statistic = "daily_mean"
+    )
+
+    dew_files <- download_climate(
+        boundary = boundary,
+        start = start,
+        end = end,
+        source = source,
+        variable = "2m_dewpoint_temperature",
+        statistic = "daily_mean"
+    )
+
+    temp <- extract_temperature(
+        read_climate(temp_files),
+        boundary,
+        name = "temperature_c"
+    )
+
+    dew <- extract_temperature(
+        read_climate(dew_files),
+        boundary,
+        name = "dewpoint_c"
+    )
+
+    out <- merge(
+        temp,
+        dew,
+        by = "date",
+        all = FALSE
+    )
+
+    out$relative_humidity <- relative_humidity(
+        out$temperature_c,
+        out$dewpoint_c
+    )
+
+    out$vpd_kpa <- vapour_pressure_deficit(
+        out$temperature_c,
+        out$dewpoint_c
+    )
+
+    out <- out[
+        out$date >= as.Date(start) &
+            out$date <= as.Date(end),
+        ,
+        drop = FALSE
+    ]
+
+    class(out) <- c(
+        "sbr_humidity",
+        "data.frame"
+    )
+
+    attr(out, "source") <- source
+    attr(out, "humidity_method") <-
+        "derived from daily-mean 2 m temperature and dewpoint"
+
+    out
+}
+
+vapour_pressure_deficit <- function(
+        temperature_c,
+        dewpoint_c
+) {
+    saturation_vapour_pressure <- function(x) {
+        0.6108 * exp(
+            (17.27 * x) /
+                (x + 237.3)
+        )
+    }
+
+    vpd <-
+        saturation_vapour_pressure(temperature_c) -
+        saturation_vapour_pressure(dewpoint_c)
+
+    pmax(0, vpd)
+}
+
 

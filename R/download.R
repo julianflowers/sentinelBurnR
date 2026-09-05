@@ -5,7 +5,8 @@
 #'
 #' @param x An `sbr_search` object.
 #' @param assets Character vector of asset names.
-#' @param limit Optional maximum number of scenes to download.
+#' @param limit Maximum number of scenes to download. If `NULL`,
+#'   all scenes in the search are downloaded.
 #' @param max_cloud Set numerical value for cloud cover cut off.
 #' @param output_dir Directory used to cache downloaded files.
 #' @param overwrite Logical. Overwrite existing files?
@@ -18,7 +19,7 @@
 download_s2 <- function(
         x,
         assets = NULL,
-        limit = 2,
+        limit = NULL,
         max_cloud = NULL,
         project = NULL,
         output_dir = cache_downloads(),
@@ -59,11 +60,28 @@ download_s2 <- function(
         )
     }
 
+    if (!is.null(limit)) {
+
+        if (!is.numeric(limit) ||
+            length(limit) != 1L ||
+            is.na(limit) ||
+            limit < 1 ||
+            limit != as.integer(limit)) {
+
+            stop(
+                "`limit` must be NULL or a positive integer.",
+                call. = FALSE
+            )
+        }
+
+        limit <- as.integer(limit)
+    }
+
     workers <- as.integer(workers)
 
     invalid <- setdiff(
         assets,
-        names(s2_bands)
+        s2_assets
     )
 
     if (length(invalid) > 0) {

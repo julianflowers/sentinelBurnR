@@ -7,7 +7,7 @@
 download_s2(
   x,
   assets = NULL,
-  limit = 2,
+  limit = NULL,
   max_cloud = NULL,
   project = NULL,
   output_dir = cache_downloads(),
@@ -20,7 +20,8 @@ download_s2(
 
 \item{assets}{Character vector of asset names.}
 
-\item{limit}{Optional maximum number of scenes to download.}
+\item{limit}{Maximum number of scenes to download. If \code{NULL},
+all scenes in the search are downloaded.}
 
 \item{max_cloud}{Set numerical value for cloud cover cut off.}
 

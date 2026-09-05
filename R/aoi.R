@@ -97,6 +97,10 @@ aoi_to_spatvector <- function(
         layer = NULL
 ) {
 
+    if (inherits(aoi, "sbr_aoi")) {
+        return(aoi$geometry)
+    }
+
     if (inherits(aoi, "SpatVector")) {
         return(aoi)
     }

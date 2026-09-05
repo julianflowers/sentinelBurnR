@@ -46,6 +46,18 @@ index_info <- list(
         description = "Vegetation ",
         palette = "vegetation",
         limits = c(-1, 1)
+    ),
+
+    ndmi_anomaly = list(
+        name = "NDMI anomaly",
+        palette = "moisture",
+        limits = c(-0.5, 0.5)
+    ),
+
+    ndmi_standardised = list(
+        name = "Standardised NDMI anomaly",
+        palette = "moisture",
+        limits = c(-3, 3)
     )
 
 

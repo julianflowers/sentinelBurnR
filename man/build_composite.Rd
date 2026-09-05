@@ -4,7 +4,12 @@
 \alias{build_composite}
 \title{Build a median Sentinel-2 composite}
 \usage{
-build_composite(collection, assets = s2_burn_assets)
+build_composite(
+  collection,
+  assets = s2_burn_assets,
+  cache = TRUE,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{collection}{An sbr_collection.}

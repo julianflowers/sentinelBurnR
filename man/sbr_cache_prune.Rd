@@ -4,7 +4,13 @@
 \alias{sbr_cache_prune}
 \title{Remove old cached files}
 \usage{
-sbr_cache_prune(max_age = 30, downloads = TRUE, temp = TRUE, dry_run = TRUE)
+sbr_cache_prune(
+  max_age = 30,
+  downloads = TRUE,
+  temp = TRUE,
+  composites = FALSE,
+  dry_run = TRUE
+)
 }
 \arguments{
 \item{max_age}{Maximum age (days) to retain.}
@@ -12,6 +18,8 @@ sbr_cache_prune(max_age = 30, downloads = TRUE, temp = TRUE, dry_run = TRUE)
 \item{downloads}{Prune download cache.}
 
 \item{temp}{Prune temporary files.}
+
+\item{composites}{Prune composites cache.}
 
 \item{dry_run}{If TRUE, report what would be deleted.}
 }

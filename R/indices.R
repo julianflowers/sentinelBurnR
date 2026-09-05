@@ -175,3 +175,97 @@ calc_msi <- function(x) {
 
 }
 
+
+# summarise index --------------------------------------------------------
+
+summarise_index <- function(x, index) {
+
+    q <- terra::quantile(
+        x,
+        probs = c(
+            0.05,
+            0.25,
+            0.5,
+            0.75,
+            0.95
+        ),
+        na.rm = TRUE
+    )
+
+    data.frame(
+        index = index,
+        mean = terra::global(
+            x,
+            "mean",
+            na.rm = TRUE
+        )[[1]],
+        p05 = q[[1]],
+        p25 = q[[2]],
+        median = q[[3]],
+        p75 = q[[4]],
+        p95 = q[[5]]
+    )
+
+    summary <- rbind(
+        summarise_index(ndvi, "NDVI"),
+        summarise_index(ndmi, "NDMI"),
+        summarise_index(msi, "MSI")
+    )
+
+    summary = summary
+}
+
+calculate_index <- function(
+        x,
+        index = c(
+            "nbr",
+            "ndvi",
+            "ndmi",
+            "msi"
+        )
+) {
+
+    index <- match.arg(index)
+
+    switch(
+        index,
+        nbr = calc_nbr(x),
+        ndvi = calc_ndvi(x),
+        ndmi = calc_ndmi(x),
+        msi = calc_msi(x)
+    )
+}
+
+
+# check raster geom -------------------------------------------------------
+
+check_raster_geometry <- function(x) {
+
+    if (!is.list(x) || length(x) < 2) {
+        return(invisible(TRUE))
+    }
+
+    reference <- x[[1]]
+
+    ok <- vapply(
+        x[-1],
+        function(r) {
+            terra::compareGeom(
+                reference,
+                r,
+                stopOnError = FALSE
+            )
+        },
+        logical(1)
+    )
+
+    if (!all(ok)) {
+        stop(
+            "Rasters do not have matching geometry.",
+            call. = FALSE
+        )
+    }
+
+    invisible(TRUE)
+}
+

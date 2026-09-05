@@ -73,20 +73,21 @@ test_that("split_months checks date order", {
 
 test_that("climate_cache_file returns expected filename", {
 
+    cache <- tempdir()
+
     f <- climate_cache_file(
-        "era5",
-        2024,
-        7,
-        tempdir()
+        source = "era5",
+        year = 2024,
+        month = 7,
+        variable = "total_precipitation",
+        statistic = "daily_sum",
+        cache = cache
     )
 
-    expect_true(
-        grepl(
-            "2024_07\\.nc$",
-            f
-        )
+    expect_equal(
+        basename(f),
+        "2024_07_daily_sum.nc"
     )
-
 })
 
 test_that("climate_cache_file creates directories", {

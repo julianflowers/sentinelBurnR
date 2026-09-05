@@ -5,7 +5,7 @@ library(jsonlite)
 download_ngd <- function(
         collection,
         area,
-        key = Sys.getenv("OS_API_KEY"),
+        key = Sys.getenv("OSDATAHUB"),
         limit = 100,
         clip = FALSE,
         quiet = FALSE

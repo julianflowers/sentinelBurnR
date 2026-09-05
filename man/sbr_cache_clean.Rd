@@ -4,12 +4,14 @@
 \alias{sbr_cache_clean}
 \title{Clean cache}
 \usage{
-sbr_cache_clean(temp = TRUE, downloads = FALSE)
+sbr_cache_clean(temp = TRUE, downloads = FALSE, composites = FALSE)
 }
 \arguments{
 \item{temp}{Remove temporary files.}
 
 \item{downloads}{Remove downloaded scenes.}
+
+\item{composites}{Remove cached sentinel-2 composites}
 }
 \description{
 Clean cache

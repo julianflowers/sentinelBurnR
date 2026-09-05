@@ -9,7 +9,9 @@
 #'
 build_composite <- function(
         collection,
-        assets = s2_burn_assets
+        assets = s2_burn_assets,
+        cache = TRUE,
+        overwrite = FALSE
 ) {
 
     if (!inherits(collection, "sbr_collection")) {
@@ -18,6 +20,28 @@ build_composite <- function(
             "`collection` must be an sbr_collection.",
             call. = FALSE
         )
+    }
+
+    cache_file <- NULL
+
+    if (cache) {
+
+        cache_file <- composite_cache_file(
+            collection,
+            assets
+        )
+
+        if (
+            file.exists(cache_file) &&
+            !overwrite
+        ) {
+
+            message("Using cached composite")
+
+            return(
+                terra::rast(cache_file)
+            )
+        }
     }
 
     band_stacks <- stats::setNames(
@@ -96,7 +120,22 @@ build_composite <- function(
         )
     }
 
+    if (cache) {
+
+        message(
+            "Caching composite: ",
+            cache_file
+        )
+
+        terra::writeRaster(
+            composite,
+            cache_file,
+            overwrite = TRUE
+        )
+    }
+
     composite
+
 }
 
 
@@ -444,11 +483,31 @@ mask_scl <- function(
 
 #----------align bands------------------------------------
 
+
 align_bands <- function(
         rasters,
         reference = "red",
         method = "bilinear"
 ) {
+
+    if (length(rasters) == 0) {
+        return(rasters)
+    }
+
+    if (!reference %in% names(rasters)) {
+
+        resolutions <- vapply(
+            rasters,
+            function(x) {
+                prod(terra::res(x))
+            },
+            numeric(1)
+        )
+
+        reference <- names(rasters)[
+            which.min(resolutions)
+        ]
+    }
 
     template <- rasters[[reference]]
 
@@ -456,21 +515,19 @@ align_bands <- function(
 
     for (nm in names(rasters)) {
 
-        if (nm == reference)
+        if (nm == reference) {
             next
+        }
 
         out[[nm]] <- terra::resample(
             rasters[[nm]],
             template,
             method = method
         )
-
     }
 
     out
-
 }
-
 #----stack and mosaic------------------------------
 
 median_stack <- function(x) {

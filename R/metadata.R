@@ -18,7 +18,7 @@ build_provenance <- function(pre, post, threshold, assets) {
 
         post = post$provenance,
 
-        processing = list(
+        processing = processing_provenance(
 
             threshold = threshold,
             assets = assets,
@@ -38,6 +38,48 @@ build_provenance <- function(pre, post, threshold, assets) {
 
 }
 
+
+# process provenance ------------------------------------------------------
+
+processing_provenance <- function(assets, ...) {
+
+    list(
+        assets = assets,
+
+        created = Sys.time(),
+
+        package_version =
+            as.character(
+                utils::packageVersion(
+                    "sentinelBurnR"
+                )
+            ),
+
+        ...
+    )
+}
+
+
+# vegetation provenance ---------------------------------------------------
+
+build_vegetation_provenance <- function(
+        collection,
+        assets
+) {
+
+    list(
+        collection = collection$provenance,
+
+        processing = processing_provenance(
+            assets = assets,
+            indices = c(
+                "NDVI",
+                "NDMI",
+                "MSI"
+            )
+        )
+    )
+}
 
 
 # burn caption ------------------------------------------------------------

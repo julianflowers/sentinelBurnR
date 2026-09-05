@@ -54,6 +54,8 @@ climate_cache_file <- function(
         source,
         year,
         month,
+        variable = "total_precipitation",
+        statistic = "daily_sum",
         cache = cache_climate()
 ) {
 
@@ -66,6 +68,7 @@ climate_cache_file <- function(
     dir <- file.path(
         cache,
         source,
+        variable,
         sprintf("%04d", year)
     )
 
@@ -78,9 +81,10 @@ climate_cache_file <- function(
     file.path(
         dir,
         sprintf(
-            "%04d_%02d.nc",
+            "%04d_%02d_%s.nc",
             year,
-            month
+            month,
+            statistic
         )
     )
 

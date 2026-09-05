@@ -53,6 +53,11 @@ s2_default_assets <- c(
 
 )
 
+s2_assets <- c(
+    names(s2_bands),
+    "visual"
+)
+
 s2_scl_keep <- c(
     4L,  # vegetation
     5L,  # bare soil
@@ -61,11 +66,13 @@ s2_scl_keep <- c(
 )
 
 s2_burn_assets <- c(
+    "nir08",
+    "swir22"
+)
+
+s2_vegetation_assets <- c(
     "red",
     "nir08",
-    "swir22",
-    "blue",
-    "green",
     "swir16"
 )
 
@@ -155,3 +162,37 @@ burn_palette <- c(
     "#d73027"
 
 )
+
+
+
+# nbmi palettes -----------------------------------------------------------
+
+ndmi_anomaly = list(
+    name = "NDMI anomaly",
+    palette = c(
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#f5f5f5",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+    ),
+    limits = c(-0.5, 0.5)
+)
+
+ndmi_standardised = list(
+    name = "Standardised NDMI anomaly",
+    palette = c(
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#f5f5f5",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+    ),
+    limits = c(-3, 3)
+)
+
+

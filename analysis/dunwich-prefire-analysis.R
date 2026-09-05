@@ -34,7 +34,7 @@ search <- search_s2(
 ts_search <- select_timeseries(
     search,
     interval = 10,
-    cloud_cover = 30
+    max_cloud = 30
 )
 
 # Check selected acquisitions
@@ -197,7 +197,7 @@ burn_for_analysis <- terra::mask(
 download_ngd <- function(
         collection,
         area,
-        key = Sys.getenv("OS_API_KEY"),
+        key = Sys.getenv("OSDATAHUB"),
         limit = 100,
         clip = FALSE,
         quiet = FALSE
@@ -705,3 +705,503 @@ lines(
 #
 # Build a historical seasonal NDMI baseline and calculate pre-fire
 # moisture anomaly relative to expected condition.
+#
+#
+#
+
+
+land_aoi$fuel_class <- fuel_class
+fuel_lookup <- data.frame(
+fuel_class = sort(unique(na.omit(land_aoi$fuel_class))),
+stringsAsFactors = FALSE
+)
+fuel_lookup$fuel_id <- seq_len(nrow(fuel_lookup))
+land_aoi$fuel_id <- fuel_lookup$fuel_id[
+match(
+land_aoi$fuel_class,
+fuel_lookup$fuel_class
+)
+]
+land_utm <- terra::project(
+terra::vect(land_aoi),
+terra::crs(ndmi_trend)
+)
+fuel_raster <- terra::rasterize(
+land_utm,
+ndmi_trend,
+field = "fuel_id"
+)
+names(fuel_raster) <- "fuel_id"
+predictors <- c(
+ndvi_july29,
+ndmi_july29,
+ndmi_trend,
+burn_for_analysis,
+fuel_raster
+)
+land_utm <- terra::project(
+terra::vect(land_aoi),
+terra::crs(ndmi_anomaly)
+)
+fuel_raster <- terra::rasterize(
+land_utm,
+ndmi_anomaly,
+field = "fuel_id"
+)
+names(fuel_raster) <- "fuel_id"
+ndvi
+fuel_raster
+plot(fuel_raster)
+terra::freq(fuel_raster)
+fuel_lookup <- unique(
+data.frame(
+fuel_id = land_aoi$fuel_id,
+fuel_class = land_aoi$fuel_class
+)
+)
+fuel_lookup <- fuel_lookup[
+!is.na(fuel_lookup$fuel_id),
+]
+fuel_lookup <- fuel_lookup[
+order(fuel_lookup$fuel_id),
+]
+rownames(fuel_lookup) <- NULL
+fuel_lookup
+focus_classes <- c(
+"Broadleaved woodland/scrub",
+"Open heath/grass/scrub",
+"Tree-influenced heath/grass/scrub"
+)
+dir.create(
+"analysis/dunwich-2026/data",
+recursive = TRUE,
+showWarnings = FALSE
+)
+terra::writeRaster(
+burn_for_analysis,
+"analysis/dunwich-2026/data/burn-mask.tif",
+overwrite = TRUE
+)
+terra::writeRaster(
+fuel_raster,
+"analysis/dunwich-2026/data/fuel-classes.tif",
+overwrite = TRUE
+)
+anomaly_focus$anomaly_quintile <- ave(
+anomaly_focus$ndmi_anomaly,
+anomaly_focus$fuel_class,
+FUN = function(x) {
+cut(
+x,
+breaks = quantile(
+x,
+probs = seq(0, 1, 0.2),
+na.rm = TRUE
+),
+include.lowest = TRUE,
+labels = FALSE
+)
+}
+)
+anomaly_predictors <- c(
+anomaly_aligned,
+ndmi_july29,
+burn_for_analysis,
+fuel_raster
+)
+names(anomaly_predictors) <- c(
+"ndmi_anomaly",
+"ndmi",
+"burned",
+"fuel_id"
+)
+anomaly_dat <- as.data.frame(
+anomaly_predictors,
+na.rm = TRUE
+)
+anomaly_dat$fuel_class <- fuel_lookup$fuel_class[
+match(
+anomaly_dat$fuel_id,
+fuel_lookup$fuel_id
+)
+]
+anomaly_focus <- anomaly_dat[
+anomaly_dat$fuel_class %in% focus_classes,
+]
+anomaly_summary <- aggregate(
+cbind(ndmi_anomaly, ndmi) ~ fuel_class + burned,
+data = anomaly_focus,
+FUN = function(x) {
+c(
+n = length(x),
+mean = mean(x),
+median = median(x),
+q25 = quantile(x, 0.25),
+q75 = quantile(x, 0.75)
+)
+}
+)
+anomaly_summary
+anomaly_focus$anomaly_quintile <- ave(
+anomaly_focus$ndmi_anomaly,
+anomaly_focus$fuel_class,
+FUN = function(x) {
+cut(
+x,
+breaks = quantile(
+x,
+probs = seq(0, 1, 0.2),
+na.rm = TRUE
+),
+include.lowest = TRUE,
+labels = FALSE
+)
+}
+)
+anomaly_response <- aggregate(
+burned ~ fuel_class + anomaly_quintile,
+data = anomaly_focus,
+FUN = function(x) {
+c(
+n = length(x),
+burned = sum(x),
+burn_rate = mean(x)
+)
+}
+)
+anomaly_response
+terra::minmax(burn_for_analysis)
+terra::freq(burn_for_analysis)
+terra::global(
+burn_for_analysis,
+c("min", "max", "mean"),
+na.rm = TRUE
+)
+burn_for_analysis <- terra::resample(
+burn_raster,
+ndmi_anomaly,
+method = "near"
+)
+burn_for_analysis <- terra::resample(
+burn_raster,
+ndmi_trend,
+method = "near"
+)
+subset_date <- function(collection, date) {
+date <- as.Date(date)
+keep <- collection$files$date == date
+out <- collection
+out$files <- collection$files[keep, , drop = FALSE]
+out
+}
+pre_collection <- subset_date(
+burn_collection,
+"2026-07-29"
+)
+post_collection <- subset_date(
+burn_collection,
+"2026-08-13"
+)
+burn <- analyse_burn(
+pre = pre_collection,
+post = post_collection,
+boundary = aoi
+)
+names(burn)
+burn_raster <- burn$burned
+burn_raster <- burn$burned
+terra::freq(burn_raster)
+burn_for_analysis <- terra::resample(
+burn_raster,
+ndmi_anomaly,
+method = "near"
+)
+burn_for_analysis <- terra::mask(
+burn_for_analysis,
+ndmi_anomaly
+)
+names(burn_for_analysis) <- "burned"
+sort(unique(
+terra::values(
+burn_for_analysis,
+na.rm = TRUE
+)
+))
+anomaly_predictors <- c(
+ndmi_anomaly,
+ndmi_july29,
+burn_for_analysis,
+fuel_raster
+)
+names(anomaly_predictors) <- c(
+"ndmi_anomaly",
+"ndmi",
+"burned",
+"fuel_id"
+)
+anomaly_dat <- as.data.frame(
+anomaly_predictors,
+na.rm = TRUE
+)
+anomaly_dat$fuel_class <- fuel_lookup$fuel_class[
+match(
+anomaly_dat$fuel_id,
+fuel_lookup$fuel_id
+)
+]
+anomaly_focus <- anomaly_dat[
+anomaly_dat$fuel_class %in% focus_classes,
+]
+table(anomaly_focus$burned)
+anomaly_focus$anomaly_quintile <- ave(
+anomaly_focus$ndmi_anomaly,
+anomaly_focus$fuel_class,
+FUN = function(x) {
+cut(
+x,
+breaks = quantile(
+x,
+probs = seq(0, 1, 0.2),
+na.rm = TRUE
+),
+include.lowest = TRUE,
+labels = FALSE
+)
+}
+)
+anomaly_response <- aggregate(
+burned ~ fuel_class + anomaly_quintile,
+data = anomaly_focus,
+FUN = function(x) {
+c(
+n = length(x),
+burned = sum(x),
+burn_rate = mean(x)
+)
+}
+)
+anomaly_response
+cor(
+anomaly_focus$ndmi,
+anomaly_focus$ndmi_anomaly,
+use = "complete.obs"
+)
+by(
+anomaly_focus,
+anomaly_focus$fuel_class,
+function(x) {
+cor(
+x$ndmi,
+x$ndmi_anomaly,
+use = "complete.obs"
+)
+}
+)
+anomaly_focus$ndmi_state <- ave(
+anomaly_focus$ndmi,
+anomaly_focus$fuel_class,
+FUN = function(x) {
+ifelse(
+x <= median(x, na.rm = TRUE),
+"Dry",
+"Moist"
+)
+}
+)
+anomaly_focus$anomaly_state <- ave(
+anomaly_focus$ndmi_anomaly,
+anomaly_focus$fuel_class,
+FUN = function(x) {
+ifelse(
+x <= median(x, na.rm = TRUE),
+"Unusually dry",
+"Near/above normal"
+)
+}
+)
+joint_response <- aggregate(
+burned ~
+fuel_class +
+ndmi_state +
+anomaly_state,
+data = anomaly_focus,
+FUN = function(x) {
+c(
+n = length(x),
+burned = sum(x),
+burn_rate = mean(x)
+)
+}
+)
+joint_response
+
+devtools::test(filter = "seasonal-baseline")
+baseline <- seasonal_baseline(
+annual_ndmi,
+method = "median",
+min_years = 5
+)
+ndmi_anomaly_pkg <- index_anomaly(
+ndmi_july29,
+baseline
+)
+terra::global(
+ndmi_anomaly_pkg,
+c("mean", "sd"),
+na.rm = TRUE
+)
+difference <- ndmi_anomaly_pkg - ndmi_anomaly
+terra::global(
+abs(difference),
+c("mean", "max"),
+na.rm = TRUE
+)
+devtools::test()
+library(ggplot2)
+library(terra)
+anomaly_df <- as.data.frame(
+ndmi_anomaly_pkg,
+xy = TRUE,
+na.rm = TRUE
+)
+names(anomaly_df)[3] <- "ndmi_anomaly"
+burn_plot <- terra::resample(
+burn_raster,
+ndmi_anomaly_pkg,
+method = "near"
+)
+burn_plot <- terra::mask(
+burn_plot,
+ndmi_anomaly_pkg
+)
+burn_plot[burn_plot == 0] <- NA
+burn_poly <- terra::as.polygons(
+burn_plot,
+dissolve = TRUE,
+na.rm = TRUE
+)
+burn_sf <- sf::st_as_sf(burn_poly)
+ggplot() +
+geom_raster(
+data = anomaly_df,
+aes(
+x = x,
+y = y,
+fill = ndmi_anomaly
+)
+) +
+geom_sf(
+data = burn_sf,
+fill = NA,
+colour = "black",
+linewidth = 0.5
+) +
+scale_fill_gradient2(
+low = "#b2182b",
+mid = "#f7f7f7",
+high = "#2166ac",
+midpoint = 0,
+name = "NDMI anomaly"
+) +
+coord_sf(
+crs = sf::st_crs(burn_sf),
+expand = FALSE
+) +
+labs(
+title = "Pre-fire vegetation moisture anomaly",
+subtitle = "29 July 2026 relative to 2018–2025 seasonal baseline",
+caption = "Black outline: subsequently detected burn"
+) +
+theme_minimal()
+terra::global(
+ndmi_anomaly_pkg,
+function(x) {
+c(
+n = sum(!is.na(x)),
+pct_below_0 = mean(x < 0, na.rm = TRUE) * 100,
+pct_below_m05 = mean(x < -0.05, na.rm = TRUE) * 100,
+pct_below_m10 = mean(x < -0.10, na.rm = TRUE) * 100
+)
+}
+)
+terra::global(
+ndmi_anomaly_pkg,
+fun = quantile,
+probs = c(
+0.01, 0.05, 0.10, 0.25,
+0.50,
+0.75, 0.90, 0.95, 0.99
+),
+na.rm = TRUE
+)
+terra::global(
+ndmi_anomaly_pkg,
+function(x) {
+c(
+n = sum(!is.na(x)),
+pct_below_0 = mean(x < 0, na.rm = TRUE) * 100,
+pct_below_m05 = mean(x < -0.05, na.rm = TRUE) * 100,
+pct_below_m10 = mean(x < -0.10, na.rm = TRUE) * 100
+)
+}
+)
+terra::global(
+ndmi_anomaly_pkg,
+fun = quantile,
+probs = c(
+0.01, 0.05, 0.10, 0.25,
+0.50,
+0.75, 0.90, 0.95, 0.99
+),
+na.rm = TRUE
+)
+breaks <- c(
+-Inf,
+-0.134,  # driest 10%
+-0.097,  # driest 25%
+-0.062,  # median
+-0.031,  # 75%
+Inf
+)
+anomaly_df$dryness_class <- cut(
+anomaly_df$ndmi_anomaly,
+breaks = breaks,
+labels = c(
+"Extreme anomaly",
+"Strong anomaly",
+"Moderate anomaly",
+"Mild anomaly",
+"Least anomalous"
+),
+include.lowest = TRUE
+)
+ggplot() +
+geom_raster(
+data = anomaly_df,
+aes(
+x = x,
+y = y,
+fill = dryness_class
+)
+) +
+geom_sf(
+data = burn_sf,
+fill = NA,
+colour = "black",
+linewidth = 0.5
+) +
+scale_fill_brewer(
+palette = "YlOrRd",
+direction = -1,
+name = "Relative dryness"
+) +
+coord_sf(
+crs = sf::st_crs(burn_sf),
+expand = FALSE
+) +
+labs(
+title = "Relative pre-fire vegetation moisture anomaly",
+subtitle = "29 July 2026 relative to 2018–2025 seasonal baseline",
+caption = "Classes based on the 2026 anomaly distribution; black outline = subsequent burn"
+) +
+theme_minimal()

@@ -260,7 +260,10 @@ plot_index <- function(
             ggplot2::scale_fill_gradientn(
                 colours = palette,
                 na.value = "transparent",
-                name = info$name
+                name = info$name,
+                limits = info$limits,
+                oob = scales:::squish
+
             ) +
 
             ggplot2::labs(
@@ -355,71 +358,43 @@ plot_severity <- function(
         boundary = NULL
 ) {
 
-    plot_index(
-        x = x,
-        index = "dnbr",
-        title = title,
-        subtitle = subtitle,
-        caption = caption,
-        boundary = boundary
+    x <- terra::as.factor(x)
+
+    levels(x) <- data.frame(
+        ID = 1:7,
+        severity = dnbr_labels
     )
 
+    p <- ggplot2::ggplot() +
+
+        tidyterra::geom_spatraster(
+            data = x
+        ) +
+
+        ggplot2::scale_fill_manual(
+            values = stats::setNames(
+                burn_palette,
+                dnbr_labels
+            ),
+            drop = FALSE,
+            name = "Burn severity"
+        ) +
+
+        ggplot2::coord_sf(expand = FALSE) +
+
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle,
+            caption = caption
+        ) +
+
+        ggplot2::theme_minimal()
+
+    add_boundary(
+        p,
+        boundary = boundary
+    )
 }
-
-#     x <- terra::as.factor(x)
-#
-#     p <- ggplot2::ggplot() +
-#
-#         tidyterra::geom_spatraster(
-#             data = x
-#         ) +
-#
-#         ggplot2::scale_fill_manual(
-#             values = burn_palette,
-#             drop = FALSE,
-#             name = "Burn severity"
-#         ) +
-#
-#         ggplot2::coord_sf(expand = FALSE) +
-#
-#         ggplot2::labs(
-#             title = title,
-#             subtitle = subtitle,
-#             caption = caption
-#         ) +
-#
-#         theme_sbr_map()
-#
-#     if (!is.null(boundary)) {
-#
-#         boundary <- read_boundary(boundary)
-#
-#         if (!terra::same.crs(
-#             boundary,
-#             x
-#         )) {
-#
-#             boundary <- terra::project(
-#                 boundary,
-#                 terra::crs(x)
-#             )
-#
-#         }
-#
-#         p <- p +
-#
-#             tidyterra::geom_spatvector(
-#                 data = boundary,
-#                 fill = NA,
-#                 colour = "black",
-#                 linewidth = 0.6
-#             )
-#     }
-#
-#     p
-#
-# }
-
 
 # overlay boundary --------------------------------------------------------
 
@@ -491,5 +466,156 @@ add_caption <- function(
         )
 
 }
+
+
+# print sbr_drought -------------------------------------------------------
+#' @export
+print.sbr_drought <- function(x, ...) {
+
+    s <- x$summary
+
+    cat("<sbr_drought>\n")
+    cat(
+        "Current date:      ",
+        format(s$current_date),
+        "\n",
+        sep = ""
+    )
+
+    cat(
+        "Baseline:          ",
+        s$baseline_start,
+        "-",
+        s$baseline_end,
+        " (",
+        s$baseline_years,
+        " years)\n",
+        sep = ""
+    )
+
+    cat(
+        "Seasonal window:   ±",
+        s$window_days,
+        " days\n",
+        sep = ""
+    )
+
+    cat(
+        "Valid coverage:    ",
+        sprintf("%.1f%%", 100 * s$valid_coverage),
+        "\n",
+        sep = ""
+    )
+
+    cat(
+        "Median anomaly:    ",
+        sprintf("%.3f", s$anomaly_median),
+        "\n",
+        sep = ""
+    )
+
+    cat(
+        "Pixels below -2SD: ",
+        sprintf(
+            "%.1f%%",
+            100 * s$proportion_below_minus_2sd
+        ),
+        "\n",
+        sep = ""
+    )
+
+    invisible(x)
+}
+
+
+# plot drought ------------------------------------------------------------
+
+#' Plot drought analysis
+#'
+#' Plot vegetation moisture anomalies from an `sbr_drought`
+#' analysis.
+#'
+#' @param x An object of class `sbr_drought`.
+#' @param index Drought product to plot. Either `"anomaly"` or
+#'   `"standardised"`.
+#' @param boundary Optional boundary to overlay.
+#' @param title Optional plot title.
+#' @param subtitle Optional plot subtitle.
+#' @param caption Optional plot caption.
+#'
+#' @return A ggplot object.
+#'
+#' @export
+plot_drought <- function(
+        x,
+        index = c("anomaly", "standardised"),
+        boundary = NULL,
+        title = NULL,
+        subtitle = NULL,
+        caption = NULL
+) {
+
+    if (!inherits(x, "sbr_drought")) {
+        stop("`x` must be an sbr_drought object.")
+    }
+
+    index <- match.arg(index)
+
+    s <- x$summary
+
+    if (index == "anomaly") {
+
+        r <- x$anomaly
+
+        if (is.null(title)) {
+            title <- "Vegetation moisture anomaly"
+        }
+
+        if (is.null(subtitle)) {
+            subtitle <- paste0(
+                "NDMI anomaly on ",
+                format(s$current_date),
+                " relative to ",
+                s$baseline_start,
+                "\u2013",
+                s$baseline_end,
+                " seasonal baseline"
+            )
+        }
+
+
+    } else {
+
+        r <- x$standardised
+
+        if (is.null(title)) {
+            title <- "Standardised vegetation moisture anomaly"
+        }
+
+        if (is.null(subtitle)) {
+            subtitle <- paste0(
+                format(s$current_date),
+                " relative to ",
+                s$baseline_start,
+                "\u2013",
+                s$baseline_end,
+                " seasonal baseline"
+            )
+        }
+
+    }
+
+    plot_index(
+        r,
+        index = names(r)[1],
+        title = title,
+        subtitle = subtitle,
+        boundary = boundary,
+        caption = caption    )
+}
+
+
+
+
 
 

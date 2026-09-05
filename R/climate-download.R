@@ -8,6 +8,8 @@ download_climate <- function(
         end,
         source = "era5",
         cache = cache_climate(),
+        variable = "total_precipitation",
+        statistic = "daily_sum",
         overwrite = FALSE
 ) {
 
@@ -31,6 +33,8 @@ download_climate <- function(
             source = source,
             year = year,
             month = month,
+            variable = variable,
+            statistic = statistic,
             cache = cache
         )
 
@@ -49,6 +53,8 @@ download_climate <- function(
                 year = year,
                 month = month,
                 source = source,
+                variable = variable,
+                statistic = statistic,
                 outfile = file
             )
         } else {
@@ -76,6 +82,8 @@ download_climate_month <- function(
         year,
         month,
         source,
+        variable = variable,
+        statistic = statistic,
         outfile
 ) {
 
@@ -92,12 +100,15 @@ download_climate_month <- function(
         boundary,
         year,
         month,
+        variable = variable,
+        statistic = statistic,
         outfile
     )
 
 }
 
-era5_request <- function() {
+era5_request <- function(variable = "total_precipitation",
+                         daily_statistic = "daily_sum") {
 
     list(
 
@@ -108,10 +119,10 @@ era5_request <- function() {
             "reanalysis",
 
         variable =
-            "total_precipitation",
+            variable,
 
         daily_statistic =
-            "daily_sum",
+            daily_statistic,
 
         frequency =
             "1_hourly",
@@ -123,35 +134,28 @@ era5_request <- function() {
 
 }
 
+
+# download monthly era5 data ----------------------------------------------
+
 download_era5_month <- function(
         boundary,
         year,
         month,
-        outfile
+        outfile,
+        variable = "total_precipitation",
+        statistic = "daily_sum",
+        max_tries = 5
 ) {
-
-    request <- era5_request()
-
-    request$year <- sprintf(
-        "%04d",
-        year
+    request <- era5_request(
+        variable = variable,
+        daily_statistic = statistic
     )
 
-    request$month <- sprintf(
-        "%02d",
-        month
-    )
-
-    ##
-    ## All days in month
-    ##
+    request$year <- sprintf("%04d", year)
+    request$month <- sprintf("%02d", month)
 
     first <- as.Date(
-        sprintf(
-            "%04d-%02d-01",
-            year,
-            month
-        )
+        sprintf("%04d-%02d-01", year, month)
     )
 
     last <- seq(
@@ -162,43 +166,68 @@ download_era5_month <- function(
 
     request$day <- sprintf(
         "%02d",
-        seq_len(
-            as.integer(
-                format(last, "%d")
-            )
-        )
+        seq_len(as.integer(format(last, "%d")))
     )
 
-    request$area <- era5_bbox(
-        boundary
-    )
-
+    request$area <- era5_bbox(boundary)
     request$target <- basename(outfile)
 
-    message(
-        "Submitting ERA5 request for ",
-        year,
-        "-",
-        sprintf("%02d", month)
+    for (attempt in seq_len(max_tries)) {
+
+        message(
+            sprintf(
+                "ERA5 %04d-%02d, attempt %d/%d",
+                year,
+                month,
+                attempt,
+                max_tries
+            )
+        )
+
+        result <- tryCatch(
+            {
+                ecmwfr::wf_request(
+                    request = request,
+                    transfer = TRUE,
+                    path = dirname(outfile)
+                )
+                TRUE
+            },
+            error = function(e) {
+                message(
+                    "ERA5 request failed: ",
+                    conditionMessage(e)
+                )
+                FALSE
+            }
+        )
+
+        if (result && file.exists(outfile)) {
+            return(outfile)
+        }
+
+        if (attempt < max_tries) {
+            wait <- 10 * 2^(attempt - 1)
+
+            message(
+                "Retrying in ",
+                wait,
+                " seconds..."
+            )
+
+            Sys.sleep(wait)
+        }
+    }
+
+    stop(
+        sprintf(
+            "ERA5 download failed after %d attempts: %04d-%02d",
+            max_tries,
+            year,
+            month
+        ),
+        call. = FALSE
     )
-
-
-    ecmwfr::wf_request(
-        request = request,
-        transfer = TRUE,
-        path = dirname(outfile)
-    )
-
-    outfile
-
 }
-
-# cds_download <- function(request) {
-#
-#     ecmwfr::wf_request(
-#         request = request
-#     )
-#
-# }
 
 

@@ -4,7 +4,7 @@ library(sentinelBurnR)
 ## AOI
 ## ------------------------------------------------------------------
 
-aoi <- read_aoi(
+aoi <- sentinelBurnR:::read_aoi(
     system.file(
         "extdata",
         "dunwich.gpkg",

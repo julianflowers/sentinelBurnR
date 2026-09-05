@@ -72,12 +72,15 @@ cache_downloads <- function() {
 #'
 #' @param temp Remove temporary files.
 #' @param downloads Remove downloaded scenes.
+#' @param composites Remove cached sentinel-2 composites
 #' @export
 sbr_cache_clean <- function(
 
     temp = TRUE,
 
-    downloads = FALSE
+    downloads = FALSE,
+
+    composites = FALSE
 
 ) {
 
@@ -105,6 +108,18 @@ sbr_cache_clean <- function(
 
     }
 
+    if (composites) {
+
+            unlink(
+
+                cache_composites(),
+
+                recursive = TRUE
+
+        )
+
+    }
+
     invisible(TRUE)
 
 }
@@ -124,7 +139,9 @@ sbr_cache_info <- function() {
 
         downloads = cache_downloads(),
 
-        temp = cache_temp()
+        temp = cache_temp(),
+
+        composite = cache_composites()
 
     )
 
@@ -212,6 +229,7 @@ sbr_cache_info <- function() {
 #' @param max_age Maximum age (days) to retain.
 #' @param downloads Prune download cache.
 #' @param temp Prune temporary files.
+#' @param composites Prune composites cache.
 #' @param dry_run If TRUE, report what would be deleted.
 #'
 #' @return Invisibly returns a data frame describing deleted files.
@@ -226,6 +244,8 @@ sbr_cache_prune <- function(
 
     temp = TRUE,
 
+    composites = FALSE,
+
     dry_run = TRUE
 
 ) {
@@ -237,6 +257,9 @@ sbr_cache_prune <- function(
 
     if (temp)
         dirs <- c(dirs, cache_temp())
+
+    if(composites)
+        dirs <- c(dirs, cache_composites())
 
     files <- unlist(
 
@@ -410,3 +433,187 @@ cache_climate <- function() {
     path
 
 }
+
+
+# cache key ---------------------------------------------------------------
+
+composite_cache_key <- function(
+        collection,
+        assets
+) {
+
+    f <- files(collection)
+
+    required_cols <- c(
+        "asset",
+        "file"
+    )
+
+    missing_cols <- setdiff(
+        required_cols,
+        names(f)
+    )
+
+    if (length(missing_cols)) {
+
+        stop(
+            "Collection file table is missing required column(s): ",
+            paste(missing_cols, collapse = ", "),
+            ".",
+            call. = FALSE
+        )
+    }
+
+    # Only source assets relevant to this composite.
+    # SCL also affects the result when available.
+    required <- unique(
+        c(
+            assets,
+            if ("scl" %in% f$asset) "scl"
+        )
+    )
+
+    f <- f[
+        f$asset %in% required,
+        ,
+        drop = FALSE
+    ]
+
+    sort_cols <- intersect(
+        c("date", "tile", "asset", "file"),
+        names(f)
+    )
+
+    f <- f[
+        do.call(
+            order,
+            unname(f[sort_cols])
+        ),
+        ,
+        drop = FALSE
+    ]
+
+    source_files <- normalizePath(
+        f$file,
+        mustWork = TRUE
+    )
+
+    source_md5 <- unname(
+        tools::md5sum(source_files)
+    )
+
+    aoi_key <- aoi_cache_key(
+        collection$aoi
+    )
+
+    hash_text(
+        paste(
+            paste0("version=", composite_cache_version),
+            paste(assets, collapse = ","),
+            aoi_key,
+            paste(source_md5, collapse = "|"),
+            sep = "\n"
+        )
+    )
+}
+
+
+# composite cache ---------------------------------------------------------
+
+composite_cache_version <- 1L
+
+
+cache_composites <- function() {
+
+    path <- file.path(
+        cache_path(),
+        "composites"
+    )
+
+    dir.create(
+        path,
+        recursive = TRUE,
+        showWarnings = FALSE
+    )
+
+    path
+}
+
+
+
+# composite cache files ---------------------------------------------------------
+
+composite_cache_file <- function(
+        collection,
+        assets
+) {
+
+    key <- composite_cache_key(
+        collection,
+        assets
+    )
+
+    file.path(
+        cache_composites(),
+        paste0(
+            "composite_",
+            key,
+            ".tif"
+        )
+    )
+}
+
+
+# hashing  ----------------------------------------------------------------
+
+hash_text <- function(x) {
+
+    tmp <- tempfile()
+    on.exit(unlink(tmp), add = TRUE)
+
+    writeLines(
+        enc2utf8(x),
+        tmp,
+        useBytes = TRUE
+    )
+
+    unname(
+        tools::md5sum(tmp)
+    )
+}
+
+aoi_cache_key <- function(aoi) {
+
+    if (is.null(aoi)) {
+        return("no-aoi")
+    }
+
+    if (inherits(aoi, "sbr_aoi")) {
+        aoi <- aoi$geometry
+    }
+
+    if (!inherits(aoi, "SpatVector")) {
+        stop(
+            "`aoi` must be an sbr_aoi or SpatVector.",
+            call. = FALSE
+        )
+    }
+
+    geom <- terra::as.data.frame(
+        aoi,
+        geom = "WKT"
+    )
+
+    wkt <- geom$geometry
+
+    hash_text(
+        paste(
+            terra::crs(aoi),
+            paste(wkt, collapse = "|"),
+            sep = "\n"
+        )
+    )
+}
+
+
+
