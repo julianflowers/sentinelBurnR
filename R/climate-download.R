@@ -144,7 +144,9 @@ download_era5_month <- function(
         outfile,
         variable = "total_precipitation",
         statistic = "daily_sum",
-        max_tries = 5
+        max_tries = 5,
+        bbox = NULL
+
 ) {
     request <- era5_request(
         variable = variable,
@@ -169,7 +171,11 @@ download_era5_month <- function(
         seq_len(as.integer(format(last, "%d")))
     )
 
-    request$area <- era5_bbox(boundary)
+    if (is.null(bbox)) {
+        bbox <- era5_bbox(boundary)
+    }
+
+    request$area <- bbox
     request$target <- basename(outfile)
 
     for (attempt in seq_len(max_tries)) {

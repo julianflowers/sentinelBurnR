@@ -223,4 +223,171 @@ test_that("vapour_pressure_deficit is vectorised and non-negative", {
     expect_true(all(vpd >= 0))
 })
 
+test_that("summarise_rainfall_window summarises rainfall correctly", {
+
+    rainfall <- data.frame(
+        date = as.Date("2026-07-01") + 0:29,
+        precipitation_mm = rep(2, 30)
+    )
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    x <- summarise_rainfall_window(
+        rainfall,
+        date = "2026-07-30",
+        window_days = 30
+    )
+
+    expect_equal(x$start_date, as.Date("2026-07-01"))
+    expect_equal(x$end_date, as.Date("2026-07-30"))
+    expect_equal(x$window_days, 30)
+    expect_equal(x$rainfall_mm, 60)
+    expect_equal(x$mean_daily_mm, 2)
+    expect_equal(x$max_daily_mm, 2)
+    expect_equal(x$days_observed, 30)
+})
+
+test_that("summarise_rainfall_window errors when window is incomplete", {
+
+    rainfall <- data.frame(
+        date = as.Date("2026-07-11") + 0:19,
+        precipitation_mm = rep(2, 20)
+    )
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    expect_error(
+        summarise_rainfall_window(
+            rainfall,
+            date = "2026-07-30",
+            window_days = 30
+        ),
+        "incomplete"
+    )
+})
+
+test_that("compare_rainfall_window compares current rainfall with baseline years", {
+
+    dates <- seq(
+        as.Date("2020-01-01"),
+        as.Date("2023-12-31"),
+        by = "day"
+    )
+
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = 1
+    )
+
+    rainfall$precipitation_mm[
+        format(rainfall$date, "%Y") == "2023"
+    ] <- 0.5
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    x <- compare_rainfall_window(
+        rainfall,
+        date = "2023-07-29",
+        baseline_years = 2020:2022,
+        window_days = 30
+    )
+
+    expect_equal(x$current_mm, 15)
+    expect_equal(x$baseline_median_mm, 30)
+    expect_equal(x$anomaly_mm, -15)
+    expect_equal(x$percent_of_normal, 50)
+    expect_equal(x$historical_percentile, 0)
+})
+
+test_that("analyse_climate calculates rainfall anomalies", {
+
+    dates <- seq(
+        as.Date("2020-01-01"),
+        as.Date("2023-12-31"),
+        by = "day"
+    )
+
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = 1
+    )
+
+    rainfall$precipitation_mm[
+        format(rainfall$date, "%Y") == "2023"
+    ] <- 0.5
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    attr(rainfall, "source") <- "test"
+
+    x <- analyse_climate(
+        rainfall = rainfall,
+        date = "2023-07-29",
+        baseline_years = 2020:2022,
+        windows = c(30, 60, 90)
+    )
+
+    expect_s3_class(x, "sbr_climate")
+
+    expect_equal(
+        x$summary$window_days,
+        c(30, 60, 90)
+    )
+
+    expect_equal(
+        x$summary$current_mm,
+        c(15, 30, 45)
+    )
+
+    expect_equal(
+        x$summary$baseline_median_mm,
+        c(30, 60, 90)
+    )
+
+    expect_equal(
+        x$summary$percent_of_normal,
+        rep(50, 3)
+    )
+
+    expect_equal(x$source, "test")
+})
+
+test_that("summarise_dry_spell identifies dry periods", {
+
+    rainfall <- data.frame(
+        date = as.Date("2026-07-01") + 0:29,
+        precipitation_mm = 0
+    )
+
+    rainfall$precipitation_mm[c(5, 20)] <- 5
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    x <- summarise_dry_spell(
+        rainfall,
+        date = "2026-07-30",
+        window_days = 30
+    )
+
+    expect_equal(x$max_consecutive_dry_days, 14)
+    expect_equal(x$days_since_rain, 10)
+    expect_equal(x$dry_days, 28)
+    expect_equal(x$dry_spell_start, as.Date("2026-07-06"))
+    expect_equal(x$dry_spell_end, as.Date("2026-07-19"))
+})
 

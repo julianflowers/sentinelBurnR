@@ -188,5 +188,22 @@ test_that("composite cache version contributes to cache key", {
 # })
 
 
+test_that("composite cache key does not require downloaded files", {
 
+    collection <- make_test_collection()
+
+    expect_false(
+        any(file.exists(collection$files$file))
+    )
+
+    expect_no_error(
+        key <- composite_cache_key(
+            collection,
+            c("red", "nir08")
+        )
+    )
+
+    expect_type(key, "character")
+    expect_length(key, 1)
+})
 
