@@ -480,7 +480,7 @@ composite_cache_key <- function(
     ]
 
     sort_cols <- intersect(
-        c("date", "tile", "asset", "file"),
+        c("date", "tile", "asset", "file", "satellite"),
         names(f)
     )
 
@@ -493,13 +493,11 @@ composite_cache_key <- function(
         drop = FALSE
     ]
 
-    source_files <- normalizePath(
-        f$file,
-        mustWork = TRUE
-    )
-
-    source_md5 <- unname(
-        tools::md5sum(source_files)
+    source_key <- apply(
+        f[sort_cols],
+        1,
+        paste,
+        collapse = "|"
     )
 
     aoi_key <- aoi_cache_key(
@@ -511,7 +509,7 @@ composite_cache_key <- function(
             paste0("version=", composite_cache_version),
             paste(assets, collapse = ","),
             aoi_key,
-            paste(source_md5, collapse = "|"),
+            paste(source_key, collapse = "|"),
             sep = "\n"
         )
     )

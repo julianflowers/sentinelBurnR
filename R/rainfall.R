@@ -67,6 +67,7 @@ get_rainfall <- function(
         start,
         end,
         source = "era5"
+        #workers = 1
 ) {
     boundary <- read_boundary(boundary)
 
@@ -75,14 +76,7 @@ get_rainfall <- function(
         start = start,
         end = end,
         source = source
-    )
-    boundary <- read_boundary(boundary)
-
-    files <- download_climate(
-        boundary = boundary,
-        start = start,
-        end = end,
-        source = source
+        #workers = workers
     )
 
     climate <- read_climate(files)
@@ -100,10 +94,6 @@ get_rainfall <- function(
 
     attr(out, "source") <- source
     attr(out, "boundary") <- boundary
-
-
-
-
 
     out
 
