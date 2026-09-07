@@ -135,6 +135,10 @@ compare_rainfall_window <- function(
 
 }
 
+
+# analyse climate ---------------------------------------------------------
+
+
 analyse_climate <- function(
         rainfall,
         date,
@@ -186,12 +190,22 @@ analyse_climate <- function(
             threshold_mm = 1
         )
 
+        dry_spell_baseline <- summarise_dry_spell_baseline(
+        rainfall = rainfall,
+        date = date,
+        baseline_years = baseline_years,
+        current_dry_spell = dry_spell,
+        window_days = 90,
+        threshold_mm = 1
+        )
+
         out <- list(
             date = date,
             baseline_years = baseline_years,
             windows = windows,
             summary = summary,
             dry_spell = dry_spell,
+            dry_spell_baseline = dry_spell_baseline,
             source = attr(rainfall, "source")
         )
 
@@ -272,10 +286,29 @@ print.sbr_climate <- function(x, ...) {
         ))
     }
 
+    if (!is.null(x$dry_spell_baseline)) {
+
+        dsb <- x$dry_spell_baseline
+
+        cat(
+            sprintf(
+                "Baseline median spell: %.1f days\n",
+                dsb$median_days
+            )
+        )
+
+        cat(
+            sprintf(
+                "Dry-spell percentile: %.1f%%\n",
+                dsb$percentile
+            )
+        )
+    }
+
     invisible(x)
 }
 
-# dry speill --------------------------------------------------------------
+# dry spell --------------------------------------------------------------
 
 summarise_dry_spell <- function(
         rainfall,
@@ -360,3 +393,79 @@ summarise_dry_spell <- function(
 }
 
 
+# baseline_dry_spell  -----------------------------------------------------
+baseline_dry_spells <- function(
+        rainfall,
+        date,
+        baseline_years,
+        window_days = 90,
+        threshold_mm = 1
+) {
+
+    date <- as.Date(date)
+    md <- format(date, "%m-%d")
+
+    out <- lapply(baseline_years, function(year) {
+
+        assessment_date <- as.Date(
+            sprintf("%04d-%s", year, md)
+        )
+
+        x <- summarise_dry_spell(
+            rainfall = rainfall,
+            date = assessment_date,
+            window_days = window_days,
+            threshold_mm = threshold_mm
+        )
+
+        data.frame(
+            year = year,
+            max_dry_days = x$max_consecutive_dry_days,
+            dry_days = x$dry_days,
+            dry_spell_start = x$dry_spell_start,
+            dry_spell_end = x$dry_spell_end
+        )
+    })
+
+    do.call(rbind, out)
+}
+
+
+# summarise baseline dry spell --------------------------------------------
+
+
+summarise_dry_spell_baseline <- function(
+        rainfall,
+        date,
+        baseline_years,
+        current_dry_spell,
+        window_days = 90,
+        threshold_mm = 1
+) {
+
+    baseline <- baseline_dry_spells(
+        rainfall = rainfall,
+        date = date,
+        baseline_years = baseline_years,
+        window_days = window_days,
+        threshold_mm = threshold_mm
+    )
+
+    current <- current_dry_spell$max_consecutive_dry_days
+
+    list(
+        baseline = baseline,
+        median_days = median(
+            baseline$max_dry_days,
+            na.rm = TRUE
+        ),
+        max_days = max(
+            baseline$max_dry_days,
+            na.rm = TRUE
+        ),
+        percentile = 100 * mean(
+            baseline$max_dry_days < current,
+            na.rm = TRUE
+        )
+    )
+}

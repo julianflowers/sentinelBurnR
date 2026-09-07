@@ -391,3 +391,90 @@ test_that("summarise_dry_spell identifies dry periods", {
     expect_equal(x$dry_spell_end, as.Date("2026-07-19"))
 })
 
+test_that("baseline dry spells summarise historical dry spells", {
+
+    dates <- seq(
+        as.Date("2020-05-01"),
+        as.Date("2022-07-29"),
+        by = "day"
+    )
+
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = 2
+    )
+
+    class(rainfall) <- c("sbr_rainfall", "data.frame")
+    attr(rainfall, "source") <- "test"
+
+    ## Give each baseline year a known dry spell.
+    rainfall$precipitation_mm[
+        rainfall$date >= as.Date("2020-06-01") &
+            rainfall$date <= as.Date("2020-06-10")
+    ] <- 0
+
+    rainfall$precipitation_mm[
+        rainfall$date >= as.Date("2021-06-01") &
+            rainfall$date <= as.Date("2021-06-20")
+    ] <- 0
+
+    result <- baseline_dry_spells(
+        rainfall = rainfall,
+        date = "2022-07-29",
+        baseline_years = 2020:2021,
+        window_days = 90,
+        threshold_mm = 1
+    )
+
+    expect_equal(nrow(result), 2)
+    expect_equal(result$year, 2020:2021)
+    expect_equal(result$max_dry_days, c(10, 20))
+})
+
+test_that("dry spell baseline compares current with historical spells", {
+
+    dates <- seq(
+        as.Date("2020-05-01"),
+        as.Date("2022-07-29"),
+        by = "day"
+    )
+
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = 2
+    )
+
+    class(rainfall) <- c("sbr_rainfall", "data.frame")
+    attr(rainfall, "source") <- "test"
+
+    rainfall$precipitation_mm[
+        rainfall$date >= as.Date("2020-06-01") &
+            rainfall$date <= as.Date("2020-06-10")
+    ] <- 0
+
+    rainfall$precipitation_mm[
+        rainfall$date >= as.Date("2021-06-01") &
+            rainfall$date <= as.Date("2021-06-20")
+    ] <- 0
+
+    current <- data.frame(
+        max_consecutive_dry_days = 15
+    )
+
+    result <- summarise_dry_spell_baseline(
+        rainfall = rainfall,
+        date = "2022-07-29",
+        baseline_years = 2020:2021,
+        current_dry_spell = current,
+        window_days = 90,
+        threshold_mm = 1
+    )
+
+    expect_equal(result$median_days, 15)
+    expect_equal(result$max_days, 20)
+
+    ## One of the two baseline years had a shorter spell than 15 days.
+    expect_equal(result$percentile, 50)
+
+    expect_equal(nrow(result$baseline), 2)
+})
