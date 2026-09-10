@@ -12,6 +12,8 @@
 #' @export
 demo_data <- function(name = c("aoi", "pre", "post", "visual_pre", "visual_post",
                                "drought_historical", "drought_current",
+                               "habitat", "landcover",
+                               "transport",
                                "rainfall")) {
 
     name <- match.arg(name)
@@ -39,6 +41,19 @@ demo_data <- function(name = c("aoi", "pre", "post", "visual_pre", "visual_post"
         if (!file.exists(file)) {
             stop("Rainfall demo data not found.")
         }
+
+        return(readRDS(file))
+    }
+
+    if (name %in% c("landcover", "habitat", "transport")) {
+
+        file <- system.file(
+            "extdata",
+            "demo",
+            "landscape",
+            paste0(name, ".rds"),
+            package = "sentinelBurnR"
+        )
 
         return(readRDS(file))
     }

@@ -6,7 +6,7 @@
 \usage{
 demo_data(
   name = c("aoi", "pre", "post", "visual_pre", "visual_post", "drought_historical",
-    "drought_current", "rainfall")
+    "drought_current", "habitat", "landcover", "transport", "rainfall")
 )
 }
 \arguments{

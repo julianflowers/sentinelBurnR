@@ -401,6 +401,159 @@ These observations describe the environmental conditions preceding
 the fire. They do not establish its cause or, by themselves, quantify
 wildfire risk.
 
+## Landscape context
+
+Wildfire behaviour is influenced not only by vegetation condition and recent
+weather, but also by the spatial arrangement of fuels and other landscape
+features. Interfaces between vegetation types can be particularly important,
+as can roads, tracks and other features that may affect access, suppression
+and fuel continuity.
+
+`analyse_landscape()` provides tools for describing these relationships. It
+does not calculate a wildfire risk score; instead, it reports measurable
+landscape characteristics that can be interpreted alongside vegetation,
+drought and climate information.
+
+```{r landscape-data}
+landcover <- demo_data("landcover")
+habitat <- demo_data("habitat")
+transport <- demo_data("transport")
+```
+
+For the Dunwich example, we examine the interface between lowland heathland
+and coniferous land cover. Priority habitat polygons provide the heathland
+mapping, while coniferous cover is identified from OS land-cover classes.
+
+```{r landscape-classes}
+heath <- habitat |>
+    dplyr::filter(
+        stringr::str_detect(
+            mainhabs,
+            "Lowland heathland"
+        )
+    )
+
+conifer <- landcover |>
+    dplyr::filter(
+        purrr::map_lgl(
+            oslandcovertierb,
+            \(x) any(
+                x %in% c(
+                    "Coniferous Trees",
+                    "Scattered Coniferous Trees"
+                )
+            )
+        )
+    )
+```
+
+
+```{r landscape-analysis}
+landscape <- sentinelBurnR::analyse_landscape(
+    landcover = landcover,
+    category = "lcb",
+    habitat = habitat,
+    transport = transport,
+    interfaces = list(
+        heath_conifer = list(
+            source = heath,
+            target = conifer,
+            source_label = "Lowland heathland",
+            target_label = "Coniferous land cover"
+        )
+    ),
+    distances = c(0, 10, 25, 50, 100)
+)
+
+landscape
+```
+
+
+The interface results are complementary measures. `interface_summary`
+reports the cumulative length of heathland boundary with coniferous cover
+within each specified distance. `interface_bands` reports the area of
+coniferous cover in mutually exclusive distance bands around the heathland.
+
+In this example, mapped coniferous cover is strongly concentrated close to
+the heathland boundary. This describes the spatial relationship between the
+two mapped cover types; it should not by itself be interpreted as a measure
+of wildfire probability or expected fire behaviour.
+
+
+
+```{r landscape-bands}
+landscape$interface_bands |>
+    dplyr::transmute(
+        Interface = interface,
+        `Distance from heath (m)` =
+            paste0(lower_m, "–", upper_m),
+        `Conifer area (ha)` = area_ha
+    ) |>
+    knitr::kable(
+        digits = 2,
+        caption =
+            "Coniferous land cover by distance from mapped lowland heathland."
+    )
+```
+
+o be compared with the vegetation interface.
+In this demonstration area, very little of the heathland boundary near
+conifer coincides with mapped transport features. A mapped road or track
+should not automatically be interpreted as an effective firebreak: its
+importance depends on characteristics such as width, surface, surrounding
+vegetation, condition and accessibility.
+
+```{r landscape-map, fig.width=9, fig.height=7, out.width="100%"}
+
+aoi_sf <- sf::st_as_sf(aoi$geometry)
+
+ggplot2::ggplot() +
+    ggplot2::geom_sf(
+        data = landcover,
+        fill = "grey95",
+        colour = NA
+    ) +
+    ggplot2::geom_sf(
+        data = conifer,
+        fill = "darkgreen",
+        colour = NA,
+        alpha = 0.7
+    ) +
+    ggplot2::geom_sf(
+        data = heath,
+        fill = "goldenrod",
+        colour = "goldenrod4",
+        alpha = 0.6
+    ) +
+    ggplot2::geom_sf(
+        data = transport,
+        fill = "grey30",
+        colour = "grey20"
+    ) +
+    ggplot2::geom_sf(
+        data = aoi_sf,
+        fill = NA,
+        colour = "black",
+        linewidth = 0.5
+    ) +
+    ggplot2::coord_sf(datum = NA) +
+    ggplot2::labs(
+        title = "Landscape context",
+        subtitle = "Lowland heathland, coniferous land cover and transport features",
+        caption = "Dunwich demonstration area"
+    ) +
+    ggplot2::theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
 ### NBR — Normalized Burn Ratio
 NBR is a way of using satellite imagery to distinguish healthy vegetation from recently burned ground.
 Healthy green vegetation reflects a lot of near-infrared light, while burned, dry and charred surfaces tend to reflect relatively more short-wave infrared light. NBR combines these two parts of the spectrum into a single number.
