@@ -9,6 +9,7 @@
 <url><loc>/news/index.html</loc></url>
 <url><loc>/reference/analyse_burn.html</loc></url>
 <url><loc>/reference/analyse_drought.html</loc></url>
+<url><loc>/reference/analyse_landscape.html</loc></url>
 <url><loc>/reference/analyse_vegetation.html</loc></url>
 <url><loc>/reference/antecedent_conditions.html</loc></url>
 <url><loc>/reference/aoi.html</loc></url>
@@ -46,6 +47,7 @@
 <url><loc>/reference/plot_severity.html</loc></url>
 <url><loc>/reference/plot_timeseries.html</loc></url>
 <url><loc>/reference/print.sbr_climate.html</loc></url>
+<url><loc>/reference/print.sbr_landscape.html</loc></url>
 <url><loc>/reference/read_aoi.html</loc></url>
 <url><loc>/reference/read_band.html</loc></url>
 <url><loc>/reference/read_boundary.html</loc></url>

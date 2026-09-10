@@ -454,7 +454,7 @@ short-wave infrared reflectance.</li>
 <span><span class="co">#&gt; [1] "red"    "nir08"  "swir16"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$created</span></span>
-<span><span class="co">#&gt; [1] "2026-09-10 17:11:19 UTC"</span></span>
+<span><span class="co">#&gt; [1] "2026-09-10 21:26:56 UTC"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$package_version</span></span>
 <span><span class="co">#&gt; [1] "0.0.1"</span></span>
@@ -703,6 +703,206 @@ vegetation moisture anomaly across much of the area.</p>
 <p>These observations describe the environmental conditions preceding
 the fire. They do not establish its cause or, by themselves, quantify
 wildfire risk.</p>
+</div>
+<div class="section level3">
+<h3 id="landscape-context">Landscape context<a class="anchor" aria-label="anchor" href="#landscape-context"></a>
+</h3>
+<p>Wildfire behaviour is influenced not only by vegetation condition and
+recent weather, but also by the spatial arrangement of fuels and other
+landscape features. Interfaces between vegetation types can be
+particularly important, as can roads, tracks and other features that may
+affect access, suppression and fuel continuity.</p>
+<p><code><a href="../reference/analyse_landscape.html">analyse_landscape()</a></code> provides tools for describing these
+relationships. It does not calculate a wildfire risk score; instead, it
+reports measurable landscape characteristics that can be interpreted
+alongside vegetation, drought and climate information.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">landcover</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"landcover"</span><span class="op">)</span></span>
+<span><span class="va">habitat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"habitat"</span><span class="op">)</span></span>
+<span><span class="va">transport</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"transport"</span><span class="op">)</span></span></code></pre></div>
+<p>For the Dunwich example, we examine the interface between lowland
+heathland and coniferous land cover. Priority habitat polygons provide
+the heathland mapping, while coniferous cover is identified from OS
+land-cover classes.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">heath</span> <span class="op">&lt;-</span> <span class="va">habitat</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
+<span>        <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span></span>
+<span>            <span class="va">mainhabs</span>,</span>
+<span>            <span class="st">"Lowland heathland"</span></span>
+<span>        <span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span></span>
+<span><span class="va">conifer</span> <span class="op">&lt;-</span> <span class="va">landcover</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
+<span>        <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_lgl</a></span><span class="op">(</span></span>
+<span>            <span class="va">oslandcovertierb</span>,</span>
+<span>            \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span></span>
+<span>                <span class="va">x</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>                    <span class="st">"Coniferous Trees"</span>,</span>
+<span>                    <span class="st">"Scattered Coniferous Trees"</span></span>
+<span>                <span class="op">)</span></span>
+<span>            <span class="op">)</span></span>
+<span>        <span class="op">)</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">landscape</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_landscape.html">analyse_landscape</a></span><span class="op">(</span></span>
+<span>    landcover <span class="op">=</span> <span class="va">landcover</span>,</span>
+<span>    category <span class="op">=</span> <span class="st">"lcb"</span>,</span>
+<span>    habitat <span class="op">=</span> <span class="va">habitat</span>,</span>
+<span>    transport <span class="op">=</span> <span class="va">transport</span>,</span>
+<span>    interfaces <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>        heath_conifer <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>            source <span class="op">=</span> <span class="va">heath</span>,</span>
+<span>            target <span class="op">=</span> <span class="va">conifer</span>,</span>
+<span>            source_label <span class="op">=</span> <span class="st">"Lowland heathland"</span>,</span>
+<span>            target_label <span class="op">=</span> <span class="st">"Coniferous land cover"</span></span>
+<span>        <span class="op">)</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    distances <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span>, <span class="fl">25</span>, <span class="fl">50</span>, <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">landscape</span></span>
+<span><span class="co">#&gt; &lt;sbr_landscape&gt;</span></span>
+<span><span class="co">#&gt; Land-cover classes: 22 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Source boundary near target:</span></span>
+<span><span class="co">#&gt;  1 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Target area by distance from source:</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 6</span></span></span>
+<span><span class="co">#&gt;   interface     source            target           distance_m length_m length_km</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> heath_conifer Lowland heathland Coniferous land…          0     625.     0.625</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> heath_conifer Lowland heathland Coniferous land…         10     931.     0.931</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> heath_conifer Lowland heathland Coniferous land…         25    <span style="text-decoration: underline;">1</span>010.     1.01 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> heath_conifer Lowland heathland Coniferous land…         50    <span style="text-decoration: underline;">1</span>116.     1.12 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> heath_conifer Lowland heathland Coniferous land…        100    <span style="text-decoration: underline;">1</span>321.     1.32 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Transport coinciding with source boundary near target:</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>
+<span><span class="co">#&gt;   interface     source            target                lower_m upper_m area_ha</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> heath_conifer Lowland heathland Coniferous land cover       0      10   3.67 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> heath_conifer Lowland heathland Coniferous land cover      10      25   0.477</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> heath_conifer Lowland heathland Coniferous land cover      25      50   0.512</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> heath_conifer Lowland heathland Coniferous land cover      50     100   0.250</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Transport at interface:</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 7</span></span></span>
+<span><span class="co">#&gt;    interface     source            target category distance_m length_m length_km</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> heath_conifer Lowland heathland Conif… Track             0      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> heath_conifer Lowland heathland Conif… Road              0      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> heath_conifer Lowland heathland Conif… Track            10      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> heath_conifer Lowland heathland Conif… Road             10      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> heath_conifer Lowland heathland Conif… Track            25     11.5    0.011<span style="text-decoration: underline;">5</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> heath_conifer Lowland heathland Conif… Road             25      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> heath_conifer Lowland heathland Conif… Track            50     11.7    0.011<span style="text-decoration: underline;">7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> heath_conifer Lowland heathland Conif… Road             50      0      0     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> heath_conifer Lowland heathland Conif… Track           100     12.4    0.012<span style="text-decoration: underline;">4</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> heath_conifer Lowland heathland Conif… Road            100      0      0</span></span></code></pre></div>
+<p>The interface results are complementary measures.
+<code>interface_summary</code> reports the cumulative length of
+heathland boundary with coniferous cover within each specified distance.
+<code>interface_bands</code> reports the area of coniferous cover in
+mutually exclusive distance bands around the heathland.</p>
+<p>In this example, mapped coniferous cover is strongly concentrated
+close to the heathland boundary. This describes the spatial relationship
+between the two mapped cover types; it should not by itself be
+interpreted as a measure of wildfire probability or expected fire
+behaviour.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">landscape</span><span class="op">$</span><span class="va">interface_bands</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
+<span>        Interface <span class="op">=</span> <span class="va">interface</span>,</span>
+<span>        `Distance from heath (m)` <span class="op">=</span></span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">lower_m</span>, <span class="st">"–"</span>, <span class="va">upper_m</span><span class="op">)</span>,</span>
+<span>        `Conifer area (ha)` <span class="op">=</span> <span class="va">area_ha</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>        digits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>        caption <span class="op">=</span></span>
+<span>            <span class="st">"Coniferous land cover by distance from mapped lowland heathland."</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Coniferous land cover by distance from mapped lowland
+heathland.</caption>
+<thead><tr class="header">
+<th align="left">Interface</th>
+<th align="left">Distance from heath (m)</th>
+<th align="right">Conifer area (ha)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">heath_conifer</td>
+<td align="left">0–10</td>
+<td align="right">3.67</td>
+</tr>
+<tr class="even">
+<td align="left">heath_conifer</td>
+<td align="left">10–25</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="odd">
+<td align="left">heath_conifer</td>
+<td align="left">25–50</td>
+<td align="right">0.51</td>
+</tr>
+<tr class="even">
+<td align="left">heath_conifer</td>
+<td align="left">50–100</td>
+<td align="right">0.25</td>
+</tr>
+</tbody>
+</table>
+<p>o be compared with the vegetation interface. In this demonstration
+area, very little of the heathland boundary near conifer coincides with
+mapped transport features. A mapped road or track should not
+automatically be interpreted as an effective firebreak: its importance
+depends on characteristics such as width, surface, surrounding
+vegetation, condition and accessibility.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">aoi_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">aoi</span><span class="op">$</span><span class="va">geometry</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
+<span>        data <span class="op">=</span> <span class="va">landcover</span>,</span>
+<span>        fill <span class="op">=</span> <span class="st">"grey95"</span>,</span>
+<span>        colour <span class="op">=</span> <span class="cn">NA</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
+<span>        data <span class="op">=</span> <span class="va">conifer</span>,</span>
+<span>        fill <span class="op">=</span> <span class="st">"darkgreen"</span>,</span>
+<span>        colour <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>        alpha <span class="op">=</span> <span class="fl">0.7</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
+<span>        data <span class="op">=</span> <span class="va">heath</span>,</span>
+<span>        fill <span class="op">=</span> <span class="st">"goldenrod"</span>,</span>
+<span>        colour <span class="op">=</span> <span class="st">"goldenrod4"</span>,</span>
+<span>        alpha <span class="op">=</span> <span class="fl">0.6</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
+<span>        data <span class="op">=</span> <span class="va">transport</span>,</span>
+<span>        fill <span class="op">=</span> <span class="st">"grey30"</span>,</span>
+<span>        colour <span class="op">=</span> <span class="st">"grey20"</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
+<span>        data <span class="op">=</span> <span class="va">aoi_sf</span>,</span>
+<span>        fill <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>        colour <span class="op">=</span> <span class="st">"black"</span>,</span>
+<span>        linewidth <span class="op">=</span> <span class="fl">0.5</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>datum <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>        title <span class="op">=</span> <span class="st">"Landscape context"</span>,</span>
+<span>        subtitle <span class="op">=</span> <span class="st">"Lowland heathland, coniferous land cover and transport features"</span>,</span>
+<span>        caption <span class="op">=</span> <span class="st">"Dunwich demonstration area"</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/landscape-map-1.png" class="r-plt" alt="" width="100%"></p>
 <div class="section level4">
 <h4 id="nbr-normalized-burn-ratio">NBR — Normalized Burn Ratio<a class="anchor" aria-label="anchor" href="#nbr-normalized-burn-ratio"></a>
 </h4>
