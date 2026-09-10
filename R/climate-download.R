@@ -146,8 +146,11 @@ download_era5_month <- function(
         statistic = "daily_sum",
         max_tries = 5,
         bbox = NULL
-
 ) {
+    request <- era5_request(
+        variable = variable,
+        daily_statistic = statistic
+    )
     request <- era5_request(
         variable = variable,
         daily_statistic = statistic

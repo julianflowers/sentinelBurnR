@@ -99,40 +99,69 @@ get_rainfall <- function(
 
 }
 
+
+# extract temperature -----------------------------------------------------
 extract_temperature <- function(
         climate,
         boundary,
-        fun = mean
+        statistic = c(
+            "daily_mean",
+            "daily_max",
+            "daily_min"
+        )
 ) {
-    stopifnot(inherits(climate, "SpatRaster"))
 
-    boundary <- prepare_boundary(boundary, climate)
+    statistic <- match.arg(statistic)
 
-    vals <- terra::extract(
+    x <- extract_climate_values(
         climate,
-        boundary,
-        fun = fun,
-        na.rm = TRUE
+        boundary
     )
 
-    vals <- vals[, -1, drop = FALSE]
+    x$temperature_c <- x$value - 273.15
+    x$value <- NULL
 
-    out <- data.frame(
-        date = as.Date(terra::time(climate)),
-        temperature_c =
-            as.numeric(vals[1, ]) - 273.15,
-        stringsAsFactors = FALSE
-    )
-
-    class(out) <- c(
+    class(x) <- c(
         "sbr_temperature",
         "data.frame"
     )
 
-    attr(out, "units") <- "degrees C"
+    attr(x, "source") <- "era5"
+    attr(x, "statistic") <- statistic
+    attr(x, "units") <- "degC"
 
-    out
+    x
 }
+
+
+
+#     boundary <- prepare_boundary(boundary, climate)
+#
+#     vals <- terra::extract(
+#         climate,
+#         boundary,
+#         fun = fun,
+#         na.rm = TRUE
+#     )
+#
+#     vals <- vals[, -1, drop = FALSE]
+#
+#     out <- data.frame(
+#         date = as.Date(terra::time(climate)),
+#         temperature_c =
+#             as.numeric(vals[1, ]) - 273.15,
+#         stringsAsFactors = FALSE
+#     )
+#
+#     class(out) <- c(
+#         "sbr_temperature",
+#         "data.frame"
+#     )
+#
+#     attr(out, "units") <- "degrees C"
+#
+#     out
+# }
 
 get_temperature <- function(
         boundary,
@@ -243,43 +272,34 @@ relative_humidity <- function(
 extract_temperature <- function(
         climate,
         boundary,
-        name = "temperature_c",
-        fun = mean
+        statistic = c(
+            "daily_mean",
+            "daily_max",
+            "daily_min"
+        )
 ) {
-    stopifnot(inherits(climate, "SpatRaster"))
 
-    boundary <- prepare_boundary(
-        boundary,
-        climate
-    )
+    statistic <- match.arg(statistic)
 
-    vals <- terra::extract(
+    x <- extract_climate_values(
         climate,
-        boundary,
-        fun = fun,
-        na.rm = TRUE
+        boundary
     )
 
-    vals <- vals[, -1, drop = FALSE]
+    x$temperature_c <- x$value - 273.15
+    x$value <- NULL
 
-    out <- data.frame(
-        date = as.Date(terra::time(climate)),
-        value = as.numeric(vals[1, ]) - 273.15,
-        stringsAsFactors = FALSE
-    )
-
-    names(out)[2] <- name
-
-    class(out) <- c(
+    class(x) <- c(
         "sbr_temperature",
         "data.frame"
     )
 
-    attr(out, "units") <- "degrees C"
+    attr(x, "source") <- "era5"
+    attr(x, "statistic") <- statistic
+    attr(x, "units") <- "degC"
 
-    out
+    x
 }
-
 
 get_humidity <- function(
         boundary,
@@ -373,4 +393,145 @@ vapour_pressure_deficit <- function(
     pmax(0, vpd)
 }
 
+
+# climate values ----------------------------------------------------------
+
+extract_climate_values <- function(climate, boundary) {
+
+    if (!inherits(climate, "SpatRaster")) {
+        stop(
+            "`climate` must be a SpatRaster.",
+            call. = FALSE
+        )
+    }
+
+    boundary <- prepare_boundary(
+        boundary,
+        climate
+    )
+
+    values <- terra::extract(
+        climate,
+        boundary,
+        fun = mean,
+        na.rm = TRUE
+    )
+
+    dates <- as.Date(terra::time(climate))
+
+    if (length(dates) != terra::nlyr(climate)) {
+        stop(
+            "Climate raster must have one date per layer.",
+            call. = FALSE
+        )
+    }
+
+    data.frame(
+        date = dates,
+        value = as.numeric(values[1, -1])
+    )
+}
+
+summarise_temperature_window <- function(
+        temperature,
+        date,
+        window_days
+) {
+
+    date <- as.Date(date)
+    start <- date - window_days + 1
+
+    x <- temperature[
+        temperature$date >= start &
+            temperature$date <= date,
+        ,
+        drop = FALSE
+    ]
+
+    data.frame(
+        window_days = window_days,
+        mean_max_c = mean(
+            x$temperature_c,
+            na.rm = TRUE
+        ),
+        max_c = max(
+            x$temperature_c,
+            na.rm = TRUE
+        ),
+        days_ge_25 = sum(
+            x$temperature_c >= 25,
+            na.rm = TRUE
+        ),
+        days_ge_30 = sum(
+            x$temperature_c >= 30,
+            na.rm = TRUE
+        )
+    )
+}
+
+
+# summarise temperature window --------------------------------------------
+
+
+summarise_temperature_window <- function(
+        temperature,
+        date,
+        window_days,
+        hot_threshold = 25,
+        very_hot_threshold = 30
+) {
+
+    date <- as.Date(date)
+
+    start <- date - window_days + 1L
+
+    x <- temperature |>
+        dplyr::filter(
+            .data$date >= .env$start,
+            .data$date <= .env$date
+        )
+
+    expected_dates <- seq.Date(
+        start,
+        date,
+        by = "day"
+    )
+
+    complete <- (
+        nrow(x) == length(expected_dates) &&
+            dplyr::n_distinct(x$date) == nrow(x) &&
+            setequal(x$date, expected_dates)
+    )
+
+    if (!complete) {
+        warning(
+            sprintf(
+                "Temperature window ending %s is incomplete.",
+                date
+            ),
+            call. = FALSE
+        )
+    }
+
+    tibble::tibble(
+        window_days = window_days,
+        mean_max_c = mean(
+            x$temperature_c,
+            na.rm = TRUE
+        ),
+        maximum_c = max(
+            x$temperature_c,
+            na.rm = TRUE
+        ),
+        hot_days = sum(
+            x$temperature_c >= hot_threshold,
+            na.rm = TRUE
+        ),
+        very_hot_days = sum(
+            x$temperature_c >= very_hot_threshold,
+            na.rm = TRUE
+        ),
+        complete = complete
+    )
+}
 

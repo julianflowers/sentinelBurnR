@@ -137,15 +137,18 @@ compare_rainfall_window <- function(
 
 
 # analyse climate ---------------------------------------------------------
-
-
+#' @export
 analyse_climate <- function(
         rainfall,
+        temperature = NULL,
         date,
         baseline_years,
-        windows = c(30, 60, 90)
-    ) {
-
+        windows = c(30, 60, 90),
+        dry_spell_window = 90,
+        dry_threshold_mm = 1,
+        hot_threshold = 25,
+        very_hot_threshold = 30
+) {
         if (!inherits(rainfall, "sbr_rainfall")) {
             stop("`rainfall` must be an sbr_rainfall object.")
         }
@@ -183,6 +186,25 @@ analyse_climate <- function(
 
         rownames(summary) <- NULL
 
+        temperature_summary <- NULL
+
+        if (!is.null(temperature)) {
+
+            temperature_summary <- purrr::map_dfr(
+                windows,
+                \(window) {
+                    compare_temperature_window(
+                        temperature = temperature,
+                        date = date,
+                        baseline_years = baseline_years,
+                        window_days = window,
+                        hot_threshold = hot_threshold,
+                        very_hot_threshold = very_hot_threshold
+                    )
+                }
+            )
+        }
+
         dry_spell <- summarise_dry_spell(
             rainfall = rainfall,
             date = date,
@@ -206,6 +228,7 @@ analyse_climate <- function(
             summary = summary,
             dry_spell = dry_spell,
             dry_spell_baseline = dry_spell_baseline,
+            temperature = temperature_summary,
             source = attr(rainfall, "source")
         )
 
@@ -303,6 +326,27 @@ print.sbr_climate <- function(x, ...) {
                 dsb$percentile
             )
         )
+
+        if (!is.null(x$temperature)) {
+
+            cat("\nTemperature:\n")
+
+            print(
+                x$temperature |>
+                    dplyr::select(
+                        .data$window_days,
+                        .data$mean_max_c,
+                        .data$baseline_median_mean_max_c,
+                        .data$mean_max_anomaly_c,
+                        .data$mean_max_percentile,
+                        .data$maximum_c,
+                        .data$hot_days,
+                        .data$very_hot_days
+                    ),
+                row.names = FALSE
+            )
+        }
+
     }
 
     invisible(x)
@@ -469,3 +513,116 @@ summarise_dry_spell_baseline <- function(
         )
     )
 }
+
+
+# compare temperature window ----------------------------------------------
+compare_temperature_window <- function(
+        temperature,
+        date,
+        baseline_years,
+        window_days,
+        hot_threshold = 25,
+        very_hot_threshold = 30
+) {
+
+    date <- as.Date(date)
+
+    current <- summarise_temperature_window(
+        temperature = temperature,
+        date = date,
+        window_days = window_days,
+        hot_threshold = hot_threshold,
+        very_hot_threshold = very_hot_threshold
+    )
+
+    baseline <- purrr::map_dfr(
+        baseline_years,
+        \(year) {
+
+            baseline_date <- as.Date(sprintf(
+                "%04d-%02d-%02d",
+                year,
+                lubridate::month(date),
+                lubridate::day(date)
+            ))
+
+            summarise_temperature_window(
+                temperature = temperature,
+                date = baseline_date,
+                window_days = window_days,
+                hot_threshold = hot_threshold,
+                very_hot_threshold = very_hot_threshold
+            ) |>
+                dplyr::mutate(
+                    year = year,
+                    .before = 1
+                )
+        }
+    )
+
+    baseline_complete <- baseline |>
+        dplyr::filter(.data$complete)
+
+    if (nrow(baseline_complete) == 0L) {
+        stop(
+            "No complete baseline temperature windows available.",
+            call. = FALSE
+        )
+    }
+
+    tibble::tibble(
+        window_days = window_days,
+
+        mean_max_c = current$mean_max_c,
+        baseline_median_mean_max_c = median(
+            baseline_complete$mean_max_c,
+            na.rm = TRUE
+        ),
+        mean_max_anomaly_c =
+            current$mean_max_c -
+            median(
+                baseline_complete$mean_max_c,
+                na.rm = TRUE
+            ),
+        mean_max_percentile =
+            100 * mean(
+                baseline_complete$mean_max_c <
+                    current$mean_max_c
+            ),
+        hot_days_percentile =
+            100 * mean(
+                baseline_complete$hot_days <
+                    current$hot_days
+            ),
+
+        very_hot_days_percentile =
+            100 * mean(
+                baseline_complete$very_hot_days <
+                    current$very_hot_days
+            ),
+
+        maximum_c = current$maximum_c,
+        baseline_median_maximum_c = median(
+            baseline_complete$maximum_c,
+            na.rm = TRUE
+        ),
+        maximum_percentile =
+            100 * mean(
+                baseline_complete$maximum_c <
+                    current$maximum_c
+            ),
+
+        hot_days = current$hot_days,
+        baseline_median_hot_days = median(
+            baseline_complete$hot_days
+        ),
+
+        very_hot_days = current$very_hot_days,
+        baseline_median_very_hot_days = median(
+            baseline_complete$very_hot_days
+        ),
+
+        n_baseline_years = nrow(baseline_complete)
+    )
+}
+

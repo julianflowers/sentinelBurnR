@@ -109,7 +109,7 @@ test_that("extract_temperature converts Kelvin to Celsius", {
     expect_equal(x$temperature_c, 20)
     expect_equal(x$date, as.Date("2026-07-01"))
     expect_s3_class(x, "sbr_temperature")
-    expect_equal(attr(x, "units"), "degrees C")
+    expect_equal(attr(x, "units"), "degC")
 })
 
 test_that("climate_cache_file returns expected filename", {
@@ -478,3 +478,145 @@ test_that("dry spell baseline compares current with historical spells", {
 
     expect_equal(nrow(result$baseline), 2)
 })
+
+test_that("summarise_temperature_window summarises temperature", {
+
+    temperature <- tibble::tibble(
+        date = seq.Date(
+            as.Date("2026-07-01"),
+            as.Date("2026-07-30"),
+            by = "day"
+        ),
+        temperature_c = seq(20, 29, length.out = 30)
+    )
+
+    result <- summarise_temperature_window(
+        temperature,
+        date = "2026-07-30",
+        window_days = 30
+    )
+
+    expect_equal(result$window_days, 30)
+    expect_equal(result$mean_max_c, mean(temperature$temperature_c))
+    expect_equal(result$maximum_c, 29)
+    expect_equal(result$hot_days, sum(temperature$temperature_c >= 25))
+    expect_equal(result$very_hot_days, 0)
+    expect_true(result$complete)
+})
+
+test_that("summarise_temperature_window uses requested end date", {
+
+    temperature <- tibble::tibble(
+        date = seq.Date(
+            as.Date("2026-07-01"),
+            as.Date("2026-07-31"),
+            by = "day"
+        ),
+        temperature_c = seq_len(31)
+    )
+
+    result <- summarise_temperature_window(
+        temperature,
+        date = "2026-07-29",
+        window_days = 29
+    )
+
+    expect_equal(result$mean_max_c, mean(1:29))
+    expect_equal(result$maximum_c, 29)
+    expect_true(result$complete)
+})
+
+test_that("analyse_climate includes temperature analysis", {
+
+    rainfall <- purrr::map_dfr(
+        c(2020:2022, 2026),
+        \(year) {
+            tibble::tibble(
+                date = seq.Date(
+                    as.Date(sprintf("%d-05-01", year)),
+                    as.Date(sprintf("%d-07-29", year)),
+                    by = "day"
+                ),
+                precipitation_mm = 2
+            )
+        }
+    )
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        class(rainfall)
+    )
+
+    attr(rainfall, "source") <- "era5"
+    attr(rainfall, "units") <- "mm"
+
+make_temperature <- function(year, offset) {
+        tibble::tibble(
+            date = as.Date(sprintf("%d-07-01", year)) + 0:28,
+            temperature_c =
+                20 + offset + seq(0, 4, length.out = 29)
+        )
+    }
+
+    temperature <- dplyr::bind_rows(
+        make_temperature(2020, 0),
+        make_temperature(2021, 1),
+        make_temperature(2022, 2),
+        make_temperature(2026, 3)
+    )
+
+    result <- analyse_climate(
+        rainfall = rainfall,
+        temperature = temperature,
+        date = "2026-07-29",
+        baseline_years = 2020:2022,
+        windows = 29
+    )
+
+    expect_s3_class(result, "sbr_climate")
+    expect_s3_class(result$temperature, "data.frame")
+
+    expect_equal(
+        result$temperature$mean_max_anomaly_c,
+        2
+    )
+
+    expect_equal(
+        result$temperature$mean_max_percentile,
+        100
+    )
+})
+
+test_that("rainfall demo reproduces expected 90-day rainfall", {
+
+    rainfall <- demo_data("rainfall")
+
+    rain_90 <- compare_rainfall_window(
+        rainfall = rainfall,
+        date = as.Date("2026-07-29"),
+        window_days = 90,
+        baseline_years = 1991:2020
+    )
+
+    expect_equal(
+        rain_90$current_mm,
+        94.289,
+        tolerance = 0.01
+    )
+
+        expect_equal(
+            rain_90$baseline_median_mm,
+            172.753,
+            tolerance = 0.01
+        )
+
+        expect_equal(
+            rain_90$percent_of_normal,
+            54.58,
+            tolerance = 0.1
+        )
+
+})
+
+
+

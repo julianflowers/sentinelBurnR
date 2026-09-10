@@ -80,6 +80,7 @@ make_test_disk_collection <- function() {
     assets <- c(
         "red",
         "nir08",
+        "swir16",
         "swir22"
     )
 
@@ -112,6 +113,13 @@ make_test_disk_collection <- function() {
                     0.8
                 } else {
                     0.6
+                },
+                swir16 = if (
+                    date == as.Date("2026-05-01")
+                ) {
+                    0.3
+                } else {
+                    0.4
                 },
                 swir22 = if (
                     date == as.Date("2026-05-01")
@@ -300,3 +308,103 @@ make_test_drought <- function() {
         class = "sbr_drought"
     )
 }
+
+make_test_rainfall <- function(
+        years = c(2020:2022, 2026),
+        start = "07-01",
+        end = "07-29",
+        precipitation_mm = 1
+    ) {
+
+        purrr::map_dfr(
+            years,
+            \(year) {
+
+                tibble::tibble(
+                    date = seq.Date(
+                        as.Date(sprintf("%d-%s", year, start)),
+                        as.Date(sprintf("%d-%s", year, end)),
+                        by = "day"
+                    ),
+                    precipitation_mm = precipitation_mm
+                )
+            }
+        )
+}
+
+
+make_test_temperature <- function(
+        years = c(2020:2022, 2026),
+        start = "07-01",
+        end = "07-29"
+    ) {
+
+        purrr::map_dfr(
+            years,
+            \(year) {
+
+                offset <- year - min(years)
+
+                tibble::tibble(
+                    date = seq.Date(
+                        as.Date(sprintf("%d-%s", year, start)),
+                        as.Date(sprintf("%d-%s", year, end)),
+                        by = "day"
+                    ),
+                    temperature_c =
+                        20 + offset +
+                        seq(0, 4, length.out = 29)
+                )
+            }
+        )
+
+}
+
+make_test_vegetation_collection <- function() {
+
+    collection <- make_test_collection()
+
+    r <- terra::rast(
+        nrows = 10,
+        ncols = 10,
+        xmin = 0,
+        xmax = 100,
+        ymin = 0,
+        ymax = 100,
+        crs = "EPSG:3857"
+    )
+
+    values <- list(
+        red    = 0.2,
+        nir08  = 0.6,
+        swir16 = 0.3,
+        swir22 = 0.25
+    )
+
+    files <- purrr::imap_chr(
+        values,
+        \(value, asset) {
+
+            x <- r
+            terra::values(x) <- value
+
+            file <- tempfile(
+                pattern = paste0(asset, "_"),
+                fileext = ".tif"
+            )
+
+            terra::writeRaster(
+                x,
+                file,
+                overwrite = TRUE
+            )
+
+            file
+        }
+    )
+
+    collection$files$file <- unname(files)
+
+    collection
+}
+

@@ -9,8 +9,10 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>",
+    fig.width = 8,
+    fig.height = 6
 )
 ```
 
@@ -19,165 +21,449 @@ knitr::opts_chunk$set(
 library(sentinelBurnR)
 library(terra)
 
-cache_dir <- file.path(
-    path.expand("~"),
-    "Library",
-    "CloudStorage",
-    "GoogleDrive-julian.flowers12@gmail.com",
-    "My Drive",
-    "Sentinel2",
-    "cache"
-)
-
 ```
 
-# Introduction
+# Getting started with sentinelBurnR
 
-`sentinelBurnR` provides tools for detecting and summarising burned areas from Sentinel-2 imagery, together with environmental context such as rainfall from ERA5.
+`sentinelBurnR` provides tools for analysing wildfire and its
+environmental context using satellite and climate data.
 
-Boundary
-    │
-    ▼
-search_s2()
-    │
-    ▼
-download_s2()
-    │
-    ▼
-detect_burns()
-    │
-    ▼
-burn_summary()
-    │
-    └──────────────► get_rainfall()
+The package uses Sentinel-2 multispectral imagery to identify burned
+areas and examine vegetation condition. It can also compare vegetation
+moisture with historical observations and place these observations in
+the context of climate data such as rainfall.
 
+A typical analysis can include:
 
+1. defining an area of interest;
+2. identifying suitable Sentinel-2 imagery;
+3. comparing pre- and post-fire imagery;
+4. analysing vegetation condition;
+5. assessing vegetation moisture anomalies;
+6. examining recent rainfall and other climate conditions.
 
+This vignette uses data from the Dunwich area of Suffolk, UK, associated
+with a wildfire in summer 2026. All example data are included with the
+package, so the vignette can be run without downloading data.
 
-## Load data
+# True-colour imagery
 
-```{r}
-aoi <- read_aoi(
-    system.file(
-        "extdata",
-        "dunwich.gpkg",
-        package = "sentinelBurnR"
-    )
-)
+Sentinel-2 records reflected light in several parts of the
+electromagnetic spectrum. The simplest way to view the imagery is as a
+true-colour image, combining the red, green and blue wavelengths to
+produce an image similar to that seen by the human eye.
 
-boundary <- read_boundary(system.file(
-        "extdata",
-        "dunwich.gpkg",
-        package = "sentinelBurnR"
-    ))
+The following images show the Dunwich area before and after the fire.
 
-rainfile <- system.file(
-    "extdata",
-    "era5",
-    "2024_07.nc",
-    package = "sentinelBurnR"
-)
+```{r true-colour-pre, fig.width=10, fig.height=8}
+pre_visual <- demo_data("visual_pre")
 
-burn <- readRDS(
-    system.file(
-        "extdata",
-        "burn",
-        "burn.rds",
-        package = "sentinelBurnR"
-    )
+terra::plotRGB(
+    pre_visual,
+    r = 1,
+    g = 2,
+    b = 3,
+    stretch = "lin"
 )
 ```
 
+```{r true-colour-post, fig.width=10, fig.height=8}
+post_visual <- demo_data("visual_post")
+
+terra::plotRGB(
+    post_visual,
+    r = 1,
+    g = 2,
+    b = 3,
+    stretch = "lin"
+)
+```
+
+The effects of the fire can be seen in the true-colour imagery, but
+visible colour alone is not an ideal way to determine the extent or
+severity of burning. Soil, shadows, vegetation type and naturally bare
+ground can produce similar changes in appearance.
+
+Sentinel-2 also measures near-infrared and short-wave infrared light,
+which provide much stronger information about changes in vegetation
+following fire. These wavelengths are used to calculate the Normalized
+Burn Ratio (NBR).
+
+Sentinel-2 also measures wavelengths beyond those visible to the human
+eye. The Normalized Burn Ratio (NBR) uses near-infrared and short-wave
+infrared measurements, which respond strongly to changes in vegetation
+and surface condition following fire.
+
+# Demo data
+
+Load the area of interest and the Sentinel-2 collections:
+
+```{r demo-data}
 
 
-## Search Sentinel-2 satellite imagery
+aoi <- sentinelBurnR::demo_data("aoi")
 
-```{r, eval = TRUE}
+pre <- demo_data("pre")
+post <- demo_data("post")
+```
 
-pre_images <- search_s2(
+The collections contain cropped Sentinel-2 imagery for the Dunwich
+area. In a normal analysis these collections would instead be created
+using `search_s2()` and `download_s2()`.
+
+For example, the corresponding workflow is:
+
+```{r sentinel-workflow, eval=FALSE}
+pre_search <- search_s2(
     aoi,
     start = "2026-07-14",
     end = "2026-07-29"
 )
 
-post_images <- search_s2(
+post_search <- search_s2(
     aoi,
     start = "2026-07-29",
     end = "2026-08-22"
 )
 
-
-```
-
-## Download image
-
-```{r, eval = TRUE}
-
-## Download imagery
-
-pre_collection <- download_s2(
-
-    pre_images, 
-    
-    max_cloud = 20, 
-    
-    limit = 1,
-    
-    workers = 4
-
+pre <- download_s2(
+    pre_search,
+    assets = s2_burn_assets
 )
 
-post_collection <- download_s2(
-
-    post_images,
-    
-    max_cloud = 20,
-    
-    limit = 1,
-  
-    workers = 4
-
+post <- download_s2(
+    post_search,
+    assets = s2_burn_assets
 )
 ```
 
-## Burn analysis
+The code is not evaluated in this vignette because searching and
+downloading Sentinel-2 imagery requires an internet connection.
 
-```{r}
+# Burn analysis
 
+Burn severity can be estimated from changes in the Normalized Burn
+Ratio (NBR). NBR contrasts near-infrared and short-wave infrared
+reflectance. Healthy vegetation generally has high near-infrared
+reflectance, whereas recently burned surfaces tend to have relatively
+higher short-wave infrared reflectance.
+
+`analyse_burn()` calculates pre- and post-fire NBR and their difference
+(dNBR):
+
+```{r burn-analysis}
 burn <- analyse_burn(
-    pre = pre_collection,
-    post = post_collection,
+    pre = pre,
+    post = post,
     boundary = aoi
 )
 
-
+burn
 ```
 
-## Get rainfall
+The resulting `sbr_burn` object contains the pre- and post-fire
+composites, NBR rasters, dNBR, the detected burned area, burn severity
+and processing provenance.
 
-```{r, fig.width=9, fig.height=6}
-r <- terra::rast(rainfile)
+The spatial pattern of dNBR can be displayed with:
 
-rain <- extract_rainfall(
-    r,
-    boundary = boundary
-)
-
-plot(rain)
-```
-
-Burn severity depends not only on vegetation but also on recent weather conditions. Rainfall in the days and weeks before a fire influences fuel moisture and can help explain patterns of burn severity observed in satellite imagery.
-
-## Plot indices
-
-```{r, fig.width=9, fig.height=6}
+```{r plot-dnbr}
 
 plot_index(
     burn$dnbr,
     index = "dnbr",
-    boundary = boundary,
-    caption = burn_caption(burn)
+    boundary = aoi$geometry
 )
+```
+
+Burn severity can also be mapped directly:
+
+```{r plot-severity}
+
+plot_severity(
+    burn$severity,
+    boundary = aoi$geometry
+)
+```
+
+# Vegetation condition
+
+The same pre-fire Sentinel-2 imagery can be used to examine vegetation
+condition.
+
+`analyse_vegetation()` calculates three complementary spectral indices:
+
+- **NDVI** — an indicator of vegetation greenness;
+- **NDMI** — sensitive to vegetation moisture;
+- **MSI** — a moisture-stress index based on near- and short-wave
+  infrared reflectance.
+
+```{r vegetation-analysis}
+vegetation <- analyse_vegetation(
+    pre
+)
+
+vegetation
+```
+
+For example, pre-fire vegetation moisture can be mapped using NDMI:
+
+```{r vegetation-ndmi}
+plot_index(
+    vegetation$ndmi,
+    index = "ndmi"
+)
+```
+
+These indices describe vegetation condition at the time of observation.
+A low NDMI value alone does not demonstrate drought: vegetation moisture
+varies naturally between vegetation types and through the growing
+season. To assess whether conditions were unusually dry, the current
+observation can instead be compared with observations from previous
+years.
+
+# Vegetation moisture anomaly
+
+Vegetation moisture at a single point in time is difficult to interpret
+in isolation. NDMI varies between vegetation types and also changes
+seasonally.
+
+To provide historical context, `sentinelBurnR` can compare current NDMI
+with observations from the same part of the growing season in previous
+years.
+
+For this example, the package includes annual NDMI composites for
+2018--2025 and a pre-fire observation from 29 July 2026.
+
+```{r drought-data}
+historical_ndmi <- demo_data("drought_historical")
+current_ndmi <- demo_data("drought_current")
+```
+
+The historical data contain one seasonal NDMI composite for each year:
+
+```{r drought-years}
+names(historical_ndmi)
+```
+
+For the demonstration we can analyse these already-prepared rasters:
+
+```{r drought-analysis}
+drought <- sentinelBurnR:::analyse_drought_rasters(
+    annual = historical_ndmi,
+    current = current_ndmi[["2026-07-29"]],
+    current_date = "2026-07-29"
+)
+
+drought
+```
+
+The anomaly is calculated as the difference between current NDMI and
+the historical seasonal baseline. Negative values therefore indicate
+vegetation that was less moisture-rich than expected for the time of
+year.
+
+For the Dunwich example, median NDMI on 29 July 2026 was approximately
+0.05 below the 2018--2025 seasonal baseline. This indicates relatively
+dry vegetation conditions before the fire, although the anomaly should
+not by itself be interpreted as a direct measure of drought severity.
+
+```{r drought-map}
+plot_drought(
+    drought,
+    index = "anomaly",
+    boundary = aoi$geometry
+)
+```
+
+A standardised anomaly is also available:
+
+```{r drought-standardised}
+plot_drought(
+    drought,
+    index = "standardised",
+    boundary = aoi$geometry
+)
+```
+
+The standardised anomaly expresses the departure relative to historical
+interannual variability. Where historical variability is very small,
+standardisation can become unstable, so `sentinelBurnR` masks pixels
+whose historical standard deviation falls below a minimum threshold.
+Absolute NDMI anomaly therefore remains an important part of the
+interpretation.
+
+# Rainfall and climate context
+
+The Sentinel-2 moisture anomaly indicates whether vegetation was
+unusually dry compared with previous years. It does not, by itself,
+tell us why the vegetation was dry.
+
+Meteorological data provide an independent line of evidence. Here we
+compare rainfall before the fire with the same period during the
+1991--2020 climate baseline.
+
+The demonstration data contain daily ERA5 rainfall extracted for the
+Dunwich area.
+
+```{r rainfall-analysis}
+rainfall <- demo_data("rainfall")
+
+climate <- sentinelBurnR::analyse_climate(
+    rainfall = rainfall,
+    date = as.Date("2026-07-29"),
+    baseline_years = 1991:2020,
+    windows = c(30, 60, 90)
+)
+
+rainfall_table <- climate$summary |>
+    dplyr::transmute(
+        `Period (days)` = window_days,
+        `2026 rainfall (mm)` = current_mm,
+        `1991–2020 median (mm)` = baseline_median_mm,
+        `Deficit (mm)` = anomaly_mm,
+        `% of historical median` = percent_of_normal,
+        `Historical percentile` = historical_percentile
+    )
+
+knitr::kable(
+    rainfall_table,
+    digits = 1,
+    caption = paste(
+        "Rainfall before 29 July 2026 compared with",
+        "the equivalent periods in the 1991–2020 baseline."
+    )
+)
+
 
 ```
 
+The historical percentile ranks the 2026 rainfall total against the 30 equivalent periods in the 1991–2020 baseline. For example, the 90-day rainfall total was at approximately the 3rd percentile. The 30-day value was lower than all 30 baseline values and therefore has an empirical percentile of 0%. This should be interpreted as a ranking within the 30-year sample, rather than as a literal estimate of a zero-percent climatological probability.
+
+Rainfall was substantially below the historical median during the
+period leading up to the fire. In the 30 days ending 29 July 2026,
+only about 6.8 mm of rain fell, compared with a 1991--2020 median of
+about 62.3 mm -- approximately 11% of the historical median.
+
+The rainfall deficit was also apparent over longer periods. About
+68.4 mm fell during the preceding 60 days and 94.3 mm during the
+preceding 90 days, compared with historical medians of approximately
+123.4 and 172.8 mm respectively.
+
+This provides independent meteorological evidence that the negative
+vegetation moisture anomaly seen by Sentinel-2 occurred during an
+unusually dry period.
+
+## Prolonged dry weather
+
+Total rainfall does not tell us how rain was distributed through time.
+A similar total could result from frequent small showers or from a
+long period with almost no rain.
+
+```{r dry-spell}
+climate$dry_spell
+```
+
+Using less than 1 mm of rainfall per day to define a dry day, 68 of
+the 90 days before 29 July were dry.
+
+The longest continuous dry spell lasted 32 days, from 24 June to
+25 July. Only three days had elapsed since the most recent day with
+at least 1 mm of rainfall.
+
+We can also compare the duration of this dry spell with the equivalent
+90-day period during the 1991--2020 baseline.
+
+```{r dry-spell-baseline}
+climate$dry_spell_baseline[c(
+    "median_days",
+    "max_days",
+    "percentile"
+)]
+```
+
+The median longest dry spell during the 1991--2020 baseline was
+13.5 days. The 32-day spell in 2026 was therefore more than twice
+the historical median.
+
+Only one of the 30 baseline years had a longer dry spell: 2018, when
+the longest spell lasted 36 days. The 2026 value has an empirical
+percentile of approximately 96.7%, meaning that it was longer than
+the corresponding dry spell in 29 of the 30 baseline years.
+
+Taken together, the rainfall and satellite observations provide two
+independent lines of evidence of unusually dry conditions before the
+fire. Rainfall was substantially below the historical median and a
+prolonged dry spell had occurred, while Sentinel-2 showed a negative
+vegetation moisture anomaly across much of the area.
+
+These observations describe the environmental conditions preceding
+the fire. They do not establish its cause or, by themselves, quantify
+wildfire risk.
+
+### NBR — Normalized Burn Ratio
+NBR is a way of using satellite imagery to distinguish healthy vegetation from recently burned ground.
+Healthy green vegetation reflects a lot of near-infrared light, while burned, dry and charred surfaces tend to reflect relatively more short-wave infrared light. NBR combines these two parts of the spectrum into a single number.
+In general, high NBR indicates healthy vegetation, while lower NBR is associated with sparse, dry or burned vegetation.
+The important point is that NBR alone does not tell us that a fire has occurred. Different vegetation and soil types naturally have different NBR values. It becomes much more useful when we compare images from before and after a fire.
+
+### dNBR — change caused by the fire
+dNBR measures how much NBR changed between the pre-fire and post-fire satellite images.
+It is calculated approximately as:
+\[
+dNBR = NBR_{before} - NBR_{after}
+\]If vegetation was healthy before the fire and subsequently burned, NBR falls and dNBR becomes positive.
+So, broadly:
+little change around zero → little evidence of burning;
+larger positive values → a stronger change consistent with burning;
+negative values → vegetation became greener or wetter rather than more burned.
+This makes dNBR particularly useful for mapping the burn scar, because it measures change rather than simply looking for dark or bare ground.
+
+### Burn severity
+Burn severity turns the continuous dNBR values into categories that are easier to interpret on a map.
+Pixels with a small change may be classified as unburned or very lightly affected, while increasingly large changes can be classified into progressively higher burn-severity classes.
+The important distinction is that this is satellite-derived burn severity. It describes the magnitude of the change in vegetation and surface reflectance detected by Sentinel-2. It is not necessarily identical to ecological damage measured on the ground—for example, tree mortality, depth of soil heating or loss of particular species.
+So a useful plain-English description is:
+Burn severity shows where the fire produced the greatest change to the vegetation and ground surface visible from the satellite.
+
+## #Vegetation condition
+The vegetation analysis uses several satellite indices that respond to different aspects of vegetation condition.
+NDVI mainly describes vegetation greenness and density. Healthy, actively growing vegetation generally has higher NDVI.
+NDMI is more sensitive to vegetation moisture. Lower values can indicate drier vegetation, although naturally dry vegetation types can also have low NDMI.
+MSI is another measure of vegetation moisture stress. Unlike NDMI, higher MSI generally corresponds to greater moisture stress.
+These measurements are useful for asking questions such as “Was the vegetation unusually dry before the fire?” But a single satellite image cannot answer that very well, because heathland, woodland and grassland naturally have different values and all change through the seasons.
+
+### Vegetation moisture anomaly
+This is why the historical comparison is important.
+A vegetation moisture anomaly asks whether the vegetation is wetter or drier than would normally be expected at that location and time of year.
+For example, in the Dunwich analysis we compare the NDMI observed on 29 July 2026 with NDMI from the same part of the growing season in 2018–2025.
+We calculate:
+\[
+\text{NDMI anomaly}
+=
+\text{current NDMI}
+-
+\text{historical NDMI}
+\]Therefore:
+zero → approximately normal;
+positive → wetter/moister vegetation than usual;
+negative → drier vegetation than usual.
+At Dunwich the median anomaly was about −0.05, meaning vegetation moisture was generally lower than its recent historical seasonal baseline.
+
+Standardised vegetation moisture anomaly
+The absolute anomaly tells us how much NDMI changed. The standardised anomaly asks a slightly different question:
+How unusual is that change compared with the amount this location normally varies from year to year?
+
+It is essentially:
+\[
+\frac{\text{current NDMI} - \text{historical average}}
+     {\text{historical variability}}
+\]A value around −2, for example, means vegetation moisture is roughly two historical standard deviations below normal.
+This can help distinguish a place that is slightly dry but naturally very variable from one experiencing conditions that are genuinely unusual for that location.
+There is an important caveat: if a pixel normally varies very little, dividing by a very small historical variability can produce misleadingly extreme values. That's why sentinelBurnR masks locations where the historical standard deviation is very small.
+
+### Drought anomaly versus drought
+I'd make this distinction explicit in the vignette:
+A negative vegetation moisture anomaly is evidence of unusually dry vegetation, but it is not by itself proof of meteorological drought.
+
+Sentinel-2 tells us about the response of the vegetation. ERA5 rainfall tells us about the weather conditions that may have produced that response. In your Dunwich example, those two independent lines of evidence can then be considered together.

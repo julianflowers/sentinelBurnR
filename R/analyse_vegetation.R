@@ -46,7 +46,7 @@ analyse_vegetation <- function(
         composite
     )
 
-    structure(
+    veg <- structure(
         list(
             composite = composite,
             ndvi = ndvi,

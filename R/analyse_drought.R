@@ -136,43 +136,16 @@ analyse_drought <- function(
         )
     }
 
-    anomaly <- calculate_drought_anomaly(
-        current = current_raster,
-        baseline = baseline,
-        min_sd = min_sd
-    )
-
-    baseline_years <- as.integer(
-        names(annual)
-    )
-
-    summary <- summarise_drought(
-        current = current_raster,
-        anomaly = anomaly$anomaly,
-        standardised = anomaly$standardised,
-        current_date = current_date,
-        baseline_years = baseline_years,
-        window_days = window_days,
-        coverage = current_qc$coverage[1]
-    )
-
-    out <- list(
-        current = current_raster,
-        baseline = baseline,
-        anomaly = anomaly$anomaly,
-        standardised = anomaly$standardised,
+    analyse_drought_rasters(
         annual = annual,
-        summary = summary,
-        coverage = list(
-            historical = historical_qc$coverage,
-            current = current_qc
-        ),
-        assets = assets
+        current = current_raster,
+        current_date = current_date,
+        window_days = window_days,
+        coverage = current_qc$coverage[1],
+        min_years = min_years,
+        min_sd = min_sd,
+        historical_coverage = historical_qc$coverage
     )
-
-    class(out) <- "sbr_drought"
-
-    out
 }
 
 
@@ -215,6 +188,81 @@ annual_index_composites <- function(x) {
     )
 
     names(out) <- unique(years)
+
+    out
+}
+
+
+# analyse drought rasters -------------------------------------------------
+
+analyse_drought_rasters <- function(
+        annual,
+        current,
+        current_date,
+        window_days = 30,
+        coverage = 1,
+        min_years = 3,
+        min_sd = 0.01,
+        historical_coverage = NULL
+) {
+
+    current_date <- as.Date(current_date)
+
+    if (is.na(current_date)) {
+        stop("`current_date` must be a valid date.")
+    }
+
+    if (!is.list(annual) || length(annual) < min_years) {
+        stop(
+            "Fewer than ",
+            min_years,
+            " historical years available."
+        )
+    }
+
+    if (!inherits(current, "SpatRaster")) {
+        stop("`current` must be a SpatRaster.")
+    }
+
+    baseline <- build_drought_baseline(
+        annual
+    )
+
+    anomaly <- calculate_drought_anomaly(
+        current = current,
+        baseline = baseline,
+        min_sd = min_sd
+    )
+
+    baseline_years <- as.integer(
+        names(annual)
+    )
+
+    summary <- summarise_drought(
+        current = current,
+        anomaly = anomaly$anomaly,
+        standardised = anomaly$standardised,
+        current_date = current_date,
+        baseline_years = baseline_years,
+        window_days = window_days,
+        coverage = coverage
+    )
+
+    out <- list(
+        current = current,
+        baseline = baseline,
+        anomaly = anomaly$anomaly,
+        standardised = anomaly$standardised,
+        annual = annual,
+        summary = summary,
+        coverage = list(
+            historical = historical_coverage,
+            current = coverage
+        ),
+        assets = c("nir08", "swir16")
+    )
+
+    class(out) <- "sbr_drought"
 
     out
 }
