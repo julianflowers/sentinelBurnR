@@ -8,6 +8,7 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/news/index.html</loc></url>
 <url><loc>/reference/analyse_burn.html</loc></url>
+<url><loc>/reference/analyse_climate.html</loc></url>
 <url><loc>/reference/analyse_drought.html</loc></url>
 <url><loc>/reference/analyse_landscape.html</loc></url>
 <url><loc>/reference/analyse_vegetation.html</loc></url>
@@ -60,7 +61,6 @@
 <url><loc>/reference/seasonal_baseline.html</loc></url>
 <url><loc>/reference/select_timeseries.html</loc></url>
 <url><loc>/reference/sentinel_timeseries.html</loc></url>
-<url><loc>/reference/subset_collection_date.html</loc></url>
 <url><loc>/reference/summary.sbr_collection.html</loc></url>
 <url><loc>/reference/summary.sbr_search.html</loc></url>
 <url><loc>/reference/theme_sbr_map.html</loc></url>

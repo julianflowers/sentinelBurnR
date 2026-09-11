@@ -454,7 +454,7 @@ short-wave infrared reflectance.</li>
 <span><span class="co">#&gt; [1] "red"    "nir08"  "swir16"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$created</span></span>
-<span><span class="co">#&gt; [1] "2026-09-10 21:26:56 UTC"</span></span>
+<span><span class="co">#&gt; [1] "2026-09-11 07:17:31 UTC"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$package_version</span></span>
 <span><span class="co">#&gt; [1] "0.0.1"</span></span>
@@ -513,7 +513,7 @@ rasters:</p>
 <span><span class="co">#&gt; &lt;sbr_drought&gt;</span></span>
 <span><span class="co">#&gt; Current date:      2026-07-29</span></span>
 <span><span class="co">#&gt; Baseline:          2018-2025 (8 years)</span></span>
-<span><span class="co">#&gt; Seasonal window:   ±30 days</span></span>
+<span><span class="co">#&gt; Seasonal window:   °C30 days</span></span>
 <span><span class="co">#&gt; Valid coverage:    100.0%</span></span>
 <span><span class="co">#&gt; Median anomaly:    -0.050</span></span>
 <span><span class="co">#&gt; Pixels below -2SD: 5.1%</span></span></code></pre></div>
@@ -566,7 +566,7 @@ Dunwich area.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rainfall</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"rainfall"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">climate</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu">analyse_climate</span><span class="op">(</span></span>
+<span><span class="va">climate</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_climate.html">analyse_climate</a></span><span class="op">(</span></span>
 <span>    rainfall <span class="op">=</span> <span class="va">rainfall</span>,</span>
 <span>    date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2026-07-29"</span><span class="op">)</span>,</span>
 <span>    baseline_years <span class="op">=</span> <span class="fl">1991</span><span class="op">:</span><span class="fl">2020</span>,</span>
@@ -765,6 +765,7 @@ land-cover classes.</p>
 <span><span class="va">landscape</span></span>
 <span><span class="co">#&gt; &lt;sbr_landscape&gt;</span></span>
 <span><span class="co">#&gt; Land-cover classes: 22 </span></span>
+<span><span class="co">#&gt; Transport classes: 2 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Source boundary near target:</span></span>
 <span><span class="co">#&gt;  1 </span></span>
