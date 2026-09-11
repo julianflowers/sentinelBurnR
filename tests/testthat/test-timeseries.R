@@ -303,21 +303,17 @@ test_that("select_timeseries prefers clearer acquisitions", {
         max_cloud = 100
     )
 
-    dates <- unique(
-        as.Date(
-            vapply(
-                out$items$features,
-                function(x) {
-                    substr(
-                        x$properties$datetime,
-                        1,
-                        10
-                    )
-                },
-                character(1)
+    dates <- purrr::map_chr(
+        out$items,
+        \(acquisition) {
+            substr(
+                acquisition[[1]]$properties$datetime,
+                1,
+                10
             )
-        )
-    )
+        }
+    ) |>
+        as.Date()
 
     # 6 May is clearer than 1 May and is within
     # the exclusion interval.
@@ -1049,5 +1045,101 @@ test_that("index_timeseries projects boundary to raster CRS", {
 
     expect_s3_class(result, "data.frame")
     expect_equal(nrow(result), 2)
+})
+
+test_that("keep_collection_acquisitions retains collection acquisitions", {
+
+    search <- make_test_timeseries_search()
+
+    # Collection contains only two of the five search acquisitions
+    collection <- list(
+        files = tibble::tibble(
+            date = as.Date(c(
+                "2026-05-06",
+                "2026-05-23"
+            )),
+            satellite = c(
+                "sentinel-2a",
+                "sentinel-2a"
+            )
+        )
+    )
+
+    class(collection) <- "sbr_collection"
+
+    print(
+        collection$files |>
+            dplyr::distinct(date, satellite)
+    )
+
+
+
+    acquisitions <- collection$files |>
+        dplyr::distinct(date, satellite) |>
+        dplyr::mutate(
+            date = as.Date(.data$date)
+        )
+
+    acquisitions
+
+    purrr::map_dfr(
+        search$items,
+        \(acquisition) {
+
+            item <- acquisition[[1]]
+
+            item_date <- as.Date(
+                item$properties$datetime
+            )
+
+            item_satellite <-
+                item$properties$platform
+
+            tibble::tibble(
+                item_date = item_date,
+                item_satellite = item_satellite,
+                date_match =
+                    item_date %in% acquisitions$date,
+                satellite_match =
+                    item_satellite %in%
+                    acquisitions$satellite,
+                pair_match = any(
+                    acquisitions$date == item_date &
+                        acquisitions$satellite ==
+                        item_satellite
+                )
+            )
+        }
+    )
+
+    out <- keep_collection_acquisitions(
+        search,
+        collection
+    )
+
+    dates <- purrr::map_chr(
+        out$items,
+        \(acquisition) {
+            as.character(
+                as.Date(
+                    acquisition[[1]]$
+                        properties$datetime
+                )
+            )
+        }
+    )
+
+    expect_equal(
+        dates,
+        c("2026-05-06", "2026-05-23")
+    )
+
+    expect_length(out$items, 2)
+
+    # Each retained acquisition still contains all its tiles
+    expect_equal(
+        purrr::map_int(out$items, length),
+        purrr::map_int(search$items[c(2, 4)], length)
+    )
 })
 

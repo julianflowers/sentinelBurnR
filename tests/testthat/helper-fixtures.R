@@ -171,6 +171,9 @@ make_test_disk_collection <- function() {
     )
 }
 
+
+# nake test timeseries search ---------------------------------------------
+
 make_test_timeseries_search <- function() {
 
     dates <- as.Date(c(
@@ -189,60 +192,51 @@ make_test_timeseries_search <- function() {
         8
     )
 
-    features <- list()
+    tiles <- c(
+        "31UCT",
+        "31UDT"
+    )
 
-    k <- 1
+    items <- purrr::map2(
+        dates,
+        clouds,
+        \(date, cloud) {
 
-    for (i in seq_along(dates)) {
+            purrr::map(
+                tiles,
+                \(tile) {
 
-        for (tile in c(
-            "31UCT",
-            "31UDT"
-        )) {
-
-            features[[k]] <- list(
-                id = paste(
-                    "S2A",
-                    tile,
-                    format(
-                        dates[i],
-                        "%Y%m%d"
-                    ),
-                    "0",
-                    "L2A",
-                    sep = "_"
-                ),
-
-                properties = list(
-                    datetime = paste0(
-                        dates[i],
-                        "T10:30:00Z"
-                    ),
-
-                    platform = "sentinel-2a",
-
-                    `eo:cloud_cover` =
-                        clouds[i]
-                )
+                    list(
+                        id = paste(
+                            "S2A",
+                            tile,
+                            format(date, "%Y%m%d"),
+                            "0_L2A",
+                            sep = "_"
+                        ),
+                        properties = list(
+                            datetime = paste0(
+                                date,
+                                "T10:00:00Z"
+                            ),
+                            platform = "sentinel-2a",
+                            `eo:cloud_cover` = cloud
+                        )
+                    )
+                }
             )
-
-            k <- k + 1
         }
-    }
+    )
 
     structure(
         list(
-            items = list(
-                features = features
-            ),
-            aoi = NULL,
+            items = items,
             start = min(dates),
             end = max(dates)
         ),
         class = "sbr_search"
     )
 }
-
 
 # make test drought -------------------------------------------------------
 

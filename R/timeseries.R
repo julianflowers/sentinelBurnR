@@ -443,7 +443,9 @@ select_timeseries <- function(
         )
     }
 
-    items <- search$items$features
+    # Each element of search$items represents one acquisition,
+    # containing all tiles for that date/satellite.
+    items <- search$items
 
     if (length(items) == 0) {
         stop(
@@ -452,126 +454,108 @@ select_timeseries <- function(
         )
     }
 
-    # Extract information required to identify acquisitions.
-    info <- data.frame(
-        item = seq_along(items),
+    # Summarise each acquisition.
+    acquisition <- purrr::map_dfr(
+        seq_along(items),
+        \(i) {
 
-        date = as.Date(
-            vapply(
-                items,
-                function(x) {
-                    substr(
-                        x$properties$datetime,
-                        1,
-                        10
-                    )
-                },
-                character(1)
+            x <- items[[i]]
+
+            if (length(x) == 0) {
+                return(NULL)
+            }
+
+            dates <- as.Date(
+                purrr::map_chr(
+                    x,
+                    \(item) item$properties$datetime
+                )
             )
-        ),
 
-        satellite = vapply(
-            items,
-            function(x) {
-                x$properties$platform
-            },
-            character(1)
-        ),
+            satellites <- purrr::map_chr(
+                x,
+                \(item) item$properties$platform
+            )
 
-        tile = vapply(
-            items,
-            s2_item_tile,
-            character(1)
-        ),
+            clouds <- purrr::map_dbl(
+                x,
+                \(item) item$properties$`eo:cloud_cover`
+            )
 
+            tiles <- purrr::map_chr(
+                x,
+                s2_item_tile
+            )
 
+            if (dplyr::n_distinct(dates) != 1 ||
+                dplyr::n_distinct(satellites) != 1) {
 
-        cloud = vapply(
-            items,
-            function(x) {
-                x$properties$`eo:cloud_cover`
-            },
-            numeric(1)
-        )
-    )
+                stop(
+                    paste0(
+                        "Search acquisition contains multiple ",
+                        "dates or satellites."
+                    ),
+                    call. = FALSE
+                )
+            }
 
-    # Summarise cloud cover for each acquisition.
-    acquisition <- aggregate(
-        cloud ~ date + satellite,
-        data = info,
-        FUN = mean
-    )
-
-    names(acquisition)[
-        names(acquisition) == "cloud"
-    ] <- "mean_cloud"
-
-    # Determine the number of tiles represented by each acquisition.
-    tile_count <- aggregate(
-        tile ~ date + satellite,
-        data = info,
-        FUN = function(x) {
-            length(unique(x))
+            tibble::tibble(
+                item = i,
+                date = dates[[1]],
+                satellite = satellites[[1]],
+                mean_cloud = mean(
+                    clouds,
+                    na.rm = TRUE
+                ),
+                n_tiles = dplyr::n_distinct(
+                    tiles
+                )
+            )
         }
     )
 
-    names(tile_count)[
-        names(tile_count) == "tile"
-    ] <- "n_tiles"
-
-    acquisition <- merge(
-        acquisition,
-        tile_count,
-        by = c(
-            "date",
-            "satellite"
+    if (nrow(acquisition) == 0) {
+        stop(
+            "Search contains no Sentinel-2 items.",
+            call. = FALSE
         )
-    )
+    }
 
-    # The largest observed tile count represents complete coverage
-    # for this search/AOI.
+    # The largest observed tile count represents complete
+    # coverage for this search/AOI.
     required_tiles <- max(
         acquisition$n_tiles
     )
 
     # Retain complete acquisitions satisfying the cloud threshold.
-    acquisition <- acquisition[
-        acquisition$n_tiles == required_tiles &
-            acquisition$mean_cloud <= max_cloud,
-        ,
-        drop = FALSE
-    ]
+    acquisition <- acquisition |>
+        dplyr::filter(
+            .data$n_tiles == required_tiles,
+            .data$mean_cloud <= max_cloud
+        ) |>
+        dplyr::arrange(
+            .data$date
+        )
 
     if (nrow(acquisition) == 0) {
         stop(
-            "No complete acquisitions satisfy the cloud threshold.",
+            paste0(
+                "No complete acquisitions satisfy ",
+                "the cloud threshold."
+            ),
             call. = FALSE
         )
     }
 
-    acquisition <- acquisition[
-        order(acquisition$date),
-        ,
-        drop = FALSE
-    ]
+    # Select the clearest acquisition, then exclude acquisitions
+    # closer than `interval` days to it.
+    candidates <- acquisition |>
+        dplyr::arrange(
+            .data$mean_cloud,
+            .data$date
+        )
 
-    acquisition$acquisition_id <- seq_len(
-        nrow(acquisition)
-    )
-
-    # Select the clearest available acquisition, then exclude
-    # acquisitions closer than `interval` days to it. Repeat until
-    # no candidates remain.
-    candidates <- acquisition[
-        order(
-            acquisition$mean_cloud,
-            acquisition$date
-        ),
-        ,
-        drop = FALSE
-    ]
-
-    selected_ids <- integer(0)
+    selected_items <- integer(0)
 
     while (nrow(candidates) > 0) {
 
@@ -581,9 +565,9 @@ select_timeseries <- function(
             drop = FALSE
         ]
 
-        selected_ids <- c(
-            selected_ids,
-            best$acquisition_id
+        selected_items <- c(
+            selected_items,
+            best$item
         )
 
         distance <- abs(
@@ -600,37 +584,19 @@ select_timeseries <- function(
         ]
     }
 
-    selected <- acquisition[
-        acquisition$acquisition_id %in%
-            selected_ids,
-        ,
-        drop = FALSE
-    ]
-
-    selected <- selected[
-        order(selected$date),
-        ,
-        drop = FALSE
-    ]
-
-    # Retain all STAC items belonging to the selected acquisitions.
-    keep <- vapply(
-        seq_along(items),
-        function(i) {
-
-            any(
-                selected$date == info$date[i] &
-                    selected$satellite ==
-                    info$satellite[i]
-            )
-        },
-        logical(1)
-    )
+    # Return selected acquisitions in chronological order.
+    selected <- acquisition |>
+        dplyr::filter(
+            .data$item %in% selected_items
+        ) |>
+        dplyr::arrange(
+            .data$date
+        )
 
     out <- search
 
-    out$items$features <- items[
-        keep
+    out$items <- items[
+        selected$item
     ]
 
     out
@@ -1538,30 +1504,84 @@ index_anomaly <- function(
 
 
 # keep collection acquisitions --------------------------------------------
+keep_acquisition <- function(
+        search,
+        date,
+        satellite
+) {
+    date <- as.Date(date)
 
-keep_collection_acquisitions <- function(search, collection) {
+    keep <- purrr::map_lgl(
+        search$items,
+        \(acquisition) {
 
-    f <- collection$files |>
-        dplyr::distinct(date, satellite)
+            if (!length(acquisition)) {
+                return(FALSE)
+            }
 
-    out <- lapply(
-        seq_len(nrow(f)),
-        function(i) {
-            keep_acquisition(
-                search,
-                date = as.character(f$date[i]),
-                satellite = f$satellite[i]
+            item_dates <- purrr::map_chr(
+                acquisition,
+                \(item) item$properties$datetime
+            ) |>
+                as.POSIXct(tz = "UTC") |>
+                as.Date()
+
+            platforms <- purrr::map_chr(
+                acquisition,
+                \(item) item$properties$platform
+            )
+
+            any(item_dates == date) &&
+                any(platforms == satellite)
+        }
+    )
+
+    search$items <- search$items[keep]
+
+    search
+}
+
+keep_collection_acquisitions <- function(
+        search,
+        collection
+) {
+    acquisitions <- collection$files |>
+        dplyr::distinct(
+            date,
+            satellite
+        ) |>
+        dplyr::mutate(
+            date = as.Date(.data$date)
+        )
+
+    keep <- purrr::map_lgl(
+        search$items,
+        \(acquisition) {
+
+            if (length(acquisition) == 0) {
+                return(FALSE)
+            }
+
+            item <- acquisition[[1]]
+
+            item_date <- as.Date(
+                item$properties$datetime
+            )
+
+            item_satellite <-
+                item$properties$platform
+
+            any(
+                acquisitions$date == item_date &
+                    acquisitions$satellite ==
+                    item_satellite
             )
         }
     )
 
-    # combine the STAC item collections
-    items <- do.call(c, lapply(out, `[[`, "items"))
+    search$items <- search$items[keep]
 
-    result <- search
-    result$items <- items
-
-    result
+    search
 }
 
 index_rasters <- function(
