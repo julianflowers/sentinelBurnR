@@ -2,7 +2,8 @@
 #'
 #' @param collection An sbr_collection.
 #' @param assets Assets to include.
-#'
+#' @param cache Logical; whether to use the persistent composite cache.
+#' @param overwrite Logical; whether to overwrite an existing cached composite.
 #' @return A SpatRaster.
 #'
 #' @export

@@ -262,7 +262,7 @@ plot_index <- function(
                 na.value = "transparent",
                 name = info$name,
                 limits = info$limits,
-                oob = scales:::squish
+                oob = scales::squish
 
             ) +
 
@@ -494,7 +494,7 @@ print.sbr_drought <- function(x, ...) {
     )
 
     cat(
-        "Seasonal window:   ±",
+        "Seasonal window:   \u00b0C",
         s$window_days,
         " days\n",
         sep = ""

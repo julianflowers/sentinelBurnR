@@ -17,7 +17,13 @@ Imports:
     tidyterra,
     utils,
     ecmwfr,
-    rlang
+    rlang,
+    callr,
+    dplyr,
+    lubridate,
+    purrr,
+    scales,
+    tibble
 Suggests: 
     knitr,
     rmarkdown,

@@ -1,3 +1,81 @@
+make_test_landscape <- function() {
+
+    source <- sf::st_sf(
+        cover = "Woodland",
+        geometry = sf::st_sfc(
+            sf::st_polygon(list(
+                matrix(
+                    c(
+                        0, 0,
+                        100, 0,
+                        100, 100,
+                        0, 100,
+                        0, 0
+                    ),
+                    ncol = 2,
+                    byrow = TRUE
+                )
+            )),
+            crs = 27700
+        )
+    )
+
+    target <- sf::st_sf(
+        geometry = sf::st_sfc(
+            sf::st_polygon(list(
+                matrix(
+                    c(
+                        100, 0,
+                        200, 0,
+                        200, 100,
+                        100, 100,
+                        100, 0
+                    ),
+                    ncol = 2,
+                    byrow = TRUE
+                )
+            )),
+            crs = 27700
+        )
+    )
+
+    transport <- sf::st_sf(
+        description = "Track",
+        geometry = sf::st_sfc(
+            sf::st_polygon(list(
+                matrix(
+                    c(
+                        90, 40,
+                        110, 40,
+                        110, 60,
+                        90, 60,
+                        90, 40
+                    ),
+                    ncol = 2,
+                    byrow = TRUE
+                )
+            )),
+            crs = 27700
+        )
+    )
+
+    analyse_landscape(
+        landcover = source,
+        category = "cover",
+        transport = transport,
+        interfaces = list(
+            woodland_heath = list(
+                source = source,
+                target = target,
+                source_label = "Woodland",
+                target_label = "Heathland"
+            )
+        ),
+        distances = c(0, 10, 25, 50, 100)
+    )
+}
+
+
 test_that("analyse_landscape returns an sbr_landscape", {
 
     landcover <- sf::st_sf(
@@ -502,6 +580,12 @@ test_that("analyse_landscape returns transport results", {
 
     # ... construct/run landscape as in existing test ...
 
+    landscape <- make_test_landscape()
+
+    print(names(landscape))
+    print(landscape$transport_summary)
+    print(class(landscape$transport_summary))
+
     expect_true(
         all(
             c(
@@ -511,18 +595,44 @@ test_that("analyse_landscape returns transport results", {
         )
     )
 
-    expect_s3_class(
-        landscape$transport_summary,
-        "data.frame"
+    expect_true(
+        is.data.frame(landscape$transport_summary)
     )
 
-    expect_s3_class(
-        landscape$interface_transport,
-        "data.frame"
+    expect_true(
+        is.data.frame(landscape$interface_transport)
+    )
+
+    print(landscape$transport_summary)
+    print(names(landscape$transport_summary))
+
+    expect_true(
+        all(
+            c("description", "n", "area_ha") %in%
+                names(landscape$transport_summary)
+        )
+    )
+
+    expect_true(
+        all(
+            c(
+                "interface",
+                "source",
+                "target",
+                "category",
+                "distance_m",
+                "length_m",
+                "length_km"
+            ) %in%
+                names(landscape$interface_transport)
+        )
     )
 })
 
 test_that("interface transport lengths are cumulative with distance", {
+
+    landscape <- make_test_landscape()
+
 
     x <- landscape$interface_transport |>
         dplyr::group_by(interface, category) |>
@@ -653,6 +763,9 @@ test_that("interface bands partition total target area", {
 })
 
 test_that("sbr_landscape prints", {
+
+    landscape <- make_test_landscape()
+
 
     expect_output(
         print(landscape),

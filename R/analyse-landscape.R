@@ -109,6 +109,14 @@ analyse_landscape <- function(
     }
 
     transport_summary <- NULL
+
+    if (!is.null(transport)) {
+        transport_summary <- summarise_transport(
+            transport,
+            category = "description"
+        )
+    }
+
     interface_transport <- NULL
 
     if (!is.null(transport) && !is.null(interfaces)) {

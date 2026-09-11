@@ -15,6 +15,10 @@ build_timeseries_composites(
 \item{collection}{An \code{sbr_collection}.}
 
 \item{assets}{Character vector of Sentinel-2 assets to include.}
+
+\item{cache}{Logical; whether to use the persistent composite cache.}
+
+\item{overwrite}{Logical; whether to overwrite an existing cached composite.}
 }
 \value{
 A named list of \code{SpatRaster} composites, with names

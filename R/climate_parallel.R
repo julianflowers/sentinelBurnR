@@ -203,7 +203,7 @@ download_climate_months <- function(
         variable,
         statistic
                 ) {
-                    sentinelBurnR:::run_climate_download_job(
+                    run_climate_download_job(
                         job = job,
                         bbox = bbox,
                         variable = variable,

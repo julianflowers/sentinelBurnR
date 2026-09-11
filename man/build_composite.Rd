@@ -15,6 +15,10 @@ build_composite(
 \item{collection}{An sbr_collection.}
 
 \item{assets}{Assets to include.}
+
+\item{cache}{Logical; whether to use the persistent composite cache.}
+
+\item{overwrite}{Logical; whether to overwrite an existing cached composite.}
 }
 \value{
 A SpatRaster.

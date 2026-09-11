@@ -276,7 +276,8 @@ extract_temperature <- function(
             "daily_mean",
             "daily_max",
             "daily_min"
-        )
+        ),
+        name = "temperature_c"
 ) {
 
     statistic <- match.arg(statistic)
@@ -286,7 +287,7 @@ extract_temperature <- function(
         boundary
     )
 
-    x$temperature_c <- x$value - 273.15
+    x[[name]]<- x$value - 273.15
     x$value <- NULL
 
     class(x) <- c(
@@ -432,42 +433,6 @@ extract_climate_values <- function(climate, boundary) {
     )
 }
 
-summarise_temperature_window <- function(
-        temperature,
-        date,
-        window_days
-) {
-
-    date <- as.Date(date)
-    start <- date - window_days + 1
-
-    x <- temperature[
-        temperature$date >= start &
-            temperature$date <= date,
-        ,
-        drop = FALSE
-    ]
-
-    data.frame(
-        window_days = window_days,
-        mean_max_c = mean(
-            x$temperature_c,
-            na.rm = TRUE
-        ),
-        max_c = max(
-            x$temperature_c,
-            na.rm = TRUE
-        ),
-        days_ge_25 = sum(
-            x$temperature_c >= 25,
-            na.rm = TRUE
-        ),
-        days_ge_30 = sum(
-            x$temperature_c >= 30,
-            na.rm = TRUE
-        )
-    )
-}
 
 
 # summarise temperature window --------------------------------------------

@@ -137,7 +137,22 @@ compare_rainfall_window <- function(
 
 
 # analyse climate ---------------------------------------------------------
+
+#' Analyse climate conditions
+#'
+#' Summarises climate conditions for a boundary and time period using
+#' climate data downloaded from the selected source.
+#'
+#' @param boundary Spatial boundary defining the area of interest.
+#' @param start Start date.
+#' @param end End date.
+#' @param source Climate data source. Defaults to `"era5"`.
+#'
+#' @return An object containing climate summaries for the requested
+#'   area and period.
+#'
 #' @export
+
 analyse_climate <- function(
         rainfall,
         temperature = NULL,

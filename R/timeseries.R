@@ -1,21 +1,4 @@
-#' Summarise a spectral index through time
-#'
-#' Calculates a spatial summary of a spectral index for a sequence
-#' of dated Sentinel-2 composites.
-#'
-#' @param composites A named list of `SpatRaster` composites. Names
-#'   must be valid dates.
-#' @param index Spectral index to calculate. One of `"nbr"`, `"ndvi"`
-#'  `"msi"` or `"ndmi"`.
-#' @param boundary Optional spatial boundary used to crop and mask
-#'   each index raster.
-#'
-#' @return A data frame containing one row per date, with the median,
-#'   interquartile range and number of valid pixels.
-#'
-#' @export
-#'
-#
+
 
 subset_collection_date <- function(
         collection,
@@ -209,7 +192,8 @@ index_timeseries <- function(
 #'
 #' @param collection An `sbr_collection`.
 #' @param assets Character vector of Sentinel-2 assets to include.
-#'
+#' @param cache Logical; whether to use the persistent composite cache.
+#' @param overwrite Logical; whether to overwrite an existing cached composite.
 #' @return A named list of `SpatRaster` composites, with names
 #'   corresponding to acquisition dates.
 #'
