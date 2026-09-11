@@ -446,19 +446,19 @@ summarise_temperature_window <- function(
         very_hot_threshold = 30
 ) {
 
-    date <- as.Date(date)
+    end_date <- as.Date(date)
 
-    start <- date - window_days + 1L
+    start_date <- end_date - window_days + 1L
 
     x <- temperature |>
         dplyr::filter(
-            .data$date >= .env$start,
-            .data$date <= .env$date
+            .data$date >= start_date,
+            .data$date <= end_date
         )
 
     expected_dates <- seq.Date(
-        start,
-        date,
+        start_date,
+        end_date,
         by = "day"
     )
 
@@ -472,7 +472,7 @@ summarise_temperature_window <- function(
         warning(
             sprintf(
                 "Temperature window ending %s is incomplete.",
-                date
+                end_date
             ),
             call. = FALSE
         )

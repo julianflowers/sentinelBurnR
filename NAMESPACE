@@ -70,3 +70,9 @@ export(sentinel_timeseries)
 export(timeseries_change)
 importFrom(graphics,par)
 importFrom(rlang,.data)
+importFrom(stats,
+  median,
+  quantile,
+  sd,
+  setNames
+)

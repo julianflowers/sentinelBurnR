@@ -205,14 +205,6 @@ summarise_index <- function(x, index) {
         p75 = q[[4]],
         p95 = q[[5]]
     )
-
-    summary <- rbind(
-        summarise_index(ndvi, "NDVI"),
-        summarise_index(ndmi, "NDMI"),
-        summarise_index(msi, "MSI")
-    )
-
-    summary = summary
 }
 
 calculate_index <- function(

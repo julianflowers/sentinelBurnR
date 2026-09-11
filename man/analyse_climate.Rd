@@ -17,19 +17,37 @@ analyse_climate(
 )
 }
 \arguments{
-\item{boundary}{Spatial boundary defining the area of interest.}
+\item{rainfall}{Rainfall data used to calculate recent rainfall,
+rainfall anomalies, and dry-spell statistics.}
 
-\item{start}{Start date.}
+\item{temperature}{Optional temperature data used to calculate
+temperature summaries. If \code{NULL}, temperature analysis is omitted.}
 
-\item{end}{End date.}
+\item{date}{Date for which climate conditions are assessed.}
 
-\item{source}{Climate data source. Defaults to \code{"era5"}.}
+\item{baseline_years}{Years used to define the historical climate
+baseline.}
+
+\item{windows}{Numeric vector giving the time windows, in days, over
+which recent climate conditions are summarised.}
+
+\item{dry_spell_window}{Number of days preceding \code{date} used to
+assess dry-spell conditions.}
+
+\item{dry_threshold_mm}{Daily rainfall threshold, in millimetres,
+below which a day is considered dry.}
+
+\item{hot_threshold}{Temperature threshold, in degrees Celsius, used
+to identify hot days.}
+
+\item{very_hot_threshold}{Temperature threshold, in degrees Celsius,
+used to identify very hot days.}
 }
 \value{
 An object containing climate summaries for the requested
-area and period.
+date and historical baseline.
 }
 \description{
-Summarises climate conditions for a boundary and time period using
-climate data downloaded from the selected source.
+Summarises recent rainfall and, optionally, temperature conditions
+relative to a historical baseline.
 }

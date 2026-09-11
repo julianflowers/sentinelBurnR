@@ -140,17 +140,31 @@ compare_rainfall_window <- function(
 
 #' Analyse climate conditions
 #'
-#' Summarises climate conditions for a boundary and time period using
-#' climate data downloaded from the selected source.
+#' Summarises recent rainfall and, optionally, temperature conditions
+#' relative to a historical baseline.
 #'
-#' @param boundary Spatial boundary defining the area of interest.
-#' @param start Start date.
-#' @param end End date.
-#' @param source Climate data source. Defaults to `"era5"`.
+#' @param rainfall Rainfall data used to calculate recent rainfall,
+#'   rainfall anomalies, and dry-spell statistics.
+#' @param temperature Optional temperature data used to calculate
+#'   temperature summaries. If `NULL`, temperature analysis is omitted.
+#' @param date Date for which climate conditions are assessed.
+#' @param baseline_years Years used to define the historical climate
+#'   baseline.
+#' @param windows Numeric vector giving the time windows, in days, over
+#'   which recent climate conditions are summarised.
+#' @param dry_spell_window Number of days preceding `date` used to
+#'   assess dry-spell conditions.
+#' @param dry_threshold_mm Daily rainfall threshold, in millimetres,
+#'   below which a day is considered dry.
+#' @param hot_threshold Temperature threshold, in degrees Celsius, used
+#'   to identify hot days.
+#' @param very_hot_threshold Temperature threshold, in degrees Celsius,
+#'   used to identify very hot days.
 #'
 #' @return An object containing climate summaries for the requested
-#'   area and period.
+#'   date and historical baseline.
 #'
+#' @importFrom stats median quantile sd setNames
 #' @export
 
 analyse_climate <- function(

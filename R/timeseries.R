@@ -656,14 +656,14 @@ plot_timeseries <- function(
     ggplot2::ggplot(
         x,
         ggplot2::aes(
-            x = date,
-            y = median
+            x = .data$date,
+            y = .data$median
         )
     ) +
         ggplot2::geom_ribbon(
             ggplot2::aes(
-                ymin = q25,
-                ymax = q75
+                ymin = .data$q25,
+                ymax = .data$q75
             ),
             alpha = 0.25
         ) +
@@ -1547,8 +1547,8 @@ keep_collection_acquisitions <- function(
 ) {
     acquisitions <- collection$files |>
         dplyr::distinct(
-            date,
-            satellite
+            .data$date,
+            .data$satellite
         ) |>
         dplyr::mutate(
             date = as.Date(.data$date)
