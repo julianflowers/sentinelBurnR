@@ -59,7 +59,12 @@ condition indices.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">analyse_vegetation</span><span class="op">(</span><span class="va">collection</span>, assets <span class="op">=</span> <span class="va">s2_vegetation_assets</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">analyse_vegetation</span><span class="op">(</span></span>
+<span>  <span class="va">collection</span>,</span>
+<span>  assets <span class="op">=</span> <span class="va">s2_vegetation_assets</span>,</span>
+<span>  cache <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -72,6 +77,14 @@ condition indices.</p>
 
 <dt id="arg-assets">assets<a class="anchor" aria-label="anchor" href="#arg-assets"></a></dt>
 <dd><p>Sentinel-2 assets used to build the composite.</p></dd>
+
+
+<dt id="arg-cache">cache<a class="anchor" aria-label="anchor" href="#arg-cache"></a></dt>
+<dd><p>Cache</p></dd>
+
+
+<dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
+<dd><p>overwrite cache</p></dd>
 
 </dl></div>
     <div id="value">

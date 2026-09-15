@@ -41,6 +41,8 @@
 <url><loc>/reference/index_anomaly.html</loc></url>
 <url><loc>/reference/index_info.html</loc></url>
 <url><loc>/reference/index_trend.html</loc></url>
+<url><loc>/reference/palette_gallery.html</loc></url>
+<url><loc>/reference/palette_lookup.html</loc></url>
 <url><loc>/reference/parallel_apply.html</loc></url>
 <url><loc>/reference/plot_drought.html</loc></url>
 <url><loc>/reference/plot_index.html</loc></url>
@@ -53,6 +55,7 @@
 <url><loc>/reference/read_band.html</loc></url>
 <url><loc>/reference/read_boundary.html</loc></url>
 <url><loc>/reference/read_climate.html</loc></url>
+<url><loc>/reference/read_visual.html</loc></url>
 <url><loc>/reference/sbr_cache_clean.html</loc></url>
 <url><loc>/reference/sbr_cache_info.html</loc></url>
 <url><loc>/reference/sbr_cache_prune.html</loc></url>
