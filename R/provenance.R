@@ -4,7 +4,7 @@ search_provenance <- function(x) {
         inherits(x, "sbr_search")
     )
 
-    features <- x$items$features
+    features <- x$items
 
     scene_table <- do.call(
 

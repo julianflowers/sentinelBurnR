@@ -34,7 +34,7 @@ dunwich_centroid <- st_sfc(
     crs = 27700
 )
 
-buffer <- st_buffer(dunwich_centroid, 2500)
+buffer <- st_buffer(dunwich_centroid, 4000)
 
 bbox <- st_bbox(buffer)
 

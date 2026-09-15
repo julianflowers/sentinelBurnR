@@ -56,6 +56,7 @@ produce an image similar to that seen by the human eye.
 The following images show the Dunwich area before and after the fire.
 
 ```{r true-colour-pre, fig.width=10, fig.height=8}
+
 pre_visual <- demo_data("visual_pre")
 
 terra::plotRGB(

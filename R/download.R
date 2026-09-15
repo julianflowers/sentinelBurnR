@@ -98,7 +98,7 @@ download_s2 <- function(
         showWarnings = FALSE
     )
 
-    scenes <- x$items$features
+    scenes <- x$items
 
     n_before <- length(scenes)
 

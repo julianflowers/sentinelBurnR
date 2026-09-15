@@ -4,12 +4,21 @@
 \alias{analyse_vegetation}
 \title{Analyse vegetation condition}
 \usage{
-analyse_vegetation(collection, assets = s2_vegetation_assets)
+analyse_vegetation(
+  collection,
+  assets = s2_vegetation_assets,
+  cache = TRUE,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{collection}{An \code{sbr_collection}.}
 
 \item{assets}{Sentinel-2 assets used to build the composite.}
+
+\item{cache}{Cache}
+
+\item{overwrite}{overwrite cache}
 }
 \value{
 An object of class \code{sbr_vegetation}.

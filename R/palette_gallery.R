@@ -1,3 +1,13 @@
+
+#' Display SentinelBurnR colour palettes
+#'
+#' Displays the colour palettes available for plotting
+#' SentinelBurnR results.
+#'
+#' @return Invisibly returns a named list of colour vectors.
+#'
+#' @export
+
 palette_gallery <- function() {
 
     palettes <- list(
@@ -136,10 +146,25 @@ sbr_palette_vegetation <- function(n = 256) {
 
 }
 
+
+# palette lookup ----------------------------------------------------------
+
+
+
+#' SentinelBurnR colour palette
+#'
+#' Returns a colour palette used for SentinelBurnR maps.
+#'
+#' @param name Character. Palette name. One of `"burn"`,
+#'   `"moisture"`, `"stress"`, or `"vegetation"`.
+#' @param n Integer. Number of colours to return.
+#'
+#' @return A character vector of colours.
+#'
+#' @export
 palette_lookup <- function(name, n = 256) {
 
     switch(
-
         tolower(name),
 
         burn = sbr_palette_burn(n),
@@ -155,7 +180,5 @@ palette_lookup <- function(name, n = 256) {
             name,
             call. = FALSE
         )
-
     )
-
 }

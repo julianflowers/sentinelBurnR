@@ -443,8 +443,6 @@ select_timeseries <- function(
         )
     }
 
-    # Each element of search$items represents one acquisition,
-    # containing all tiles for that date/satellite.
     items <- search$items
 
     if (length(items) == 0) {
@@ -454,80 +452,66 @@ select_timeseries <- function(
         )
     }
 
-    # Summarise each acquisition.
-    acquisition <- purrr::map_dfr(
-        seq_along(items),
-        \(i) {
+    # Extract acquisition metadata from individual STAC items.
+    metadata <- tibble::tibble(
+        item = seq_along(items),
 
-            x <- items[[i]]
-
-            if (length(x) == 0) {
-                return(NULL)
-            }
-
-            dates <- as.Date(
-                purrr::map_chr(
-                    x,
-                    \(item) item$properties$datetime
-                )
+        date = as.Date(
+            purrr::map_chr(
+                items,
+                \(item)
+                item$properties$datetime
             )
+        ),
 
-            satellites <- purrr::map_chr(
-                x,
-                \(item) item$properties$platform
-            )
+        satellite = purrr::map_chr(
+            items,
+            \(item)
+            item$properties$platform
+        ),
 
-            clouds <- purrr::map_dbl(
-                x,
-                \(item) item$properties$`eo:cloud_cover`
-            )
+        cloud = purrr::map_dbl(
+            items,
+            \(item)
+            item$properties$`eo:cloud_cover`
+        ),
 
-            tiles <- purrr::map_chr(
-                x,
-                s2_item_tile
-            )
-
-            if (dplyr::n_distinct(dates) != 1 ||
-                dplyr::n_distinct(satellites) != 1) {
-
-                stop(
-                    paste0(
-                        "Search acquisition contains multiple ",
-                        "dates or satellites."
-                    ),
-                    call. = FALSE
-                )
-            }
-
-            tibble::tibble(
-                item = i,
-                date = dates[[1]],
-                satellite = satellites[[1]],
-                mean_cloud = mean(
-                    clouds,
-                    na.rm = TRUE
-                ),
-                n_tiles = dplyr::n_distinct(
-                    tiles
-                )
-            )
-        }
+        tile = purrr::map_chr(
+            items,
+            s2_item_tile
+        )
     )
+
+    # Group individual tiles into acquisitions.
+    acquisition <- metadata |>
+        dplyr::group_by(
+            .data$date,
+            .data$satellite
+        ) |>
+        dplyr::summarise(
+            mean_cloud = mean(
+                .data$cloud,
+                na.rm = TRUE
+            ),
+            n_tiles = dplyr::n_distinct(
+                .data$tile
+            ),
+            .groups = "drop"
+        )
 
     if (nrow(acquisition) == 0) {
         stop(
-            "Search contains no Sentinel-2 items.",
+            "Search contains no Sentinel-2 acquisitions.",
             call. = FALSE
         )
     }
 
-    # The largest observed tile count represents complete
-    # coverage for this search/AOI.
+    # Largest observed tile count represents complete AOI coverage.
     required_tiles <- max(
         acquisition$n_tiles
     )
 
-    # Retain complete acquisitions satisfying the cloud threshold.
+    # Retain complete acquisitions satisfying cloud threshold.
     acquisition <- acquisition |>
         dplyr::filter(
             .data$n_tiles == required_tiles,
@@ -547,15 +531,19 @@ select_timeseries <- function(
         )
     }
 
-    # Select the clearest acquisition, then exclude acquisitions
-    # closer than `interval` days to it.
+    # Select clearest acquisition, then exclude acquisitions
+    # closer than `interval` days.
     candidates <- acquisition |>
         dplyr::arrange(
             .data$mean_cloud,
             .data$date
         )
 
-    selected_items <- integer(0)
+    selected <- acquisition[
+        0,
+        ,
+        drop = FALSE
+    ]
 
     while (nrow(candidates) > 0) {
 
@@ -565,9 +553,9 @@ select_timeseries <- function(
             drop = FALSE
         ]
 
-        selected_items <- c(
-            selected_items,
-            best$item
+        selected <- dplyr::bind_rows(
+            selected,
+            best
         )
 
         distance <- abs(
@@ -584,19 +572,25 @@ select_timeseries <- function(
         ]
     }
 
-    # Return selected acquisitions in chronological order.
-    selected <- acquisition |>
-        dplyr::filter(
-            .data$item %in% selected_items
-        ) |>
+    selected <- selected |>
         dplyr::arrange(
             .data$date
+        )
+
+    # Keep all tiles belonging to selected acquisitions.
+    keep <- metadata |>
+        dplyr::semi_join(
+            selected,
+            by = c(
+                "date",
+                "satellite"
+            )
         )
 
     out <- search
 
     out$items <- items[
-        selected$item
+        keep$item
     ]
 
     out
@@ -1715,4 +1709,65 @@ select_seasonal_baseline <- function(
 
     x[keep]
 }
+
+
+# antecedent climate ------------------------------------------------------
+
+antecedent_climate <- function(
+        date,
+        climate,
+        days = 7
+) {
+
+    start <- date - days + 1
+
+    x <- climate[
+        climate$date >= start &
+            climate$date <= date,
+    ]
+
+    data.frame(
+        date = date,
+
+        temperature_7d = mean(
+            x$temperature_c,
+            na.rm = TRUE
+        ),
+
+        rh_7d = mean(
+            x$relative_humidity,
+            na.rm = TRUE
+        ),
+
+        vpd_7d = mean(
+            x$vpd_kpa,
+            na.rm = TRUE
+        )
+    )
+}
+
+#' @export
+antecedent_rainfall <- function(
+        date,
+        rainfall,
+        days = 30
+) {
+
+    start <- date - days + 1
+
+    x <- rainfall[
+        rainfall$date >= start &
+            rainfall$date <= date,
+    ]
+
+    data.frame(
+        date = date,
+        rainfall_mm = sum(
+            x$precipitation_mm,
+            na.rm = TRUE
+        ),
+        n_days = nrow(x)
+    )
+}
+
 

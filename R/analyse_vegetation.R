@@ -5,13 +5,17 @@
 #'
 #' @param collection An `sbr_collection`.
 #' @param assets Sentinel-2 assets used to build the composite.
-#'
+#' @param cache Cache
+#' @param overwrite overwrite cache
 #' @return An object of class `sbr_vegetation`.
 #'
 #' @export
+
 analyse_vegetation <- function(
         collection,
-        assets = s2_vegetation_assets
+        assets = s2_vegetation_assets,
+        cache = TRUE,
+        overwrite = FALSE
 ) {
 
     if (!inherits(collection, "sbr_collection")) {
@@ -25,7 +29,9 @@ analyse_vegetation <- function(
 
     composite <- build_composite(
         collection,
-        assets = assets
+        assets = assets,
+        cache = cache,
+        overwrite = overwrite
     )
 
     message("Calculating NDVI...")
@@ -56,11 +62,11 @@ analyse_vegetation <- function(
         ),
         class = "sbr_vegetation"
     )
+
     veg$provenance <- build_vegetation_provenance(
         collection,
         assets
     )
 
     veg
-
 }

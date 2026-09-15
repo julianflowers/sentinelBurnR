@@ -43,7 +43,7 @@ search_s2 <- function(
     print(datetime)
     print(bbox)
 
-    items <- rstac::stac(
+    q <- rstac::stac(
         "https://earth-search.aws.element84.com/v1"
     ) |>
         rstac::stac_search(
@@ -51,12 +51,37 @@ search_s2 <- function(
             bbox = bbox,
             datetime = datetime,
             limit = 100
-        ) |>
-        rstac::post_request() |>
-        rstac::items_fetch()
+        )
+
+    cat("\nbbox:\n")
+    print(bbox)
+    cat("bbox class:", class(bbox), "\n")
+
+    items <- rstac::post_request(q)
+
+    cat(
+        "after post_request:",
+        length(items$features),
+        "\n"
+    )
+
+    items <- rstac::items_fetch(items)
+
+    if (!is.list(items$features)) {
+        stop(
+            "STAC response does not contain a valid `features` list.",
+            call. = FALSE
+        )
+    }
+
+    cat(
+        "after items_fetch:",
+        length(items$features),
+        "\n"
+    )
 
     new_s2_search(
-        items = items,
+        items = items$features,
         aoi = aoi,
         start = start,
         end = end

@@ -61,7 +61,7 @@ extract_rainfall <- function(
 }
 
 
-
+#' @export
 get_rainfall <- function(
         boundary,
         start,
@@ -163,6 +163,7 @@ extract_temperature <- function(
 #     out
 # }
 
+#' @export
 get_temperature <- function(
         boundary,
         start,
@@ -302,6 +303,8 @@ extract_temperature <- function(
     x
 }
 
+
+#' @export
 get_humidity <- function(
         boundary,
         start,
