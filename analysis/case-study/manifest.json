@@ -4155,9 +4155,6 @@
   "files": {
     "case-study.Rmd": {
       "checksum": "4ab4f8bf176514618982db5e7ab99d4e"
-    },
-    "rsconnect-old/documents/case-study.Rmd/connect.posit.cloud/julianflowers/case-study.dcf": {
-      "checksum": "a587dd37fba4762fee4190e044ebc7ce"
     }
   },
   "users": null
