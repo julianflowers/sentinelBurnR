@@ -8,7 +8,11 @@ inst/doc
 /doc/
 /Meta/
 cache/
-/analysis/
+analysis/*
+!analysis/case-study/
+analysis/case-study/*
+!analysis/case-study/case-study.Rmd
+!analysis/case-study/manifest.json
 # Large raw datasets
 data-raw/National_Forest_Inventory_England_2022.geojson
 data-raw/Priority_Habitats_Inventory_England.gpkg
