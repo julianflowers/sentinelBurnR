@@ -4,7 +4,7 @@
   "platform": "4.6.1",
   "metadata": {
     "appmode": "rmd-static",
-    "primary_rmd": "analysis/case-study/case-study.Rmd",
+    "primary_rmd": "case-study.Rmd",
     "primary_html": null,
     "content_category": null,
     "has_parameters": false
