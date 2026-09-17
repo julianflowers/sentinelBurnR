@@ -67,7 +67,7 @@ Existing cached files are skipped unless <code>overwrite = TRUE</code>.</p>
 <span>  project <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="fu">cache_downloads</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  workers <span class="op">=</span> <span class="fl">4</span></span>
+<span>  workers <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -105,13 +105,11 @@ all scenes in the search are downloaded.</p></dd>
 
 
 <dt id="arg-workers">workers<a class="anchor" aria-label="anchor" href="#arg-workers"></a></dt>
-<dd><p>Number of parallel download workers.</p></dd>
+<dd><p>Number of parallel workers. If <code>NULL</code>, the number of
+workers is determined automatically using <code><a href="https://parallelly.futureverse.org/reference/availableCores.html" class="external-link">future::availableCores()</a></code>.
+Use <code>1</code> for sequential processing.#' @return An <code>sbr_collection</code> object.</p></dd>
 
 </dl></div>
-    <div id="value">
-    <h2>Value</h2>
-    <p>An <code>sbr_collection</code> object.</p>
-    </div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

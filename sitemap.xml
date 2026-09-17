@@ -13,6 +13,7 @@
 <url><loc>/reference/analyse_landscape.html</loc></url>
 <url><loc>/reference/analyse_vegetation.html</loc></url>
 <url><loc>/reference/antecedent_conditions.html</loc></url>
+<url><loc>/reference/antecedent_rainfall.html</loc></url>
 <url><loc>/reference/aoi.html</loc></url>
 <url><loc>/reference/build_composite.html</loc></url>
 <url><loc>/reference/build_provenance.html</loc></url>
@@ -37,6 +38,9 @@
 <url><loc>/reference/files.html</loc></url>
 <url><loc>/reference/files.sbr_collection.html</loc></url>
 <url><loc>/reference/geometry.html</loc></url>
+<url><loc>/reference/get_humidity.html</loc></url>
+<url><loc>/reference/get_rainfall.html</loc></url>
+<url><loc>/reference/get_temperature.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/index_anomaly.html</loc></url>
 <url><loc>/reference/index_info.html</loc></url>
