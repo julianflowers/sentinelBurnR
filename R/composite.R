@@ -45,10 +45,14 @@ build_composite <- function(
         }
     }
 
+    #message("Reading band stacks...")
+
     band_stacks <- stats::setNames(
         lapply(assets, function(asset) read_band(collection, asset)),
         assets
     )
+
+    #message("Band stacks ready")
 
     scl_masks <- NULL
     asset_table <- files(collection)
@@ -60,10 +64,28 @@ build_composite <- function(
             read_band(collection, "scl")
         }
 
+        #message("Reading SCL...")
+
+        scl_stacks <- if ("scl" %in% assets) {
+            band_stacks[["scl"]]
+        } else {
+            read_band(collection, "scl")
+        }
+
+    #3message("Preparing SCL...")
+
         scl_masks <- prepare_scl_masks(
             scl_stacks = scl_stacks,
-            band_stacks = band_stacks[assets != "scl"]
+            band_stacks = band_stacks[assets != "scl"],
+            aoi = if (!is.null(collection$aoi)) {
+                collection$aoi$geometry
+            } else {
+                NULL
+            }
         )
+
+        #message("SCL masks ready")
+
     }
 
     band_rasters <- stats::setNames(vector("list", length(assets)), assets)
@@ -229,28 +251,135 @@ read_band <- function(
 }
 
 
+
 #----build bands-----------------------------------
 
 build_band <- function(
         collection,
         asset,
-        stacks = read_band(collection, asset),
+        stacks = read_band(
+            collection,
+            asset
+        ),
         scl_masks
-
 ) {
 
     if (missing(scl_masks)) {
-        has_scl <- "scl" %in% files(collection)$asset
+
+        has_scl <-
+            "scl" %in% files(collection)$asset
+
         scl_masks <- NULL
 
         if (asset != "scl" && has_scl) {
-            one_band <- stats::setNames(list(stacks), asset)
+
+            one_band <- stats::setNames(
+                list(stacks),
+                asset
+            )
+
             scl_masks <- prepare_scl_masks(
-                scl_stacks = read_band(collection, "scl"),
-                band_stacks = one_band
+                scl_stacks = read_band(
+                    collection,
+                    "scl"
+                ),
+                band_stacks = one_band,
+                aoi = if (!is.null(collection$aoi)) {
+                    collection$aoi$geometry
+                } else {
+                    NULL
+                }
             )[[asset]]
         }
     }
+
+    ## ------------------------------------------------------------
+    ## Crop stacks and masks to AOI before expensive processing
+    ## ------------------------------------------------------------
+
+    if (!is.null(collection$aoi)) {
+
+        aoi <- collection$aoi$geometry
+
+        keep_tiles <- logical(
+            length(stacks)
+        )
+
+        for (i in seq_along(stacks)) {
+
+            tile <- names(stacks)[[i]]
+            x <- stacks[[i]]
+
+            tile_aoi <- aoi
+
+            if (!terra::same.crs(
+                tile_aoi,
+                x
+            )) {
+                tile_aoi <- terra::project(
+                    tile_aoi,
+                    terra::crs(x)
+                )
+            }
+
+            aoi_ext <- terra::ext(
+                tile_aoi
+            )
+
+            x_ext <- terra::ext(x)
+
+            overlaps <-
+                x_ext$xmin < aoi_ext$xmax &&
+                x_ext$xmax > aoi_ext$xmin &&
+                x_ext$ymin < aoi_ext$ymax &&
+                x_ext$ymax > aoi_ext$ymin
+
+            if (!overlaps) {
+                next
+            }
+
+            stacks[[i]] <- terra::crop(
+                x,
+                aoi_ext
+            )
+
+            if (!is.null(scl_masks)) {
+
+                mask <- scl_masks[[tile]]
+
+                if (!is.null(mask)) {
+                    scl_masks[[tile]] <-
+                        terra::crop(
+                            mask,
+                            aoi_ext
+                        )
+                }
+            }
+
+            keep_tiles[[i]] <- TRUE
+        }
+
+        stacks <- stacks[
+            keep_tiles
+        ]
+
+        if (!is.null(scl_masks)) {
+            scl_masks <- scl_masks[
+                names(stacks)
+            ]
+        }
+    }
+
+    if (length(stacks) == 0L) {
+        stop(
+            "No Sentinel-2 tiles overlap the AOI.",
+            call. = FALSE
+        )
+    }
+
+    ## ------------------------------------------------------------
+    ## Build tile composites
+    ## ------------------------------------------------------------
 
     if (asset == "scl") {
 
@@ -266,7 +395,8 @@ build_band <- function(
             length(stacks)
         )
 
-        names(tile_composites) <- names(stacks)
+        names(tile_composites) <-
+            names(stacks)
 
         for (i in seq_along(stacks)) {
 
@@ -286,149 +416,30 @@ build_band <- function(
 
             if (terra::nlyr(masked) == 1) {
 
-                tile_composites[[i]] <- masked
+                tile_composites[[i]] <-
+                    masked
 
             } else {
 
-                tile_composites[[i]] <- median_stack(
-                    masked
-                )
+                tile_composites[[i]] <-
+                    median_stack(
+                        masked
+                    )
             }
         }
     }
-
-    # Crop individual tile composites to the AOI
-    if (!is.null(collection$aoi)) {
-
-        aoi <- collection$aoi$geometry
-
-        # Transform AOI to the CRS of the Sentinel raster
-        raster_crs <- terra::crs(
-            tile_composites[[1]]
-        )
-
-        if (!terra::same.crs(aoi, tile_composites[[1]])) {
-
-            aoi <- terra::project(
-                aoi,
-                raster_crs
-            )
-        }
-
-        aoi_ext <- terra::ext(aoi)
-
-        tile_composites <- lapply(
-            tile_composites,
-            function(x) {
-
-                x_ext <- terra::ext(x)
-
-                overlaps <-
-                    x_ext$xmin < aoi_ext$xmax &&
-                    x_ext$xmax > aoi_ext$xmin &&
-                    x_ext$ymin < aoi_ext$ymax &&
-                    x_ext$ymax > aoi_ext$ymin
-
-                if (!overlaps) {
-                    return(NULL)
-                }
-
-                terra::crop(
-                    x,
-                    aoi_ext
-                )
-            }
-        )
-
-        tile_composites <- Filter(
-            Negate(is.null),
-            tile_composites
-        )
-    }
-    if (length(tile_composites) == 0L) {
-        stop(
-            "No Sentinel-2 tiles overlap the AOI.",
-            call. = FALSE
-        )
-    }
-
 
     mosaic_tiles(
         tile_composites
     )
 }
-
-
 # Prepare SCL masks -------------------------------------------------------
-
-prepare_scl_masks <- function(
-        scl_stacks,
-        band_stacks,
-        keep = s2_scl_keep
-) {
-
-    stopifnot(is.list(scl_stacks), is.list(band_stacks))
-
-    prepared <- stats::setNames(
-        vector("list", length(band_stacks)),
-        names(band_stacks)
-    )
-    cache <- list()
-    n_prepared <- 0L
-
-    for (asset in names(band_stacks)) {
-        prepared[[asset]] <- list()
-
-        for (tile in names(band_stacks[[asset]])) {
-            image <- band_stacks[[asset]][[tile]]
-            scl <- scl_stacks[[tile]]
-
-            if (is.null(scl)) {
-                stop("No SCL stack is available for tile '", tile, "'.",
-                     call. = FALSE)
-            }
-
-            tile_cache <- cache[[tile]]
-            match_index <- integer()
-
-            if (length(tile_cache)) {
-                matches <- vapply(
-                    tile_cache,
-                    function(x) terra::compareGeom(
-                        image,
-                        x$template,
-                        lyrs = FALSE,
-                        stopOnError = FALSE
-                    ),
-                    logical(1)
-                )
-                match_index <- which(matches)[1]
-            }
-
-            if (length(match_index) == 0L || is.na(match_index)) {
-                mask <- prepare_scl_mask(scl, image, keep = keep)
-                tile_cache[[length(tile_cache) + 1L]] <- list(
-                    template = image,
-                    mask = mask
-                )
-                match_index <- length(tile_cache)
-                cache[[tile]] <- tile_cache
-                n_prepared <- n_prepared + 1L
-            }
-
-            prepared[[asset]][[tile]] <- tile_cache[[match_index]]$mask
-        }
-    }
-
-    attr(prepared, "n_prepared") <- n_prepared
-    prepared
-}
-
 
 prepare_scl_mask <- function(
         scl,
         template,
-        keep = s2_scl_keep
+        keep = s2_scl_keep,
+        aoi = NULL
 ) {
 
     stopifnot(
@@ -436,21 +447,172 @@ prepare_scl_mask <- function(
         inherits(template, "SpatRaster")
     )
 
+    if (!is.null(aoi)) {
+
+        stopifnot(
+            inherits(aoi, "SpatVector")
+        )
+
+        if (!terra::same.crs(
+            aoi,
+            template
+        )) {
+            aoi <- terra::project(
+                aoi,
+                terra::crs(template)
+            )
+        }
+
+        ## Crop the template first. This defines the exact
+        ## target grid needed by the subsequent resample.
+        template <- terra::crop(
+            template,
+            terra::ext(aoi),
+            snap = "out"
+        )
+
+        ## Put AOI into the SCL CRS before cropping SCL.
+        scl_aoi <- aoi
+
+        if (!terra::same.crs(
+            scl_aoi,
+            scl
+        )) {
+            scl_aoi <- terra::project(
+                scl_aoi,
+                terra::crs(scl)
+            )
+        }
+
+        ## Crop SCL slightly generously. terra::crop(...,
+        ## snap = "out") retains the cells surrounding the AOI.
+        scl <- terra::crop(
+            scl,
+            terra::ext(scl_aoi),
+            snap = "out"
+        )
+    }
+
     if (!terra::compareGeom(
         scl,
         template,
         lyrs = FALSE,
         stopOnError = FALSE
     )) {
-        scl <- terra::resample(scl, template, method = "near")
+        scl <- terra::resample(
+            scl,
+            template,
+            method = "near"
+        )
     }
 
     Reduce(
         `|`,
-        lapply(keep, function(value) scl == value)
+        lapply(
+            keep,
+            function(value) scl == value
+        )
     )
 }
 
+
+prepare_scl_masks <- function(
+        scl_stacks,
+        band_stacks,
+        keep = s2_scl_keep,
+        aoi = NULL
+) {
+
+    stopifnot(
+        is.list(scl_stacks),
+        is.list(band_stacks)
+    )
+
+    prepared <- stats::setNames(
+        vector("list", length(band_stacks)),
+        names(band_stacks)
+    )
+
+    cache <- list()
+    n_prepared <- 0L
+
+    for (asset in names(band_stacks)) {
+
+        prepared[[asset]] <- list()
+
+        for (tile in names(band_stacks[[asset]])) {
+
+            image <- band_stacks[[asset]][[tile]]
+            scl <- scl_stacks[[tile]]
+
+            if (is.null(scl)) {
+                stop(
+                    "No SCL stack is available for tile '",
+                    tile,
+                    "'.",
+                    call. = FALSE
+                )
+            }
+
+            tile_cache <- cache[[tile]]
+            match_index <- integer()
+
+            if (length(tile_cache)) {
+
+                matches <- vapply(
+                    tile_cache,
+                    function(x) {
+                        terra::compareGeom(
+                            image,
+                            x$template,
+                            lyrs = FALSE,
+                            stopOnError = FALSE
+                        )
+                    },
+                    logical(1)
+                )
+
+                match_index <- which(matches)[1]
+            }
+
+            if (
+                length(match_index) == 0L ||
+                is.na(match_index)
+            ) {
+
+                mask <- prepare_scl_mask(
+                    scl,
+                    image,
+                    keep = keep,
+                    aoi = aoi
+                )
+
+                tile_cache[[
+                    length(tile_cache) + 1L
+                ]] <- list(
+                    template = image,
+                    mask = mask
+                )
+
+                match_index <- length(tile_cache)
+
+                cache[[tile]] <- tile_cache
+
+                n_prepared <- n_prepared + 1L
+            }
+
+            prepared[[asset]][[tile]] <-
+                tile_cache[[match_index]]$mask
+        }
+    }
+
+    attr(
+        prepared,
+        "n_prepared"
+    ) <- n_prepared
+
+    prepared
+}
 
 #------------mask scl-------------------------------------
 
