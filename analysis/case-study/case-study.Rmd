@@ -7,9 +7,22 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+cds_key <- Sys.getenv(
+    "CDS_API_KEY",
+    unset = ""
+)
+
+if (nzchar(cds_key)) {
+    ecmwfr::wf_set_key(
+        key = cds_key,
+        user = "ecmwfr"
+    )
+}
+
 ```
 
-```{r}
+```{r load}
 #pak::pak("julianflowers/sentinelBurnR")
 library(sentinelBurnR)
 library(terra)
@@ -98,7 +111,7 @@ summer_collection <- download_s2(
 
 ```{r analyse vegetation}
 
-spring_veg <- analyse_vegetation(spring_collection)
+spring_veg <- analyse_vegetation(spring_collection, cache = TRUE, overwrite = TRUE)
 
 summer_veg <- analyse_vegetation(summer_collection)
 
@@ -339,7 +352,7 @@ terra::plotRGB(visual_aug25)
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 mapview(spring_veg$msi, maxpixels = 639200, col.regions = palette_lookup("stress")) +
     mapview(spring_veg$ndvi, maxpixel = 639200, col.regions = viridis::viridis(256))
@@ -354,10 +367,6 @@ climate <- get_humidity(
     start = "2026-04-01",
     end   = "2026-08-31"
 )
-
-names(climate)
-head(climate)
-str(climate)
 
 rainfall <- get_rainfall(boundary = read_boundary(aoi$geometry),
     start = "2026-04-01",

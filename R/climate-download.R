@@ -147,20 +147,28 @@ download_era5_month <- function(
         max_tries = 5,
         bbox = NULL
 ) {
-    request <- era5_request(
-        variable = variable,
-        daily_statistic = statistic
-    )
+
     request <- era5_request(
         variable = variable,
         daily_statistic = statistic
     )
 
-    request$year <- sprintf("%04d", year)
-    request$month <- sprintf("%02d", month)
+    request$year <- sprintf(
+        "%04d",
+        year
+    )
+
+    request$month <- sprintf(
+        "%02d",
+        month
+    )
 
     first <- as.Date(
-        sprintf("%04d-%02d-01", year, month)
+        sprintf(
+            "%04d-%02d-01",
+            year,
+            month
+        )
     )
 
     last <- seq(
@@ -171,72 +179,61 @@ download_era5_month <- function(
 
     request$day <- sprintf(
         "%02d",
-        seq_len(as.integer(format(last, "%d")))
+        seq_len(
+            as.integer(
+                format(
+                    last,
+                    "%d"
+                )
+            )
+        )
     )
 
     if (is.null(bbox)) {
-        bbox <- era5_bbox(boundary)
+        bbox <- era5_bbox(
+            boundary
+        )
     }
 
     request$area <- bbox
     request$target <- basename(outfile)
 
-    for (attempt in seq_len(max_tries)) {
-
-        message(
-            sprintf(
-                "ERA5 %04d-%02d, attempt %d/%d",
-                year,
-                month,
-                attempt,
-                max_tries
-            )
-        )
-
-        result <- tryCatch(
-            {
-                ecmwfr::wf_request(
-                    request = request,
-                    transfer = TRUE,
-                    path = dirname(outfile)
-                )
-                TRUE
-            },
-            error = function(e) {
-                message(
-                    "ERA5 request failed: ",
-                    conditionMessage(e)
-                )
-                FALSE
-            }
-        )
-
-        if (result && file.exists(outfile)) {
-            return(outfile)
-        }
-
-        if (attempt < max_tries) {
-            wait <- 10 * 2^(attempt - 1)
-
-            message(
-                "Retrying in ",
-                wait,
-                " seconds..."
-            )
-
-            Sys.sleep(wait)
-        }
-    }
-
-    stop(
+    message(
+        "ERA5 request: ",
         sprintf(
-            "ERA5 download failed after %d attempts: %04d-%02d",
-            max_tries,
+            "%04d-%02d",
             year,
             month
-        ),
-        call. = FALSE
+        )
     )
-}
 
+    message(
+        "CDS_API_KEY available: ",
+        nzchar(
+            Sys.getenv(
+                "CDS_API_KEY"
+            )
+        )
+    )
+
+    ## Deliberately do NOT catch errors here.
+    ## We want Connect to show the original ecmwfr error.
+
+    ecmwfr::wf_request(
+        request = request,
+        user = "ecmwfr",
+        transfer = TRUE,
+        path = dirname(outfile),
+        verbose = TRUE
+    )
+
+    if (!file.exists(outfile)) {
+        stop(
+            "ERA5 request completed but output file was not created.",
+            call. = FALSE
+        )
+    }
+
+    outfile
+}
 
