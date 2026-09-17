@@ -12,7 +12,7 @@ download_s2(
   project = NULL,
   output_dir = cache_downloads(),
   overwrite = FALSE,
-  workers = 4
+  workers = NULL
 )
 }
 \arguments{
@@ -31,10 +31,9 @@ all scenes in the search are downloaded.}
 
 \item{overwrite}{Logical. Overwrite existing files?}
 
-\item{workers}{Number of parallel download workers.}
-}
-\value{
-An \code{sbr_collection} object.
+\item{workers}{Number of parallel workers. If \code{NULL}, the number of
+workers is determined automatically using \code{\link[future:availableCores]{future::availableCores()}}.
+Use \code{1} for sequential processing.#' @return An \code{sbr_collection} object.}
 }
 \description{
 Download selected Sentinel-2 assets from an \code{sbr_search} object.

@@ -1550,13 +1550,11 @@ keep_collection_acquisitions <- function(
 
     keep <- purrr::map_lgl(
         search$items,
-        \(acquisition) {
+        \(item) {
 
-            if (length(acquisition) == 0) {
+            if (length(item) == 0) {
                 return(FALSE)
             }
-
-            item <- acquisition[[1]]
 
             item_date <- as.Date(
                 item$properties$datetime
@@ -1746,7 +1744,29 @@ antecedent_climate <- function(
     )
 }
 
+
+#' Calculate antecedent rainfall
+#'
+#' Calculates total rainfall over a specified number of days ending on a
+#' given date. This can be used to describe recent rainfall conditions
+#' preceding an observation, event, or satellite acquisition.
+#'
+#' @param date A `Date` giving the final day of the antecedent rainfall
+#'   period.
+#' @param rainfall A data frame containing `date` and `precipitation_mm`
+#'   columns.
+#' @param days Number of days over which rainfall is accumulated. Defaults
+#'   to 30.
+#'
+#' @return A data frame with one row containing:
+#' \describe{
+#'   \item{date}{The final date of the accumulation period.}
+#'   \item{rainfall_mm}{Total precipitation over the period, in millimetres.}
+#'   \item{n_days}{Number of rainfall records included in the calculation.}
+#' }
+#'
 #' @export
+
 antecedent_rainfall <- function(
         date,
         rainfall,

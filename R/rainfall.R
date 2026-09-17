@@ -61,7 +61,22 @@ extract_rainfall <- function(
 }
 
 
+#' Retrieve rainfall for a boundary
+#'
+#' Downloads climate data for a spatial boundary and extracts daily rainfall
+#' for the requested period.
+#'
+#' @param boundary Spatial boundary defining the area for which rainfall
+#'   should be retrieved. The boundary is processed by [read_boundary()].
+#' @param start Start date of the requested period. Coercible to `Date`.
+#' @param end End date of the requested period. Coercible to `Date`.
+#' @param source Climate data source. Defaults to `"era5"`.
+#'
+#' @return A data frame containing daily rainfall values for the requested
+#'   period. The result includes `source` and `boundary` attributes.
+#'
 #' @export
+
 get_rainfall <- function(
         boundary,
         start,
@@ -163,7 +178,25 @@ extract_temperature <- function(
 #     out
 # }
 
+#' Retrieve temperature for a boundary
+#'
+#' Downloads 2 m air-temperature data for a spatial boundary and extracts
+#' temperature values for the requested period.
+#'
+#' @param boundary Spatial boundary defining the area for which temperature
+#'   should be retrieved. The boundary is processed by [read_boundary()].
+#' @param start Start date of the requested period. Coercible to `Date`.
+#' @param end End date of the requested period. Coercible to `Date`.
+#' @param statistic Temperature statistic to retrieve. Defaults to
+#'   `"daily_mean"`.
+#' @param source Climate data source. Defaults to `"era5"`.
+#'
+#' @return A data frame containing temperature values for the requested
+#'   period. The result includes `source`, `boundary`, and `statistic`
+#'   attributes.
+#'
 #' @export
+
 get_temperature <- function(
         boundary,
         start,
@@ -303,8 +336,24 @@ extract_temperature <- function(
     x
 }
 
-
+#' Retrieve humidity and vapour pressure deficit for a boundary
+#'
+#' Downloads daily-mean 2 m air temperature and dewpoint temperature for a
+#' spatial boundary and derives relative humidity and vapour pressure deficit
+#' for the requested period.
+#'
+#' @param boundary Spatial boundary defining the area for which humidity
+#'   should be calculated. The boundary is processed by [read_boundary()].
+#' @param start Start date of the requested period. Coercible to `Date`.
+#' @param end End date of the requested period. Coercible to `Date`.
+#' @param source Climate data source. Defaults to `"era5"`.
+#'
+#' @return An `sbr_humidity` data frame containing `date`, `temperature_c`,
+#'   `dewpoint_c`, `relative_humidity`, and `vpd_kpa`. The result also contains
+#'   `source` and `humidity_method` attributes.
+#'
 #' @export
+
 get_humidity <- function(
         boundary,
         start,

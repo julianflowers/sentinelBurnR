@@ -5,9 +5,15 @@ make_test_search <- function(
 ) {
 
     feature <- list(
-        id = paste0("test_scene_", gsub("-", "", date)),
+        id = paste0(
+            "test_scene_",
+            gsub("-", "", date)
+        ),
         properties = list(
-            datetime = paste0(date, "T10:30:00Z"),
+            datetime = paste0(
+                date,
+                "T10:30:00Z"
+            ),
             platform = satellite,
             `eo:cloud_cover` = cloud_cover,
             `s2:cloud_shadow_percentage` = 2,
@@ -21,7 +27,7 @@ make_test_search <- function(
     structure(
         list(
             items = list(
-                features = list(feature)
+                feature
             ),
             aoi = NULL,
             start = as.Date(date),
@@ -30,7 +36,6 @@ make_test_search <- function(
         class = "sbr_search"
     )
 }
-
 
 make_test_collection <- function(
         date = "2026-06-01",
@@ -173,7 +178,6 @@ make_test_disk_collection <- function() {
 
 
 # nake test timeseries search ---------------------------------------------
-
 make_test_timeseries_search <- function() {
 
     dates <- as.Date(c(
@@ -226,6 +230,12 @@ make_test_timeseries_search <- function() {
                 }
             )
         }
+    )
+
+    # sbr_search stores a flat list of STAC Feature items
+    items <- unlist(
+        items,
+        recursive = FALSE
     )
 
     structure(

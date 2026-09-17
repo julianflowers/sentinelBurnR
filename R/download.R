@@ -10,10 +10,10 @@
 #' @param max_cloud Set numerical value for cloud cover cut off.
 #' @param output_dir Directory used to cache downloaded files.
 #' @param overwrite Logical. Overwrite existing files?
-#' @param workers Number of parallel download workers.
 #' @param project Project name description
-#'
-#' @return An `sbr_collection` object.
+#' @param workers Number of parallel workers. If `NULL`, the number of
+#'   workers is determined automatically using [future::availableCores()].
+#'   Use `1` for sequential processing.#' @return An `sbr_collection` object.
 #'
 #' @export
 download_s2 <- function(
@@ -24,7 +24,7 @@ download_s2 <- function(
         project = NULL,
         output_dir = cache_downloads(),
         overwrite = FALSE,
-        workers = 4
+        workers = NULL
 )   {
 
     if (!is.null(project)) {
@@ -50,15 +50,26 @@ download_s2 <- function(
         )
     }
 
-    if (!is.numeric(workers) ||
-        length(workers) != 1L ||
-        workers < 1) {
+    if (is.null(workers)) {
 
-        stop(
-            "`workers` must be a positive integer.",
-            call. = FALSE
-        )
+        workers <- future::availableCores()
+
+    } else {
+
+        if (!is.numeric(workers) ||
+            length(workers) != 1L ||
+            is.na(workers) ||
+            workers < 1 ||
+            workers != as.integer(workers)) {
+
+            stop(
+                "`workers` must be NULL or a positive integer.",
+                call. = FALSE
+            )
+        }
     }
+
+    workers <- as.integer(workers)
 
     if (!is.null(limit)) {
 
@@ -77,7 +88,6 @@ download_s2 <- function(
         limit <- as.integer(limit)
     }
 
-    workers <- as.integer(workers)
 
     invalid <- setdiff(
         assets,
@@ -170,6 +180,11 @@ download_s2 <- function(
             call. = FALSE
         )
     }
+
+    workers <- min(
+        workers,
+        nrow(queue)
+    )
 
     message(
         "Download queue: ",

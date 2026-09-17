@@ -270,7 +270,7 @@ test_that("select_timeseries enforces minimum temporal spacing", {
 
     dates <- as.Date(
         vapply(
-            out$items$features,
+            out$items,
             function(x) {
                 substr(
                     x$properties$datetime,
@@ -305,15 +305,16 @@ test_that("select_timeseries prefers clearer acquisitions", {
 
     dates <- purrr::map_chr(
         out$items,
-        \(acquisition) {
+        \(item) {
             substr(
-                acquisition[[1]]$properties$datetime,
+                item$properties$datetime,
                 1,
                 10
             )
         }
     ) |>
-        as.Date()
+        as.Date() |>
+        unique()
 
     # 6 May is clearer than 1 May and is within
     # the exclusion interval.
@@ -338,7 +339,7 @@ test_that("select_timeseries applies cloud threshold", {
     )
 
     clouds <- vapply(
-        out$items$features,
+        out$items,
         function(x) {
             x$properties$`eo:cloud_cover`
         },
@@ -1084,9 +1085,7 @@ test_that("keep_collection_acquisitions retains collection acquisitions", {
 
     purrr::map_dfr(
         search$items,
-        \(acquisition) {
-
-            item <- acquisition[[1]]
+        \(item) {
 
             item_date <- as.Date(
                 item$properties$datetime
@@ -1117,29 +1116,28 @@ test_that("keep_collection_acquisitions retains collection acquisitions", {
         collection
     )
 
-    dates <- purrr::map_chr(
+    expect_length(out$items, 4)
+
+
+    dates <- unique(
+        purrr::map_chr(
         out$items,
-        \(acquisition) {
-            as.character(
-                as.Date(
-                    acquisition[[1]]$
-                        properties$datetime
-                )
-            )
-        }
-    )
+        \(item) {
+            substr(
+
+                    item$properties$datetime,
+                    1, 10
+
+        )
+    }
+)
+)
+
 
     expect_equal(
-        dates,
+        sort(unique(dates)),
         c("2026-05-06", "2026-05-23")
     )
 
-    expect_length(out$items, 2)
-
-    # Each retained acquisition still contains all its tiles
-    expect_equal(
-        purrr::map_int(out$items, length),
-        purrr::map_int(search$items[c(2, 4)], length)
-    )
 })
 
