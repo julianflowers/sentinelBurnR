@@ -3171,17 +3171,17 @@
         "RemoteRepo": "sentinelBurnR",
         "RemoteUsername": "julianflowers",
         "RemoteRef": "HEAD",
-        "RemoteSha": "308f8a2d8d2807b8b78dad8dca27eabf774208fd",
+        "RemoteSha": "86fa66540f7cc8eeddb8650c109a2c5ee57679dd",
         "GithubRepo": "sentinelBurnR",
         "GithubUsername": "julianflowers",
         "GithubRef": "HEAD",
-        "GithubSHA1": "308f8a2d8d2807b8b78dad8dca27eabf774208fd",
+        "GithubSHA1": "86fa66540f7cc8eeddb8650c109a2c5ee57679dd",
         "NeedsCompilation": "no",
-        "Packaged": "2026-09-15 21:15:21 UTC; julianflowers",
+        "Packaged": "2026-09-17 13:57:15 UTC; julianflowers",
         "Author": "Julian Flowers [aut, cre]",
         "Maintainer": "Julian Flowers <julian.flowers12@gmail.com>",
         "Depends": "R (>= 4.1.0)",
-        "Built": "R 4.6.1; ; 2026-09-15 21:15:23 UTC; unix"
+        "Built": "R 4.6.1; ; 2026-09-17 13:57:16 UTC; unix"
       }
     },
     "servr": {
