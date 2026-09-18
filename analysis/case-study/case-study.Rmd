@@ -374,7 +374,28 @@ mapview(spring_veg$msi, maxpixels = 639200, col.regions = palette_lookup("stress
 ```
 
 
-```{r}
+```{r get humidity}
+
+
+
+cat(
+    "\n=== CDS DIAGNOSTIC ===\n",
+    "CDS_API_KEY available: ",
+    nzchar(Sys.getenv("CDS_API_KEY")),
+    "\n======================\n"
+)
+
+cds_key <- Sys.getenv(
+    "CDS_API_KEY",
+    unset = ""
+)
+
+if (nzchar(cds_key)) {
+    ecmwfr::wf_set_key(
+        key = cds_key,
+        user = "ecmwfr"
+    )
+}
 
 climate <- get_humidity(
     boundary = read_boundary(aoi$geometry),
