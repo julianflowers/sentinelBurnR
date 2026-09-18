@@ -8,31 +8,6 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, cache = TRUE, fig.width= 10, fig.height = 7 )
 
-cds_key <- Sys.getenv(
-    "CDS_API_KEY",
-    unset = ""
-)
-
-message(
-    "CDS_API_KEY available: ",
-    nzchar(cds_key)
-)
-
-if (nzchar(cds_key)) {
-
-    message(
-        "Registering CDS key with ecmwfr"
-    )
-
-    ecmwfr::wf_set_key(
-        key = cds_key,
-        user = "ecmwfr"
-    )
-
-    message(
-        "CDS key registered"
-    )
-}
 
 ```
 
