@@ -2,11 +2,13 @@
 title: "Dunwich Forest"
 author: "Julian Flowers"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+    html_document:
+        fig_
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, fig.width= 10, fig.height = 7 )
 
 cds_key <- Sys.getenv(
     "CDS_API_KEY",
