@@ -237,3 +237,104 @@ download_era5_month <- function(
     outfile
 }
 
+
+# climate baseline --------------------------------------------------------
+
+get_climate_baseline <- function(
+        boundary,
+        date,
+        baseline_years = 1991:2020,
+        windows = c(30, 60, 90),
+        dry_spell_window = 90,
+        source = "era5"
+) {
+
+    date <- as.Date(date)
+
+    if (length(date) != 1L || is.na(date)) {
+        stop(
+            "`date` must be a single valid date.",
+            call. = FALSE
+        )
+    }
+
+    if (length(baseline_years) < 2L) {
+        stop(
+            "At least two baseline years are required.",
+            call. = FALSE
+        )
+    }
+
+    max_window <- max(
+        c(windows, dry_spell_window)
+    )
+
+    # Baseline years plus the current analysis year
+    years <- unique(
+        c(baseline_years, lubridate::year(date))
+    )
+
+    rainfall <- purrr::map(
+        years,
+        function(year) {
+
+            end <- as.Date(sprintf(
+                "%04d-%s",
+                year,
+                format(date, "%m-%d")
+            ))
+
+            start <- end - (max_window - 1)
+
+            get_rainfall(
+                boundary = boundary,
+                start = start,
+                end = end,
+                source = source
+            )
+        }
+    )
+
+    temperature <- purrr::map(
+        years,
+        function(year) {
+
+            end <- as.Date(sprintf(
+                "%04d-%s",
+                year,
+                format(date, "%m-%d")
+            ))
+
+            start <- end - (max_window - 1)
+
+            get_temperature(
+                boundary = boundary,
+                start = start,
+                end = end,
+                source = source
+            )
+        }
+    )
+
+    rainfall <- dplyr::bind_rows(rainfall)
+    temperature <- dplyr::bind_rows(temperature)
+
+    # Restore classes lost by bind_rows()
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    structure(
+        list(
+            rainfall = rainfall,
+            temperature = temperature,
+            date = date,
+            baseline_years = baseline_years,
+            windows = windows,
+            dry_spell_window = dry_spell_window
+        ),
+        class = "sbr_climate_baseline"
+    )
+}
+

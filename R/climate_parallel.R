@@ -196,13 +196,19 @@ download_climate_months <- function(
                 )
             )
 
-            callr::r_bg(
-                func = function(
+    callr::r_bg(func = function(
         job,
         bbox,
         variable,
         statistic
                 ) {
+
+                    run_climate_download_job <-
+                        getFromNamespace(
+                            "run_climate_download_job",
+                            "sentinelBurnR"
+                        )
+
                     run_climate_download_job(
                         job = job,
                         bbox = bbox,
@@ -223,8 +229,7 @@ download_climate_months <- function(
         stdout = "|",
         stderr = "|"
             )
-        }
-
+}
         running <- list()
         next_job <- 1L
         n_done <- 0L
