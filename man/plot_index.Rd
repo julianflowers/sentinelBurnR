@@ -10,7 +10,11 @@ plot_index(
   title = NULL,
   subtitle = NULL,
   boundary = NULL,
-  caption = NULL
+  caption = NULL,
+  basemap = FALSE,
+  basemap_type = "stamen_toner_background",
+  basemap_zoom = NULL,
+  index_alpha = 0.75
 )
 }
 \arguments{
@@ -25,7 +29,32 @@ plot_index(
 \item{boundary}{Optional spatial boundary to overlay on the plot.}
 
 \item{caption}{Optional plot caption.}
+
+\item{basemap}{Optional basemap default is FALSE}
+
+\item{basemap_type}{haracter. Basemap type to use. Supported values include
+Stadia map styles such as \code{"stamen_toner_background"} and
+\code{"alidade_smooth"}, and \code{"satellite"} for satellite imagery.}
+
+\item{basemap_zoom}{Integer or \code{NULL}. Basemap zoom level. If \code{NULL}, an
+appropriate zoom is selected for standard Stadia maps. Satellite imagery
+uses the default satellite zoom.}
+
+\item{index_alpha}{Numeric between 0 and 1. Opacity of the index raster when
+plotted over a basemap. Default is \code{0.75}.}
 }
 \description{
 Plot a continuous raster index
+}
+\examples{
+\dontrun{
+plot_index(
+    x,
+    index = "ndvi",
+    basemap = TRUE,
+    basemap_type = "satellite",
+    basemap_zoom = 14,
+    index_alpha = 0.65
+)
+}
 }

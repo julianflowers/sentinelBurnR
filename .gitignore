@@ -17,3 +17,8 @@ analysis/case-study/*
 data-raw/National_Forest_Inventory_England_2022.geojson
 data-raw/Priority_Habitats_Inventory_England.gpkg
 /dev/
+rsconnect/
+**/rsconnect/
+data-raw/*
+data-raw/FR_E_TreeSpeciesMap.zip
+data-raw/FR_E_TreeSpeciesMap/
