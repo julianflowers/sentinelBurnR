@@ -204,8 +204,28 @@ theme_sbr_plot <- function() {
 #' @param index Character name of the spectral index.
 #' @param title Optional plot title.
 #' @param subtitle Optional plot subtitle.
+#' @param basemap Optional basemap default is FALSE
+#' @param basemap_type haracter. Basemap type to use. Supported values include
+#'   Stadia map styles such as `"stamen_toner_background"` and
+#'   `"alidade_smooth"`, and `"satellite"` for satellite imagery.
+#' @param basemap_zoom Integer or `NULL`. Basemap zoom level. If `NULL`, an
+#'   appropriate zoom is selected for standard Stadia maps. Satellite imagery
+#'   uses the default satellite zoom.
+#' @param index_alpha Numeric between 0 and 1. Opacity of the index raster when
+#'   plotted over a basemap. Default is `0.75`.
 #' @param boundary Optional spatial boundary to overlay on the plot.
 #' @param caption Optional plot caption.
+#' @examples
+#' \dontrun{
+#' plot_index(
+#'     x,
+#'     index = "ndvi",
+#'     basemap = TRUE,
+#'     basemap_type = "satellite",
+#'     basemap_zoom = 14,
+#'     index_alpha = 0.65
+#' )
+#' }
 #' @export
 plot_index <- function(
         x,
@@ -213,7 +233,11 @@ plot_index <- function(
         title = NULL,
         subtitle = NULL,
         boundary = NULL,
-        caption = NULL
+        caption = NULL,
+        basemap = FALSE,
+        basemap_type = "stamen_toner_background",
+        basemap_zoom = NULL,
+        index_alpha = 0.75
 ) {
 
     if (!inherits(x, "SpatRaster")) {
@@ -248,6 +272,9 @@ plot_index <- function(
 
 
     palette <- palette_lookup(info$palette)
+
+    # No basemap --------------------------
+    if (!basemap) {
 
     p <- ggplot2::ggplot() +
 
@@ -294,6 +321,88 @@ plot_index <- function(
 
     p
 
+}
+
+    # --------------------------------------------------
+    # Basemap
+    # --------------------------------------------------
+
+    if (isTRUE(basemap)) {
+    map <- get_sbr_basemap(
+        x,
+        type = basemap_type,
+        zoom = basemap_zoom
+    )
+
+
+    # ggmap uses lon/lat coordinates
+    x_plot <- terra::project(
+        x,
+        "EPSG:4326"
+    )
+
+    p <- ggmap::ggmap(
+        map
+    ) +
+
+        tidyterra::geom_spatraster(
+            data = x_plot,
+            alpha = index_alpha
+        ) +
+
+        ggplot2::scale_fill_gradientn(
+            colours = palette,
+            na.value = "transparent",
+            name = info$name,
+            limits = info$limits,
+            oob = scales::squish
+        ) +
+
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle,
+            caption = caption
+        ) +
+
+        theme_sbr_map()
+}
+
+    # Boundary must also be lon/lat in this branch
+
+    if (!is.null(boundary)) {
+
+        if (inherits(boundary, "SpatVector")) {
+            boundary_plot <- terra::project(
+                boundary,
+                "EPSG:4326"
+            )
+
+            boundary_plot <- sf::st_as_sf(
+                boundary_plot
+            )
+        } else if (inherits(boundary, "sf")) {
+            boundary_plot <- sf::st_transform(
+                boundary,
+                4326
+            )
+        } else {
+            stop(
+                "`boundary` must be an sf or SpatVector object.",
+                call. = FALSE
+            )
+        }
+
+        p <- p +
+            ggplot2::geom_sf(
+                data = boundary_plot,
+                fill = NA,
+                colour = "black",
+                linewidth = 0.5,
+                inherit.aes = FALSE
+            )
+    }
+
+    p
 }
 
 
@@ -615,7 +724,453 @@ plot_drought <- function(
 }
 
 
+# basemap -----------------------------------------------------------------
 
 
 
+get_sbr_basemap <- function(
+        x,
+        type = "stamen_toner_background",
+        zoom = NULL,
+        cache = TRUE,
+        verbose = FALSE
+) {
+
+    if (!inherits(x, "SpatRaster")) {
+        stop(
+            "`x` must be a terra::SpatRaster.",
+            call. = FALSE
+        )
+    }
+
+    # Convert raster extent to lon/lat
+    extent_poly <- terra::as.polygons(
+        terra::ext(x),
+        crs = terra::crs(x)
+    )
+
+    extent_ll <- terra::project(
+        extent_poly,
+        "EPSG:4326"
+    )
+
+    e <- terra::ext(extent_ll)
+
+    bbox <- c(
+        left   = unname(e$xmin),
+        bottom = unname(e$ymin),
+        right  = unname(e$xmax),
+        top    = unname(e$ymax)
+    )
+
+    if (identical(type, "satellite")) {
+
+        return(
+            get_sbr_satellite(
+                bbox = bbox,
+                zoom = zoom,
+                cache = cache,
+                verbose = verbose
+            )
+        )
+    }
+
+    stadia_types <- c(
+        "stamen_terrain",
+        "stamen_toner",
+        "stamen_toner_lite",
+        "stamen_watercolor",
+        "alidade_smooth",
+        "alidade_smooth_dark",
+        "outdoors",
+        "stamen_terrain_background",
+        "stamen_toner_background",
+        "stamen_terrain_labels",
+        "stamen_terrain_lines",
+        "stamen_toner_labels",
+        "stamen_toner_lines"
+    )
+
+    if (!type %in% stadia_types) {
+        stop(
+            "Unknown basemap type: ",
+            type,
+            call. = FALSE
+        )
+    }
+
+    args <- list(
+        bbox = bbox,
+        maptype = type
+    )
+
+    if (!is.null(zoom)) {
+        args$zoom <- zoom
+    }
+
+    key <- Sys.getenv("STADIA_MAPS_API_KEY")
+
+    if (!nzchar(key)) {
+        stop(
+            paste0(
+                "A Stadia Maps API key is required for basemaps.\n",
+                "Set it in the environment variable ",
+                "`STADIA_MAPS_API_KEY`."
+            ),
+            call. = FALSE
+        )
+    }
+
+    ggmap::register_stadiamaps(
+        key = key,
+        write = FALSE
+    )
+
+    do.call(
+        ggmap::get_stadiamap,
+        args
+    )
+}
+
+
+# sbr basemap cache -------------------------------------------------------
+sbr_basemap_cache_dir <- function() {
+
+    dir <- tools::R_user_dir(
+        "sentinelBurnR",
+        which = "cache"
+    )
+
+    dir <- file.path(
+        dir,
+        "basemaps"
+    )
+
+    if (!dir.exists(dir)) {
+        dir.create(
+            dir,
+            recursive = TRUE,
+            showWarnings = FALSE
+        )
+    }
+
+    dir
+}
+
+
+# basemap cache file ------------------------------------------------------
+
+basemap_cache_file <- function(
+        type,
+        zoom,
+        xmin,
+        xmax,
+        ymin,
+        ymax
+) {
+
+    key <- paste0(
+        type,
+        "_z", zoom,
+        "_x", xmin, "-", xmax,
+        "_y", ymin, "-", ymax
+    )
+
+    file.path(
+        sbr_basemap_cache_dir(),
+        paste0(key, ".rds")
+    )
+}
+
+xyz_x <- function(lon, zoom) {
+    floor(
+        (lon + 180) / 360 * 2^zoom
+    )
+}
+
+
+xyz_y <- function(lat, zoom) {
+
+    lat_rad <- lat * pi / 180
+
+    floor(
+        (
+            1 -
+                log(
+                    tan(lat_rad) +
+                        1 / cos(lat_rad)
+                ) / pi
+        ) / 2 * 2^zoom
+    )
+}
+
+
+# get sbr satellite -------------------------------------------------------
+
+get_sbr_satellite <- function(
+        bbox,
+        zoom = 14,
+        cache = TRUE,
+        verbose = FALSE
+) {
+
+    key <- Sys.getenv("STADIA_MAPS_API_KEY")
+
+    if (!nzchar(key)) {
+        stop(
+            paste0(
+                "A Stadia Maps API key is required for satellite basemaps.\n",
+                "Set `STADIA_MAPS_API_KEY` in your environment."
+            ),
+            call. = FALSE
+        )
+    }
+
+    if (is.null(zoom)) {
+        zoom <- 14L
+    }
+
+    zoom <- as.integer(zoom)
+
+    if (zoom < 0L || zoom > 18L) {
+        stop(
+            "`zoom` must be between 0 and 18 for satellite imagery.",
+            call. = FALSE
+        )
+    }
+
+
+   # Required tile range------
+    xmin <- xyz_x(
+        bbox[["left"]],
+        zoom
+    )
+
+    xmax <- xyz_x(
+        bbox[["right"]],
+        zoom
+    )
+
+    ymin <- xyz_y(
+        bbox[["top"]],
+        zoom
+    )
+
+    ymax <- xyz_y(
+        bbox[["bottom"]],
+        zoom
+    )
+
+    # Cache ----------------------
+    cache_file <- basemap_cache_file(
+        type = "satellite",
+        zoom = zoom,
+        xmin = xmin,
+        xmax = xmax,
+        ymin = ymin,
+        ymax = ymax
+    )
+
+    if (
+        isTRUE(cache) &&
+        file.exists(cache_file)
+    ) {
+
+        if (isTRUE(verbose)) {
+            message(
+                "Using cached satellite basemap."
+            )
+        }
+
+        return(
+            readRDS(cache_file)
+        )
+    }
+
+
+    # Required tiles -------------------
+    xs <- seq.int(xmin, xmax)
+    ys <- seq.int(ymin, ymax)
+
+
+    # Download tiles -----------------------------------
+
+    tiles <- vector(
+        "list",
+        length(xs) * length(ys)
+    )
+
+    k <- 1L
+
+    for (y in ys) {
+
+        for (x in xs) {
+
+            url <- sprintf(
+                paste0(
+                    "https://tiles.stadiamaps.com/",
+                    "data/satellite/%d/%d/%d.jpg",
+                    "?api_key=%s"
+                ),
+                zoom,
+                x,
+                y,
+                key
+            )
+
+            tmp <- tempfile(
+                fileext = ".jpg"
+            )
+
+            utils::download.file(
+                url,
+                tmp,
+                mode = "wb",
+                quiet = TRUE
+            )
+
+            tiles[[k]] <- jpeg::readJPEG(
+                tmp
+            )
+
+            unlink(tmp)
+
+            k <- k + 1L
+        }
+    }
+
+
+    # Stitch tiles -------------------------------------
+
+    tile_height <- dim(tiles[[1]])[1]
+    tile_width  <- dim(tiles[[1]])[2]
+
+    image <- array(
+        0,
+        dim = c(
+            tile_height * length(ys),
+            tile_width * length(xs),
+            3
+        )
+    )
+
+    k <- 1L
+
+    for (iy in seq_along(ys)) {
+
+        for (ix in seq_along(xs)) {
+
+            rows <- (
+                (iy - 1L) * tile_height + 1L
+            ):(
+                iy * tile_height
+            )
+
+            cols <- (
+                (ix - 1L) * tile_width + 1L
+            ):(
+                ix * tile_width
+            )
+
+            image[
+                rows,
+                cols,
+            ] <- tiles[[k]]
+
+            k <- k + 1L
+        }
+    }
+
+
+    # XYZ tile edges -----------------------------------
+
+    tile_x_to_lon <- function(x, z) {
+        x / 2^z * 360 - 180
+    }
+
+    tile_y_to_lat <- function(y, z) {
+
+        n <- pi - 2 * pi * y / 2^z
+
+        180 / pi *
+            atan(
+                0.5 *
+                    (exp(n) - exp(-n))
+            )
+    }
+
+
+    left <- tile_x_to_lon(
+        xmin,
+        zoom
+    )
+
+    right <- tile_x_to_lon(
+        xmax + 1L,
+        zoom
+    )
+
+    top <- tile_y_to_lat(
+        ymin,
+        zoom
+    )
+
+    bottom <- tile_y_to_lat(
+        ymax + 1L,
+        zoom
+    )
+
+
+    # Convert to ggmap-compatible raster ---------------
+
+    image <- grDevices::as.raster(image)
+
+    class(image) <- c(
+        "ggmap",
+        "raster"
+    )
+
+    attr(
+        image,
+        "bb"
+    ) <- data.frame(
+        ll.lat = bottom,
+        ll.lon = left,
+        ur.lat = top,
+        ur.lon = right,
+        row.names = "bottom"
+    )
+
+    attr(
+        image,
+        "source"
+    ) <- "stadia"
+
+    attr(
+        image,
+        "maptype"
+    ) <- "satellite"
+
+    attr(
+        image,
+        "zoom"
+    ) <- zoom
+
+
+    if (isTRUE(cache)) {
+
+        saveRDS(
+            image,
+            cache_file
+        )
+
+        if (isTRUE(verbose)) {
+            message(
+                "Satellite basemap cached."
+            )
+        }
+    }
+
+    image
+}
 

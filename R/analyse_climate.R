@@ -384,9 +384,9 @@ print.sbr_climate <- function(x, ...) {
 # dry spell --------------------------------------------------------------
 
 summarise_dry_spell <- function(
-        rainfall = rainfall,
-        date = date,
-        window_days = max(windows),
+        rainfall,
+        date,
+        window_days = 90,
         threshold_mm = 1
 ) {
 
@@ -510,8 +510,8 @@ baseline_dry_spells <- function(
 summarise_dry_spell_baseline <- function(
         rainfall,
         date,
-        baseline_years = baseline_years,
-        current_dry_spell = dry_spell,
+        baseline_years,
+        current_dry_spell,
         window_days = 90,
         threshold_mm = 1
 ) {

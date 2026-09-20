@@ -204,7 +204,7 @@ download_climate_months <- function(
                 ) {
 
                     run_climate_download_job <-
-                        getFromNamespace(
+                        utils::getFromNamespace(
                             "run_climate_download_job",
                             "sentinelBurnR"
                         )

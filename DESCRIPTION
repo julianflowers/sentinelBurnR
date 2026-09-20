@@ -23,7 +23,10 @@ Imports:
     lubridate,
     purrr,
     scales,
-    tibble
+    tibble, 
+    jpeg,
+    ggmap,
+    cli
 Suggests: 
     knitr,
     rmarkdown,
