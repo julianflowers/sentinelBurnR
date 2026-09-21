@@ -270,8 +270,36 @@ plot_index <- function(
         title <- info$title
     }
 
+    n_colours <- if (!is.null(info$palette_values)) {
+        length(info$palette_values)
+    } else {
+        256
+    }
 
-    palette <- palette_lookup(info$palette)
+    palette <- palette_lookup(
+        info$palette,
+        n = n_colours
+    )
+
+    scale_args <- list(
+        colours = palette,
+        na.value = "transparent",
+        name = info$name,
+        limits = info$limits,
+        oob = scales::squish
+    )
+
+    if (!is.null(info$palette_values)) {
+        scale_args$values <- scales::rescale(
+            info$palette_values,
+            from = info$limits
+        )
+    }
+
+    fill_scale <- do.call(
+        ggplot2::scale_fill_gradientn,
+        scale_args
+    )
 
     # No basemap --------------------------
     if (!basemap) {
@@ -284,14 +312,7 @@ plot_index <- function(
 
             ) +
 
-            ggplot2::scale_fill_gradientn(
-                colours = palette,
-                na.value = "transparent",
-                name = info$name,
-                limits = info$limits,
-                oob = scales::squish
-
-            ) +
+            fill_scale +
 
             ggplot2::labs(
 
@@ -350,13 +371,7 @@ plot_index <- function(
             alpha = index_alpha
         ) +
 
-        ggplot2::scale_fill_gradientn(
-            colours = palette,
-            na.value = "transparent",
-            name = info$name,
-            limits = info$limits,
-            oob = scales::squish
-        ) +
+        fill_scale +
 
         ggplot2::labs(
             title = title,

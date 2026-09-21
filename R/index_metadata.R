@@ -45,7 +45,16 @@ index_info <- list(
         title = "Normalized Difference Vegetation Index",
         description = "Vegetation ",
         palette = "vegetation",
-        limits = c(-1, 1)
+        limits = c(-1, 1),
+        palette_values = c(
+            -1,
+            -0.5,
+            0,
+            0.25,
+            0.5,
+            0.75,
+            1
+        )
     ),
 
     ndmi_anomaly = list(

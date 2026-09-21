@@ -135,11 +135,13 @@ sbr_palette_vegetation <- function(n = 256) {
     grDevices::colorRampPalette(
 
         c(
-            "#F7FCF5",
+            "#D9D9D9",  # negative NDVI
+            "#F2F2F2",
+            "#FFFFE5",  # around zero
             "#C7E9C0",
             "#74C476",
             "#238B45",
-            "#00441B"
+            "#00441B"   # high NDVI
         )
 
     )(n)

@@ -1,0 +1,413 @@
+---
+title: "dunwich forest"
+author: "Julian Flowers"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(stars)
+library(mapview)
+library(sentinelBurnR)
+library(dplyr)
+library(ggmap)
+
+sentinelBurnR::sbr_options()
+
+```
+
+```{r}
+
+search()
+
+"package:sentinelBurnR" %in% search()
+
+"analyse_burn" %in% ls("package:sentinelBurnR")
+
+find("analyse_burn")
+
+
+```
+
+
+```{r}
+
+ggmap::register_google
+
+ggmap::has_stadiamaps_key()
+
+ggmap::register_stadiamaps(key = Sys.getenv("STADIA_MAPS_API_KEY"), write = TRUE)
+
+```
+
+```{r}
+
+dunwich_centroid <- st_sfc(
+    st_point(c(646315, 271425)),
+    crs = 27700
+)
+
+dunwich_coords <- st_coordinates(dunwich_centroid |> st_transform(4326))
+
+dunwich_coords[2]
+buffer <- st_buffer(dunwich_centroid, 4000)
+
+# Your existing Dunwich Forest AOI
+aoi <- st_as_sf(buffer)
+
+aoi <- read_aoi(aoi) 
+
+
+dunwich_heath_nt <- read_sf("https://services-eu1.arcgis.com/NPIbx47lsIiu2pqz/arcgis/rest/services/National_Trust_Open_Data_Land_Always_Open/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A3857%2C%22wkid%22%3A102100%2C%22falseM%22%3A-100000%2C%22falseX%22%3A-20037700%2C%22falseY%22%3A-30241100%2C%22falseZ%22%3A-100000%2C%22mTolerance%22%3A0.001%2C%22mUnits%22%3A10000%2C%22xyTolerance%22%3A0.001%2C%22xyUnits%22%3A10000%2C%22zTolerance%22%3A0.001%2C%22zUnits%22%3A10000%7D%2C%22rings%22%3A%5B%5B%5B178891.875000773%2C6848139.442063789%5D%2C%5B182473.29314539168%2C6848391.146809274%5D%2C%5B182413.4274259731%2C6844613.261615393%5D%2C%5B178992.9450557515%2C6844407.837101876%5D%2C%5B178891.875000773%2C6848139.442063789%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")
+
+mins <- read_sf("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/services/RSPB_Public_Reserves/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A3857%2C%22wkid%22%3A102100%2C%22falseM%22%3A-100000%2C%22falseX%22%3A-20037700%2C%22falseY%22%3A-30241100%2C%22falseZ%22%3A-100000%2C%22mTolerance%22%3A0.001%2C%22mUnits%22%3A10000%2C%22xyTolerance%22%3A0.001%2C%22xyUnits%22%3A10000%2C%22zTolerance%22%3A0.001%2C%22zUnits%22%3A10000%7D%2C%22rings%22%3A%5B%5B%5B174039.70607185047%2C6855008.919645872%5D%2C%5B185340.59226344264%2C6855523.525967158%5D%2C%5B182606.6995281489%2C6840212.6069664825%5D%2C%5B173482.40250429546%2C6840741.470585037%5D%2C%5B174039.70607185047%2C6855008.919645872%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")
+
+mins_dun <- st_union(dunwich_heath_nt, mins)
+
+mins_dun_buffer <- st_intersection( buffer, mins_dun) |> st_cast("POLYGON") |> st_union() |> st_as_sf()
+class(mins_dun_buffer)
+
+```
+
+```{r}
+
+forest_rides <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/Forestry_England_Rides/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B628495.3575707488%2C285431.77062842005%5D%2C%5B662751.1352478093%2C294770.3551635386%5D%2C%5B684831.9538117035%2C280507.4429996414%5D%2C%5B634635.2743044049%2C232026.8892874641%5D%2C%5B628495.3575707488%2C285431.77062842005%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D") |>
+    st_intersection(buffer)
+
+
+water_sources <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/Forestry_England_Water_Supply_Points/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B643051.8766064274%2C274585.843166293%5D%2C%5B643051.8766064274%2C274537.89915978845%5D%2C%5B643044.4300021859%2C274534.1249697116%5D%2C%5B643051.8766064274%2C274585.843166293%5D%5D%2C%5B%5B643453.4977126467%2C267248.51157663105%5D%2C%5B643007.7817075249%2C267614.6780006248%5D%2C%5B64305.8766064274%2C274537.89915978845%5D%2C%5B647108.9052439564%2C275180.8263629696%5D%2C%5B652178.0309866983%2C274565.2854093723%5D%2C%5B651971.5596019728%2C269769.66721522773%5D%2C%5B652076.7318946252%2C269094.83649891696%5D%2C%5B652952.9690410579%2C268364.291281966%5D%2C%5B652641.9212406921%2C267948.369127454%5D%2C%5B643453.4977126467%2C267248.51157663105%5D%5D%2C%5B%5B642250.1240865191%2C274218.18704976875%5D%2C%5B643044.4300021859%2C274534.1249697116%5D%2C%5B643044.4300021859%2C274534.1249697116%5D%2C%5B642250.1240865191%2C274218.18704976875%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D") |>
+    st_intersection(buffer)
+
+water_pipelines <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/Forestry_England_Water_Pipes/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B643073.7333247294%2C274243.5309282382%5D%2C%5B644326.5647428692%2C274062.38431653095%5D%2C%5B646369.8270176855%2C274343.04238927475%5D%2C%5B648113.3631553678%2C274328.44340247597%5D%2C%5B650083.9284346964%2C273848.76240765903%5D%2C%5B650825.3484071199%2C273181.2311847477%5D%2C%5B651788.881535839%2C270806.36335264496%5D%2C%5B650845.0123485223%2C269312.05277531315%5D%2C%5B649902.1859459769%2C268414.5130256946%5D%2C%5B647050.4675348651%2C267278.02659418585%5D%2C%5B644070.7845353845%2C266396.4265546435%5D%2C%5B643073.7333247294%2C274243.5309282382%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")  |>
+    st_intersection(buffer)
+
+forest_subcompartments <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/Forestry_England_Legal_Boundary_2024/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B644467.0913106374%2C273420.1483005018%5D%2C%5B644398.4397688205%2C273286.2742829705%5D%2C%5B644461.0131869733%2C273495.4308992092%5D%2C%5B644467.0913106374%2C273420.1483005018%5D%5D%2C%5B%5B644267.8321888815%2C267828.8744862013%5D%2C%5B644580.2546950333%2C271030.19094720297%5D%2C%5B644474.9191837937%2C273295.94601735094%5D%2C%5B645806.6754424868%2C273619.3771798742%5D%2C%5B648036.3337586836%2C273801.30289548746%5D%2C%5B648590.874536189%2C273668.32562616916%5D%2C%5B648893.9463446445%2C273319.132970513%5D%2C%5B649002.4270262474%2C272560.5826335775%5D%2C%5B649368.1792714773%2C271502.0002168819%5D%2C%5B649713.7486626005%2C269977.44203592616%5D%2C%5B649580.0689264262%2C269552.50654309295%5D%2C%5B649219.5979981159%2C269583.81682856206%5D%2C%5B647998.8297509991%2C269298.904068958%5D%2C%5B644267.8321888815%2C267828.8744862013%5D%5D%2C%5B%5B644461.0131869733%2C273495.4308992092%5D%2C%5B644460.975574353%2C273495.89676268236%5D%2C%5B644464.7921193668%2C273496.56100273284%5D%2C%5B644463.4311538003%2C273496.1453370299%5D%2C%5B644461.0131869733%2C273495.4308992092%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")  |>
+    st_intersection(buffer)
+
+heath <- read_sf("https://environment.data.gov.uk/geoservices/datasets/42c69280-aea1-4d3b-82a3-b1129cce0e30/ogc/features/v1/collections/Habitat_Networks_Individual_England_Lowland_Heathland/items?f=application%2Fgeo%2Bjson") 
+
+dunwich_heath <- st_transform(heath, 27700) |>
+    st_intersection(buffer)
+
+plot(dunwich_heath)
+
+rspb_heath <- read_sf("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/services/Heathland_extent_and_potential/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson") |> st_transform(27700) |> st_intersection(buffer)
+
+plot(rspb_heath)
+
+basemap <- ggmap::get_googlemap(center = c(lon = dunwich_coords[1], lat = dunwich_coords[2]), zoom = 13)
+
+
+mapview(forest_rides, popup = TRUE) +
+    mapview(water_sources, popup = TRUE, zcol = "featdesc") +
+    mapview(water_pipelines) +
+    mapview(dunwich_heath, zcol = "class") 
+
+```
+
+
+# Habitat Networks (England) - Lowland Heathland
+
+Publisher
+
+: Natural England
+
+Updated
+
+: 13 July 2026
+
+Topic
+
+: Not set
+
+Licence
+
+: [View licence information](https://www.data.gov.uk/dataset/05e7e53f-8cec-4f78-bad8-73a351c85c06/habitat-networks-england-lowland-heathland#licence-information)
+
+## Summary
+
+This is the record for Lowland Heathland which forms a part of the Habitat Networks (Individual) (England) dataset (link below).
+
+The habitat network maps seek to apply the best evidence and principles and to use the best available nationally consistent spatial data. The habitat network maps are developed around 4 distinct habitat components sets and include 4 distinct network zones where action may be undertaken to build greater ecological resilience. The different elements of the maps are described below: Habitat Components; • The location of existing patches of a specific habitat for which the network is developed. This is termed the ‘Primary habitat’ e.g. lowland heathland. The main baseline data used for this is the Priority Habitat Inventories (PHIv2.2). • The location of additional habitat that naturally form mosaics with the primary habitat e.g. habitats that are most likely to form ecological mosaics possibly used by species associated with the primary habitat. This is termed the ‘Associated habitat’. The main baseline data used for this is the Priority Habitat Inventories (PHIv2.2). • The locations where habitat creation or restoration is known to occur, this is primarily sites under relevant agri-environment options. This is termed the ‘Habitat creation’ • Sites where data suggests small fragments of the primary habitat or degraded habitat exists and where restoration may be possible, this is primarily developed from information held within the current PHI v2.2. This is termed the ‘Restorable habitat’.\
+Network Zones; • Land within close proximity to the existing habitat components that are more likely to be suitable for habitat re-creation for the particular habitat. These areas are primarily based on soils but in many cases has been refined by also using other data such as hydrology, altitude and proximity to the coast. This is termed the ‘Network Enhancement Zone 1’. • Land within close proximity to the existing habitat components that are unlikely to be suitable for habitat re-creation but where other types of habitat may be created or land management may be enhanced including delivery of suitable Green Infrastructure. This is termed the ‘Network Enhancement Zone 2’. • Land immediately adjoining existing habitat patches that are small or have excessive edge to area ratio where habitat creation is likely to help reduce the effects of habitat fragmentation. This is termed the ‘Fragmentation Action Zone’. • Land within relatively close proximity to the Network Enhancement Zones 1 \&amp;amp; 2 that are more likely to be suitable for habitat creation for the particular habitat and identifying possible locations for connecting and linking up networks across a landscape. This is termed the ‘Network Expansion Zone’.\
+Note: For some habitat networks not all of the habitat components or all the action zones are identified either because the data does not exist or the habitat does not lend itself to identifying particular types of action. Further details are outlined in the Habitat Network Mapping Guidance document. The Network boundary is drawn around the 4 habitat components using a variable buffering process with a generalised distance of 500m although 1km was used for Blanket Bog. As the boundary for each habitat network is tightly drawn around the existing patches of habitat this means that at a national scale the habitat network is composed of a series of smaller ‘networks’ that encapsulates one or more clusters of existing habitat patches. These may be considered as ‘network segments’. The Network Expansion Zone has been drawn around these segments to identify areas where additional action may be undertaken to build greater ecological resilience across the wider landscape. Attribution statement: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right [year].
+
+```{r}
+
+tree_sps <- st_as_sf(read_stars("~/Projects/sentinelBurnR/data-raw/FR_E_TreeSpeciesMap/Tree Species Map England.tif"))
+
+```
+
+```{r nfi}
+
+nfi <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/National_Forest_Inventory_England_2024/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B644691.1027929918%2C273858.3975955876%5D%2C%5B644994.4414345123%2C273888.1169615708%5D%2C%5B645422.243886955%2C274309.6627053854%5D%2C%5B645926.9144739708%2C274516.24581705075%5D%2C%5B646609.901256886%2C274605.73909581976%5D%2C%5B647266.036331939%2C274589.8738703701%5D%2C%5B647584.1974141379%2C274528.68474968034%5D%2C%5B647848.1709305402%2C274323.665815172%5D%2C%5B648725.0784386115%2C272435.8901982253%5D%2C%5B648725.6370733104%2C271253.6702060306%5D%2C%5B648678.0413969613%2C271290.72630772647%5D%2C%5B648268.2642241375%2C270774.5850882259%5D%2C%5B647890.1057752734%2C270554.0361090873%5D%2C%5B647524.2000474725%2C269974.582957041%5D%2C%5B647309.7960500221%2C269922.2575069076%5D%2C%5B646711.2003489591%2C269923.82168406463%5D%2C%5B645977.9736854532%2C269353.30668720126%5D%2C%5B645530.2838377286%2C269134.0611890268%5D%2C%5B645365.710055423%2C268962.18791332183%5D%2C%5B644855.9372714902%2C268770.2782730818%5D%2C%5B644743.837908571%2C268809.4944289469%5D%2C%5B644577.9978876145%2C269342.3574471022%5D%2C%5B644473.086291155%2C269453.8236906959%5D%2C%5B644456.4017348136%2C269713.73779495264%5D%2C%5B644640.7884277746%2C270888.9934745673%5D%2C%5B644611.4042426107%2C271956.80508042057%5D%2C%5B644751.0629173439%2C272387.43794867117%5D%2C%5B644691.1027929918%2C273858.3975955876%5D%5D%2C%5B%5B644658.8137073935%2C273877.8008407972%5D%2C%5B644658.6274958272%2C273878.88086788176%5D%2C%5B644660.7130653699%2C273879.9608949664%5D%2C%5B644667.6773779499%2C273880.10986421944%5D%2C%5B644670.1685884689%2C273877.8008407972%5D%2C%5B644666.6345931785%2C273877.8008407972%5D%2C%5B644664.6235082623%2C273877.8008407972%5D%2C%5B644661.9793040208%2C273877.8008407972%5D%2C%5B644658.8137073935%2C273877.8008407972%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")
+
+mapview(nfi, zcol = "IFT_IOA") +
+    mapview(forest_rides, popup = TRUE) +
+    mapview(water_sources, popup = TRUE, zcol = "featdesc") +
+    mapview(water_pipelines) +
+    mapview(forest_subcompartments)
+
+
+
+```
+
+```{r}
+
+nfi_buffer <- st_centroid(st_union(nfi)) |>
+    st_buffer(3000) 
+
+aoi <- read_aoi(nfi_buffer)
+
+
+ggmap::get_map("Dunwich", zoom = 13, maptype = "satellite") |> ggmap::ggmap() +
+    geom_sf(data = nfi, aes(fill = IFT_IOA), alpha = 0.4, inherit.aes = FALSE) +
+    geom_sf(data = rspb_heath, fill = NA, colour = "blue", lwd = 2, alpha = 0.6, inherit.aes = FALSE) +
+    geom_sf(data = forest_rides, colour = "red", inherit.aes = FALSE) +
+    geom_sf(data = water_sources, colour = "yellow", inherit.aes = FALSE) +
+    coord_sf(crs = 4326) +
+    scale_fill_viridis_d(option = "turbo")
+
+ggmap::get_map("Dunwich", zoom = 13, maptype = "satellite") |> ggmap::ggmap() +
+    geom_sf(data = nfi, aes(fill = IFT_IOA), alpha = 0.4, inherit.aes = FALSE) +
+    geom_sf(data = rspb_heath, fill = NA, colour = "blue", lwd = 2, alpha = 0.6, inherit.aes = FALSE) +
+    geom_sf(data = forest_rides, colour = "red", inherit.aes = FALSE) +
+    geom_sf(data = water_sources, colour = "yellow", inherit.aes = FALSE) +
+    coord_sf(crs = 4326) +
+    scale_fill_viridis_d(option = "turbo")
+```
+
+```{r}
+
+spring_heath <- search_s2(
+    aoi = read_aoi(mins_dun_buffer),
+    start = "2026-04-01",
+    end   = "2026-07-01")
+
+summer_heath <- search_s2(
+    aoi = read_aoi(mins_dun_buffer),
+    start = "2026-07-01",
+    end   = "2026-09-19"
+)
+```
+
+```{r}
+spring_heath_sel <- select_timeseries(
+    spring_heath,
+    interval = 10,
+    max_cloud = 30
+)
+
+
+summer_heath_sel <- select_timeseries(
+    summer_heath,
+    interval = 10,
+    max_cloud = 30
+)
+```
+
+```{r collections}
+
+spring_heath_collection <- download_s2(
+    spring_heath_sel,
+    assets = c(
+        "red",
+        "nir08",
+        "swir16",
+        "swir22",
+        "scl"
+    )
+)
+
+summer_heath_collection <- download_s2(
+    summer_heath_sel,
+    assets = c(
+        "red",
+        "nir08",
+        "swir16",
+        "swir22",
+        "scl"
+    )
+)
+
+```
+
+```{r analyse vegetation}
+
+spring_heath_veg <- analyse_vegetation(spring_heath_collection, cache = TRUE, overwrite = TRUE)
+
+summer_heath_veg <- analyse_vegetation(summer_heath_collection, cache = TRUE, overwrite = TRUE)
+
+
+```
+
+```{r, fig.height=7, fig.width=9}
+library(ggplot2)
+library(stars)
+library(patchwork)
+
+p1 <- plot_index(
+    spring_heath_veg$msi,
+    index = "msi",
+    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+) 
+
+
+
+p2 <- plot_index(
+    summer_heath_veg$msi,
+    index = "msi",
+    title = "Summer", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+)
+
+
+p3 <- plot_index(
+    spring_heath_veg$ndmi,
+    index = "ndmi",
+    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+
+)
+
+p4 <- plot_index(
+    summer_heath_veg$ndmi,
+    index = "ndmi",
+    title = "Summer",
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+
+)
+
+
+p5 <- plot_index(
+    spring_heath_veg$ndvi,
+    index = "ndvi",
+    title = "Spring",
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+
+)
+
+p6 <- plot_index(
+    summer_heath_veg$ndvi,
+    index = "ndvi",
+    title = "Summer",
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+
+)
+
+ (p2 | p4 | p6) / (p1 | p3 | p5) +
+    plot_annotation(
+        title = "Vegetation and moisture condition"
+    ) &
+    theme(
+        axis.title = element_blank()
+    )
+
+```
+
+```{r}
+visual_collection_spring <- download_s2(
+    spring_heath_sel,
+    assets = c(
+        "visual"
+    )
+)
+
+#unique(visual_collection_spring$files$date)
+
+visual_collection_summer <- download_s2(
+    summer_heath_sel,
+    assets = c(
+        "visual"
+    )
+)
+```
+
+```{r}
+
+visual_apr07 <- read_visual(
+    visual_collection_spring,
+    date = "2026-04-07",
+    aoi = read_aoi(mins_dun_buffer)
+) 
+
+
+visual_may25 <- read_visual(
+    visual_collection_spring,
+    date = "2026-05-25",
+    aoi = read_aoi(mins_dun_buffer)
+)
+
+visual_jul29 <- read_visual(
+    visual_collection_summer,
+    date = "2026-07-29",
+    aoi = read_aoi(mins_dun_buffer)
+)
+
+visual_aug13 <- read_visual(
+    visual_collection_summer,
+    date = "2026-08-13",
+    aoi = read_aoi(mins_dun_buffer)
+)
+
+
+
+```
+
+```{r true colour images}
+
+terra::plotRGB(visual_apr07)
+terra::plotRGB(visual_may25)
+terra::plotRGB(visual_jul29)
+terra::plotRGB(visual_aug13)
+
+
+```
+
+
+```{r}
+climate <- get_humidity(
+    boundary = read_boundary(aoi$geometry),
+    start = "2026-04-01",
+    end   = "2026-08-31"
+)
+
+rainfall <- get_rainfall(boundary = read_boundary(aoi$geometry),
+                         start = "2026-04-01",
+                         end   = "2026-08-31"
+)
+
+
+
+
+rain <- data.frame(date = rainfall$date, rainfall = rainfall$precipitation_mm)
+
+climate <- sentinelBurnR::analyse_climate(
+    rainfall = rainfall,
+    date = as.Date("2026-07-29"),
+    baseline_years = 1991:2020,
+    windows = c(30, 60, 90)
+)
+
+rain |>
+    ggplot(aes(date, rainfall)) +
+    geom_line()
+
+climate |>
+    ggplot(aes(date, vpd_kpa)) +
+    geom_smooth() +
+    geom_line()
+
+```
+
+```{r}
+
+climate
+
+sentinelBurnR:::extract_temperature(climate = climate, boundary = aoi)
+
+sentinelBurnR::analyse_climate()
+
+
+```
