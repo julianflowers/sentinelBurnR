@@ -1210,7 +1210,7 @@ get_sbr_satellite <- function(
 
 
 # plot climate ------------------------------------------------------------
-
+#' @export
 plot_climate <- function(
         x,
         metric = c("rainfall", "temperature")

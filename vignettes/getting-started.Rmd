@@ -305,17 +305,16 @@ The Sentinel-2 moisture anomaly indicates whether vegetation was
 unusually dry compared with previous years. It does not, by itself,
 tell us why the vegetation was dry.
 
-Meteorological data provide an independent line of evidence. Here we
-compare rainfall before the fire with the same period during the
-1991--2020 climate baseline.
+Meteorological observations provide an independent line of evidence.
+`sentinelBurnR` can compare recent rainfall and temperature with the
+equivalent periods during a historical climate baseline. Here we use
+1991--2020 as the reference period.
 
-The demonstration data contain daily ERA5 rainfall extracted for the
-Dunwich area.
+For a full analysis, `get_climate_baseline()` downloads the required
+ERA5 data for both the analysis year and the baseline years. Only the
+months needed to calculate the requested climate windows are retrieved.
 
 ```{r climate-download, eval=FALSE}
-
-boundary <- read_boundary(aoi)
-
 climate_data <- sentinelBurnR::get_climate_baseline(
     boundary = aoi,
     date = as.Date("2026-07-29"),
@@ -333,8 +332,11 @@ climate <- sentinelBurnR::analyse_climate(
 climate
 ```
 
+Downloading ERA5 data requires access to the Copernicus Climate Data
+Store. To keep this vignette reproducible without network access, the
+executable example below uses rainfall data bundled with the package.
 
-```{r rainfall-analysis}
+```{r climate-analysis}
 rainfall <- demo_data("rainfall")
 
 climate <- sentinelBurnR::analyse_climate(
@@ -344,63 +346,88 @@ climate <- sentinelBurnR::analyse_climate(
     windows = c(30, 60, 90)
 )
 
-rainfall_table <- climate$summary |>
+climate$summary |>
     dplyr::transmute(
         `Period (days)` = window_days,
         `2026 rainfall (mm)` = current_mm,
         `1991–2020 median (mm)` = baseline_median_mm,
-        `Deficit (mm)` = anomaly_mm,
+        `Rainfall anomaly (mm)` = anomaly_mm,
         `% of historical median` = percent_of_normal,
         `Historical percentile` = historical_percentile
+    ) |>
+    knitr::kable(
+        digits = 1,
+        caption = paste(
+            "Rainfall before 29 July 2026 compared with",
+            "the equivalent periods in the 1991–2020 baseline."
+        )
     )
-
-knitr::kable(
-    rainfall_table,
-    digits = 1,
-    caption = paste(
-        "Rainfall before 29 July 2026 compared with",
-        "the equivalent periods in the 1991–2020 baseline."
-    )
-)
-
-
 ```
 
-The historical percentile ranks the 2026 rainfall total against the 30 equivalent periods in the 1991–2020 baseline. For example, the 90-day rainfall total was at approximately the 3rd percentile. The 30-day value was lower than all 30 baseline values and therefore has an empirical percentile of 0%. This should be interpreted as a ranking within the 30-year sample, rather than as a literal estimate of a zero-percent climatological probability.
+The percentage of normal rainfall compares the observed rainfall total
+with the median of the equivalent periods in the baseline years. Values
+below 100% indicate less rainfall than the historical median.
 
-Rainfall was substantially below the historical median during the
-period leading up to the fire. In the 30 days ending 29 July 2026,
-only about 6.8 mm of rain fell, compared with a 1991--2020 median of
-about 62.3 mm -- approximately 11% of the historical median.
+The historical percentile provides a complementary measure. It ranks
+the current rainfall total against the equivalent periods in the 30
+baseline years. With a 30-year baseline, the percentile is an empirical
+ranking within a relatively small sample. A value of 0%, for example,
+means that the current value was below all 30 baseline values; it should
+not be interpreted as a literal estimate of a zero-percent
+climatological probability.
 
-The rainfall deficit was also apparent over longer periods. About
-68.4 mm fell during the preceding 60 days and 94.3 mm during the
-preceding 90 days, compared with historical medians of approximately
-123.4 and 172.8 mm respectively.
+The same comparison can be visualised directly.
 
-This provides independent meteorological evidence that the negative
-vegetation moisture anomaly seen by Sentinel-2 occurred during an
-unusually dry period.
+```{r climate-rainfall-plot, fig.width=7, fig.height=5}
+sentinelBurnR::plot_climate(
+    climate,
+    metric = "rainfall"
+)
+```
+
+Rainfall substantially below the historical median provides
+meteorological evidence that a negative vegetation moisture anomaly
+occurred during an unusually dry period. The two measurements are
+independent: Sentinel-2 describes the condition of the vegetation,
+whereas ERA5 describes the meteorological conditions preceding the
+satellite observation.
+
+When temperature data are supplied to `analyse_climate()`, the same
+analysis also compares recent temperature with the historical baseline.
+
+```{r climate-temperature, eval=FALSE}
+climate$temperature
+
+sentinelBurnR::plot_climate(
+    climate,
+    metric = "temperature"
+)
+```
+
+Temperature anomalies are expressed in degrees Celsius relative to the
+baseline, while the historical percentile describes where the current
+temperature lies among the equivalent periods in the baseline years.
+As with rainfall, these percentiles are empirical rankings within the
+baseline sample rather than estimates of climatological probability.
 
 ## Prolonged dry weather
 
 Total rainfall does not tell us how rain was distributed through time.
 A similar total could result from frequent small showers or from a
-long period with almost no rain.
+long period with almost no rain. `analyse_climate()` therefore also
+examines the duration of dry spells.
 
 ```{r dry-spell}
 climate$dry_spell
 ```
 
-Using less than 1 mm of rainfall per day to define a dry day, 68 of
-the 90 days before 29 July were dry.
+By default, a day with less than 1 mm of rainfall is treated as a dry
+day. The result reports the number of dry days in the analysis window,
+the longest consecutive dry spell, its start and end dates, and the
+number of days since the most recent day with at least 1 mm of rain.
 
-The longest continuous dry spell lasted 32 days, from 24 June to
-25 July. Only three days had elapsed since the most recent day with
-at least 1 mm of rainfall.
-
-We can also compare the duration of this dry spell with the equivalent
-90-day period during the 1991--2020 baseline.
+The current dry spell can also be compared with the equivalent period
+in each baseline year.
 
 ```{r dry-spell-baseline}
 climate$dry_spell_baseline[c(
@@ -410,24 +437,19 @@ climate$dry_spell_baseline[c(
 )]
 ```
 
-The median longest dry spell during the 1991--2020 baseline was
-13.5 days. The 32-day spell in 2026 was therefore more than twice
-the historical median.
+The baseline median describes the typical longest dry spell during the
+equivalent historical period. The percentile shows how the current
+longest dry spell ranks among the baseline years.
 
-Only one of the 30 baseline years had a longer dry spell: 2018, when
-the longest spell lasted 36 days. The 2026 value has an empirical
-percentile of approximately 96.7%, meaning that it was longer than
-the corresponding dry spell in 29 of the 30 baseline years.
+Taken together, rainfall, temperature, dry-spell and satellite
+observations provide complementary evidence about the environmental
+conditions preceding a fire. Rainfall describes water input,
+temperature influences evaporative demand, and Sentinel-2 measures the
+condition of the vegetation itself.
 
-Taken together, the rainfall and satellite observations provide two
-independent lines of evidence of unusually dry conditions before the
-fire. Rainfall was substantially below the historical median and a
-prolonged dry spell had occurred, while Sentinel-2 showed a negative
-vegetation moisture anomaly across much of the area.
-
-These observations describe the environmental conditions preceding
-the fire. They do not establish its cause or, by themselves, quantify
-wildfire risk.
+These observations describe environmental conditions. They do not
+establish the cause of a fire or, by themselves, quantify wildfire
+risk.
 
 ## Landscape context
 
@@ -533,7 +555,9 @@ vegetation, condition and accessibility.
 
 ```{r landscape-map, fig.width=9, fig.height=7, out.width="100%"}
 
-aoi_sf <- aoi$geometry
+aoi_sf <- aoi |>
+    sentinelBurnR:::aoi_to_spatvector() |>
+    sf::st_as_sf()
 
 ggplot2::ggplot() +
     ggplot2::geom_sf(
