@@ -98,7 +98,12 @@ aoi_to_spatvector <- function(
 ) {
 
     if (inherits(aoi, "sbr_aoi")) {
-        return(aoi$geometry)
+
+        return(
+            terra::unwrap(
+                aoi$packed_geometry
+            )
+        )
     }
 
     if (inherits(aoi, "SpatVector")) {

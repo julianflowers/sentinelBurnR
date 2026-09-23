@@ -117,7 +117,7 @@ aoi <- sentinelBurnR:::read_aoi(
     )
 )
 
-demo_aoi <- sf::st_as_sf(aoi$geometry)
+demo_aoi <- aoi$geometry
 
 saveRDS(
     demo_aoi,
@@ -166,15 +166,16 @@ post_collection <- download_s2(
 
 demo_pre_collection <- make_demo_collection(
     collection = pre_collection,
-    aoi = aoi$geometry,
+    aoi = aoi$packed_geometry,
     name = "pre"
 )
 
 demo_post_collection <- make_demo_collection(
     collection = post_collection,
-    aoi = aoi$geometry,
+    aoi = aoi$packed_geometry,
     name = "post"
 )
+
 
 ## ------------------------------------------------------------------
 ## Burn analysis

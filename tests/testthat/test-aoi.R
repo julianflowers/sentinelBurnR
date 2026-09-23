@@ -333,3 +333,28 @@ test_that("collection AOI survives serialization", {
     )
 })
 
+test_that("aoi_to_spatvector converts sbr_aoi", {
+
+    v <- terra::vect(
+        "POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))",
+        crs = "EPSG:27700"
+    )
+
+    aoi <- read_aoi(v)
+
+    result <- aoi_to_spatvector(aoi)
+
+    expect_s4_class(
+        result,
+        "SpatVector"
+    )
+
+    expect_true(
+        terra::same.crs(
+            result,
+            v
+        )
+    )
+})
+
+

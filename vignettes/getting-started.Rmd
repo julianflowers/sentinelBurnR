@@ -100,9 +100,14 @@ and surface condition following fire.
 Load the area of interest and the Sentinel-2 collections:
 
 ```{r demo-data}
-
-
-aoi <- sentinelBurnR::demo_data("aoi")
+demo_dir <- system.file(
+        "extdata",
+        "demo",
+        package = "sentinelBurnR"
+    )
+aoi <- readRDS(
+            file.path(demo_dir, "demo_aoi.rds")
+        )
 
 pre <- demo_data("pre")
 post <- demo_data("post")
@@ -306,6 +311,28 @@ compare rainfall before the fire with the same period during the
 
 The demonstration data contain daily ERA5 rainfall extracted for the
 Dunwich area.
+
+```{r climate-download, eval=FALSE}
+
+boundary <- read_boundary(aoi)
+
+climate_data <- sentinelBurnR::get_climate_baseline(
+    boundary = aoi,
+    date = as.Date("2026-07-29"),
+    baseline_years = 1991:2020
+)
+
+climate <- sentinelBurnR::analyse_climate(
+    rainfall = climate_data$rainfall,
+    temperature = climate_data$temperature,
+    date = as.Date("2026-07-29"),
+    baseline_years = 1991:2020,
+    windows = c(30, 60, 90)
+)
+
+climate
+```
+
 
 ```{r rainfall-analysis}
 rainfall <- demo_data("rainfall")

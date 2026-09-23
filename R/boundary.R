@@ -65,6 +65,23 @@ read_boundary.default <- function(x, template = NULL) {
 
 }
 
+#' Read boundary from an sbr_aoi
+#'
+#' @param x An `sbr_aoi` object.
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return A `SpatVector`.
+#'
+#' @export
+read_boundary.sbr_aoi <- function(
+        x,
+        ...
+) {
+    aoi_to_spatvector(x)
+
+}
+
+
 #-----------------------------------------
 # Prepare Boundary
 #-----------------------------------------
