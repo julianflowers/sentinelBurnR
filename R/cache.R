@@ -587,7 +587,7 @@ aoi_cache_key <- function(aoi) {
     }
 
     if (inherits(aoi, "sbr_aoi")) {
-        aoi <- aoi$geometry
+        aoi <- aoi_geometry(aoi)
     }
 
     if (!inherits(aoi, "SpatVector")) {

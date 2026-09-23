@@ -398,7 +398,7 @@ if (nzchar(cds_key)) {
 }
 
 climate <- get_humidity(
-    boundary = read_boundary(aoi$geometry),
+    boundary = read_boundary(aoi_geometry(aoi)),
     start = "2026-04-01",
     end   = "2026-08-31"
 )

@@ -214,3 +214,122 @@ test_that("read_aoi reads a vector file", {
     )
 
 })
+
+test_that("collection AOI survives serialization", {
+
+    geometry <- terra::vect(
+        matrix(
+            c(
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 1,
+                0, 0
+            ),
+            ncol = 2,
+            byrow = TRUE
+        ),
+        type = "polygons",
+        crs = "EPSG:4326"
+    )
+
+    aoi <- new_aoi(geometry)
+
+    collection <- new_s2_collection(
+        files = data.frame(
+            scene = character(),
+            tile = character(),
+            date = as.Date(character()),
+            satellite = character(),
+            asset = character(),
+            file = character()
+        ),
+        aoi = aoi
+    )
+
+    f <- tempfile(fileext = ".rds")
+
+    saveRDS(collection, f)
+    restored <- readRDS(f)
+
+    geometry2 <- aoi_geometry(
+        restored$aoi
+    )
+
+    expect_s4_class(
+        geometry2,
+        "SpatVector"
+    )
+
+    expect_true(
+        terra::same.crs(
+            geometry,
+            geometry2
+        )
+    )
+
+    expect_equal(
+        as.vector(terra::ext(geometry)),
+        as.vector(terra::ext(geometry2))
+    )
+})
+
+test_that("collection AOI survives serialization", {
+
+    geometry <- terra::vect(
+        matrix(
+            c(
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 1,
+                0, 0
+            ),
+            ncol = 2,
+            byrow = TRUE
+        ),
+        type = "polygons",
+        crs = "EPSG:4326"
+    )
+
+    aoi <- new_aoi(geometry)
+
+    collection <- new_s2_collection(
+        files = data.frame(
+            scene = character(),
+            tile = character(),
+            date = as.Date(character()),
+            satellite = character(),
+            asset = character(),
+            file = character()
+        ),
+        aoi = aoi
+    )
+
+    f <- tempfile(fileext = ".rds")
+
+    saveRDS(collection, f)
+    restored <- readRDS(f)
+
+    geometry2 <- aoi_geometry(
+        restored$aoi
+    )
+
+    expect_s4_class(
+        geometry2,
+        "SpatVector"
+    )
+
+    expect_true(
+        terra::same.crs(
+            geometry,
+            geometry2
+        )
+    )
+
+    expect_equal(
+        as.vector(terra::ext(geometry)),
+        as.vector(terra::ext(geometry2))
+    )
+})
+

@@ -146,21 +146,13 @@ dnbr_labels <- c(
 
 
 burn_palette <- c(
-
-    "#1a9850",
-
-    "#66bd63",
-
-    "#f7f7f7",
-
-    "#fee08b",
-
-    "#fdae61",
-
-    "#f46d43",
-
-    "#d73027"
-
+    "Enhanced regrowth, high" = "#1A9850",
+    "Enhanced regrowth, low"  = "#91CF60",
+    "Unburned"                = "#E5E5E5",
+    "Low severity"            = "#FEE08B",
+    "Moderate-low severity"   = "#FDAE61",
+    "Moderate-high severity"  = "#D73027",
+    "High severity"           = "#67001F"
 )
 
 

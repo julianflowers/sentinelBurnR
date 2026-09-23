@@ -78,7 +78,7 @@ build_composite <- function(
             scl_stacks = scl_stacks,
             band_stacks = band_stacks[assets != "scl"],
             aoi = if (!is.null(collection$aoi)) {
-                collection$aoi$geometry
+                aoi_geometry(collection$aoi)
             } else {
                 NULL
             }
@@ -127,7 +127,7 @@ build_composite <- function(
 
     if (!is.null(collection$aoi)) {
 
-        aoi <- collection$aoi$geometry
+        aoi <- aoi_geometry(collection$aoi)
 
         if (!terra::same.crs(aoi, composite)) {
 
@@ -285,7 +285,7 @@ build_band <- function(
                 ),
                 band_stacks = one_band,
                 aoi = if (!is.null(collection$aoi)) {
-                    collection$aoi$geometry
+                    aoi_geometry(collection$aoi)
                 } else {
                     NULL
                 }
@@ -299,7 +299,7 @@ build_band <- function(
 
     if (!is.null(collection$aoi)) {
 
-        aoi <- collection$aoi$geometry
+        aoi <- aoi_geometry(collection$aoi)
 
         keep_tiles <- logical(
             length(stacks)

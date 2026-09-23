@@ -484,11 +484,6 @@ plot_severity <- function(
 
     x <- terra::as.factor(x)
 
-    levels(x) <- data.frame(
-        ID = 1:7,
-        severity = dnbr_labels
-    )
-
     p <- ggplot2::ggplot() +
 
         tidyterra::geom_spatraster(
@@ -496,10 +491,7 @@ plot_severity <- function(
         ) +
 
         ggplot2::scale_fill_manual(
-            values = stats::setNames(
-                burn_palette,
-                dnbr_labels
-            ),
+            values = burn_palette,
             drop = FALSE,
             name = "Burn severity"
         ) +

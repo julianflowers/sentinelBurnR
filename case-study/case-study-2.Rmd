@@ -19,19 +19,6 @@ sentinelBurnR::sbr_options()
 
 ```
 
-```{r}
-
-search()
-
-"package:sentinelBurnR" %in% search()
-
-"analyse_burn" %in% ls("package:sentinelBurnR")
-
-find("analyse_burn")
-
-
-```
-
 
 ```{r}
 
@@ -65,7 +52,13 @@ dunwich_heath_nt <- read_sf("https://services-eu1.arcgis.com/NPIbx47lsIiu2pqz/ar
 
 mins <- read_sf("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/services/RSPB_Public_Reserves/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A3857%2C%22wkid%22%3A102100%2C%22falseM%22%3A-100000%2C%22falseX%22%3A-20037700%2C%22falseY%22%3A-30241100%2C%22falseZ%22%3A-100000%2C%22mTolerance%22%3A0.001%2C%22mUnits%22%3A10000%2C%22xyTolerance%22%3A0.001%2C%22xyUnits%22%3A10000%2C%22zTolerance%22%3A0.001%2C%22zUnits%22%3A10000%7D%2C%22rings%22%3A%5B%5B%5B174039.70607185047%2C6855008.919645872%5D%2C%5B185340.59226344264%2C6855523.525967158%5D%2C%5B182606.6995281489%2C6840212.6069664825%5D%2C%5B173482.40250429546%2C6840741.470585037%5D%2C%5B174039.70607185047%2C6855008.919645872%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")
 
-mins_dun <- st_union(dunwich_heath_nt, mins)
+mins_only <- mins |> filter(Name == "MINSMERE")
+
+mapview(mins_dun)
+
+mins_dun <- st_union(dunwich_heath_nt, mins_only)
+
+plot(mins_dun)
 
 mins_dun_buffer <- st_intersection( buffer, mins_dun) |> st_cast("POLYGON") |> st_union() |> st_as_sf()
 class(mins_dun_buffer)
@@ -182,13 +175,15 @@ ggmap::get_map("Dunwich", zoom = 13, maptype = "satellite") |> ggmap::ggmap() +
 
 ```{r}
 
+plot
+
 spring_heath <- search_s2(
-    aoi = read_aoi(mins_dun_buffer),
+    aoi = read_aoi(mins_dun),
     start = "2026-04-01",
     end   = "2026-07-01")
 
 summer_heath <- search_s2(
-    aoi = read_aoi(mins_dun_buffer),
+    aoi = read_aoi(mins_dun),
     start = "2026-07-01",
     end   = "2026-09-19"
 )
@@ -233,13 +228,17 @@ summer_heath_collection <- download_s2(
     )
 )
 
+glimpse(summer_heath_collection)
+
 ```
 
 ```{r analyse vegetation}
 
-spring_heath_veg <- analyse_vegetation(spring_heath_collection, cache = TRUE, overwrite = TRUE)
+spring_heath_veg <- analyse_vegetation(spring_heath_collection, cache = FALSE, overwrite = FALSE)
 
 summer_heath_veg <- analyse_vegetation(summer_heath_collection, cache = TRUE, overwrite = TRUE)
+
+burn <- analyse_burn(spring_heath_collection, summer_heath_collection)
 
 
 ```
@@ -252,7 +251,7 @@ library(patchwork)
 p1 <- plot_index(
     spring_heath_veg$msi,
     index = "msi",
-    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 ) 
 
 
@@ -260,14 +259,14 @@ p1 <- plot_index(
 p2 <- plot_index(
     summer_heath_veg$msi,
     index = "msi",
-    title = "Summer", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    title = "Summer", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 )
 
 
 p3 <- plot_index(
     spring_heath_veg$ndmi,
     index = "ndmi",
-    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    title = "Spring", basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 
 )
 
@@ -275,7 +274,7 @@ p4 <- plot_index(
     summer_heath_veg$ndmi,
     index = "ndmi",
     title = "Summer",
-    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 
 )
 
@@ -284,7 +283,7 @@ p5 <- plot_index(
     spring_heath_veg$ndvi,
     index = "ndvi",
     title = "Spring",
-    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 
 )
 
@@ -292,11 +291,11 @@ p6 <- plot_index(
     summer_heath_veg$ndvi,
     index = "ndvi",
     title = "Summer",
-    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun_buffer)
+    basemap_type = "satellite", index_alpha = 0.2, boundary = read_boundary(mins_dun)
 
 )
 
- (p2 | p4 | p6) / (p1 | p3 | p5) +
+ (p1 | p3 | p5) / (p2 | p4 | p6) +
     plot_annotation(
         title = "Vegetation and moisture condition"
     ) &
@@ -329,26 +328,26 @@ visual_collection_summer <- download_s2(
 visual_apr07 <- read_visual(
     visual_collection_spring,
     date = "2026-04-07",
-    aoi = read_aoi(mins_dun_buffer)
+    aoi = read_aoi(mins_dun)
 ) 
 
 
 visual_may25 <- read_visual(
     visual_collection_spring,
     date = "2026-05-25",
-    aoi = read_aoi(mins_dun_buffer)
+    aoi = read_aoi(mins_dun)
 )
 
 visual_jul29 <- read_visual(
     visual_collection_summer,
     date = "2026-07-29",
-    aoi = read_aoi(mins_dun_buffer)
+    aoi = read_aoi(mins_dun)
 )
 
 visual_aug13 <- read_visual(
     visual_collection_summer,
     date = "2026-08-13",
-    aoi = read_aoi(mins_dun_buffer)
+    aoi = read_aoi(mins_dun)
 )
 
 
@@ -374,7 +373,7 @@ climate <- get_humidity(
 )
 
 rainfall <- get_rainfall(boundary = read_boundary(aoi$geometry),
-                         start = "2026-04-01",
+                         start = "2025-04-01",
                          end   = "2026-08-31"
 )
 
@@ -389,6 +388,8 @@ climate <- sentinelBurnR::analyse_climate(
     baseline_years = 1991:2020,
     windows = c(30, 60, 90)
 )
+
+sentinelBurnR:::summarise_dry_spell(rainfall = rainfall, date = as.Date("2026-07-29"), window_days = 30)
 
 rain |>
     ggplot(aes(date, rainfall)) +

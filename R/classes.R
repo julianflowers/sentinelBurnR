@@ -70,12 +70,35 @@ new_aoi <- function(geometry) {
 
     structure(
         list(
-            geometry = geometry
+            packed_geometry = terra::wrap(geometry)
         ),
         class = "sbr_aoi"
     )
 }
 
+
+aoi_geometry <- function(x) {
+
+    stopifnot(
+        inherits(x, "sbr_aoi")
+    )
+
+    if (!is.null(x$packed_geometry)) {
+        return(
+            terra::unwrap(x$packed_geometry)
+        )
+    }
+
+    # Backwards compatibility with existing sbr_aoi objects
+    if (!is.null(x$geometry)) {
+        return(x$geometry)
+    }
+
+    stop(
+        "`sbr_aoi` does not contain geometry.",
+        call. = FALSE
+    )
+}
 
 
 

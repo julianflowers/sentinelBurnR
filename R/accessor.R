@@ -11,5 +11,12 @@ geometry <- function(x) {
 
 #' @export
 geometry.sbr_aoi <- function(x) {
-    x$geometry
+
+    stopifnot(
+        inherits(x, "sbr_aoi")
+    )
+
+    aoi_geometry(x)
 }
+
+
