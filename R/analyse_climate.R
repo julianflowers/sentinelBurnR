@@ -237,8 +237,8 @@ analyse_climate <- function(
         dry_spell <- summarise_dry_spell(
             rainfall = rainfall,
             date = date,
-            window_days = max(windows),
-            threshold_mm = 1
+            window_days = dry_spell_window,
+            threshold_mm = dry_threshold_mm
         )
 
         dry_spell_baseline <- summarise_dry_spell_baseline(
@@ -246,8 +246,8 @@ analyse_climate <- function(
         date = date,
         baseline_years = baseline_years,
         current_dry_spell = dry_spell,
-        window_days = 90,
-        threshold_mm = 1
+        window_days = dry_spell_window,
+        threshold_mm = dry_threshold_mm
         )
 
         out <- list(
@@ -355,31 +355,32 @@ print.sbr_climate <- function(x, ...) {
                 dsb$percentile
             )
         )
+    }
 
-        if (!is.null(x$temperature)) {
+    if (!is.null(x$temperature)) {
 
-            cat("\nTemperature:\n")
+        cat("\nTemperature:\n")
 
-            print(
-                x$temperature |>
-                    dplyr::select(
-                        .data$window_days,
-                        .data$mean_max_c,
-                        .data$baseline_median_mean_max_c,
-                        .data$mean_max_anomaly_c,
-                        .data$mean_max_percentile,
-                        .data$maximum_c,
-                        .data$hot_days,
-                        .data$very_hot_days
-                    ),
-                row.names = FALSE
-            )
-        }
-
+        print(
+            x$temperature |>
+                dplyr::select(
+                    .data$window_days,
+                    .data$mean_max_c,
+                    .data$baseline_median_mean_max_c,
+                    .data$mean_max_anomaly_c,
+                    .data$mean_max_percentile,
+                    .data$maximum_c,
+                    .data$hot_days,
+                    .data$very_hot_days
+                ),
+            row.names = FALSE
+        )
     }
 
     invisible(x)
 }
+
+
 
 # dry spell --------------------------------------------------------------
 

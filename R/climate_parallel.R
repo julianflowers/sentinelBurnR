@@ -4,8 +4,9 @@
 
 download_climate_months <- function(
         boundary,
-        years,
-        months,
+        years = NULL,
+        months = NULL,
+        year_month = NULL,
         source = "era5",
         cache = cache_climate(),
         variable = "total_precipitation",
@@ -30,28 +31,71 @@ download_climate_months <- function(
         )
     }
 
-    years <- as.integer(years)
-    months <- as.integer(months)
-    workers <- as.integer(workers)
+    if (is.null(year_month)) {
+
+        if (is.null(years) || is.null(months)) {
+            stop(
+                "Supply either `year_month` or both `years` and `months`.",
+                call. = FALSE
+            )
+        }
+
+        years <- as.integer(years)
+        months <- as.integer(months)
+
+        if (
+            !length(years) ||
+            !length(months) ||
+            anyNA(years) ||
+            anyNA(months)
+        ) {
+            stop(
+                "`years` and `months` must contain valid values.",
+                call. = FALSE
+            )
+        }
+
+        year_month <- expand.grid(
+            year = years,
+            month = months
+        )
+
+    } else {
+
+        if (!all(c("year", "month") %in% names(year_month))) {
+            stop(
+                "`year_month` must contain `year` and `month` columns.",
+                call. = FALSE
+            )
+        }
+
+        year_month <- unique(
+            data.frame(
+                year = as.integer(year_month$year),
+                month = as.integer(year_month$month)
+            )
+        )
+    }
 
     if (
-        !length(years) ||
-        !length(months) ||
-        anyNA(years) ||
-        anyNA(months)
+        nrow(year_month) == 0L ||
+        anyNA(year_month$year) ||
+        anyNA(year_month$month)
     ) {
         stop(
-            "`years` and `months` must contain valid values.",
+            "`year_month` must contain valid values.",
             call. = FALSE
         )
     }
 
-    if (any(months < 1L | months > 12L)) {
+    if (any(year_month$month < 1L | year_month$month > 12L)) {
         stop(
-            "`months` must be between 1 and 12.",
+            "`month` must be between 1 and 12.",
             call. = FALSE
         )
     }
+
+    workers <- as.integer(workers)
 
     if (
         length(workers) != 1L ||
@@ -64,18 +108,28 @@ download_climate_months <- function(
         )
     }
 
+
     ## Reduce spatial boundary to ordinary numeric values.
     bbox <- era5_bbox(
         read_boundary(boundary)
     )
 
+    years_requested <- sort(unique(year_month$year))
+
     jobs <- unlist(
         lapply(
-            years,
+            years_requested,
             function(year) {
+
+                year_months <- sort(
+                    year_month$month[
+                        year_month$year == year
+                    ]
+                )
+
                 make_climate_download_jobs(
                     year = year,
-                    months = months,
+                    months = year_months,
                     source = source,
                     variable = variable,
                     statistic = statistic,
@@ -92,26 +146,19 @@ download_climate_months <- function(
         message("All requested climate data are already cached.")
 
         files <- unique(
-            unlist(
-                lapply(
-                    years,
-                    function(year) {
-                        vapply(
-                            months,
-                            function(month) {
-                                find_climate_cache(
-                                    source = source,
-                                    year = year,
-                                    month = month,
-                                    variable = variable,
-                                    statistic = statistic,
-                                    cache = cache
-                                )
-                            },
-                            character(1)
-                        )
-                    }
-                )
+            vapply(
+                seq_len(nrow(year_month)),
+                function(i) {
+                    find_climate_cache(
+                        source = source,
+                        year = year_month$year[i],
+                        month = year_month$month[i],
+                        variable = variable,
+                        statistic = statistic,
+                        cache = cache
+                    )
+                },
+                character(1)
             )
         )
 
@@ -307,31 +354,72 @@ download_climate_months <- function(
     ## Return all files required for the requested period,
     ## including files that were already cached.
     files <- unique(
-        unlist(
-            lapply(
-                years,
-                function(year) {
-                    vapply(
-                        months,
-                        function(month) {
-                            find_climate_cache(
-                                source = source,
-                                year = year,
-                                month = month,
-                                variable = variable,
-                                statistic = statistic,
-                                cache = cache
-                            )
-                        },
-                        character(1)
-                    )
-                }
-            )
+        vapply(
+            seq_len(nrow(year_month)),
+            function(i) {
+                find_climate_cache(
+                    source = source,
+                    year = year_month$year[i],
+                    month = year_month$month[i],
+                    variable = variable,
+                    statistic = statistic,
+                    cache = cache
+                )
+            },
+            character(1)
         )
     )
 
     files
 }
+
+# baseline year months
+#
+
+    baseline_year_months <- function(
+        date,
+        years,
+        window_days
+    ) {
+
+        date <- as.Date(date)
+
+        out <- lapply(
+            years,
+            function(year) {
+
+                target <- as.Date(
+                    sprintf(
+                        "%04d-%s",
+                        year,
+                        format(date, "%m-%d")
+                    )
+                )
+
+                start <- target - (window_days - 1)
+
+                dates <- seq(
+                    as.Date(format(start, "%Y-%m-01")),
+                    as.Date(format(target, "%Y-%m-01")),
+                    by = "month"
+                )
+
+                data.frame(
+                    year = as.integer(format(dates, "%Y")),
+                    month = as.integer(format(dates, "%m"))
+                )
+            }
+        )
+
+        unique(
+            do.call(
+                rbind,
+                out
+            )
+        )
+    }
+
+
 
 # download parallel era5 --------------------------------------------------
 
@@ -411,6 +499,8 @@ download_era5_period <- function(
     )
 }
 
+
+
 split_era5_months <- function(x) {
 
     if (is.character(x)) {
@@ -436,6 +526,8 @@ split_era5_months <- function(x) {
     ) |>
         stats::setNames(unique(groups))
 }
+
+
 
 cache_era5_period <- function(
         file,

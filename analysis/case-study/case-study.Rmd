@@ -374,6 +374,29 @@ mapview(spring_veg$msi, maxpixels = 639200, col.regions = palette_lookup("stress
 ```
 
 
+
+```{r climate}
+climate_data <- get_climate_baseline(
+    boundary = aoi$geometry,
+    date = as.Date("2026-08-25"),
+    baseline_years = 1991:2020,
+    workers = 4
+)
+
+climate <- analyse_climate(
+    rainfall = climate_data$rainfall,
+    temperature = climate_data$temperature,
+    date = as.Date("2026-08-25"),
+    baseline_years = 1991:2020
+)
+
+climate
+
+
+```
+
+
+
 ```{r get humidity}
 
 

@@ -1181,3 +1181,77 @@ get_sbr_satellite <- function(
     image
 }
 
+
+# plot climate ------------------------------------------------------------
+
+plot_climate <- function(
+        x,
+        metric = c("rainfall", "temperature")
+) {
+
+    stopifnot(
+        inherits(x, "sbr_climate")
+    )
+
+    metric <- match.arg(metric)
+
+    if (metric == "rainfall") {
+
+        p <- ggplot2::ggplot(
+            x$summary,
+            ggplot2::aes(
+                x = factor(.data$window_days),
+                y = .data$percent_of_normal
+            )
+        ) +
+            ggplot2::geom_col(
+                width = 0.65
+            ) +
+            ggplot2::geom_hline(
+                yintercept = 100,
+                linetype = "dashed"
+            ) +
+            ggplot2::labs(
+                x = "Window (days)",
+                y = "Rainfall (% of normal)",
+                title = "Rainfall conditions",
+                subtitle = sprintf(
+                    "%s relative to %d\u2013%d baseline",
+                    x$date,
+                    min(x$baseline_years),
+                    max(x$baseline_years)
+                )
+            ) +
+            ggplot2::theme_minimal()
+
+        return(p)
+    }
+
+    ggplot2::ggplot(
+        x$temperature,
+        ggplot2::aes(
+            x = factor(.data$window_days),
+            y = .data$mean_max_anomaly_c
+        )
+    ) +
+        ggplot2::geom_col(
+            width = 0.65
+        ) +
+        ggplot2::geom_hline(
+            yintercept = 0,
+            linetype = "dashed"
+        ) +
+        ggplot2::labs(
+            x = "Window (days)",
+            y = "Mean maximum temperature anomaly (\u00b0C)",
+            title = "Temperature conditions",
+            subtitle = sprintf(
+                "%s relative to %d\u2013%d baseline",
+                x$date,
+                min(x$baseline_years),
+                max(x$baseline_years)
+            )
+        ) +
+        ggplot2::theme_minimal()
+}
+

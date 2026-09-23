@@ -506,7 +506,7 @@ vegetation, condition and accessibility.
 
 ```{r landscape-map, fig.width=9, fig.height=7, out.width="100%"}
 
-aoi_sf <- sf::st_as_sf(aoi$geometry)
+aoi_sf <- aoi$geometry
 
 ggplot2::ggplot() +
     ggplot2::geom_sf(

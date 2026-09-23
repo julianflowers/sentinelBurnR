@@ -238,103 +238,117 @@ download_era5_month <- function(
 }
 
 
-# climate baseline --------------------------------------------------------
 
+# get climate baseline ----------------------------------------------------
+
+#' Get climate data for baseline analysis
+#'
+#' Downloads and extracts rainfall and temperature data required for
+#' climate analysis for the current year and a set of baseline years.
+#'
+#' @param boundary Spatial boundary.
+#' @param date Analysis date.
+#' @param baseline_years Years used for the historical baseline.
+#' @param windows Rainfall and temperature comparison windows in days.
+#' @param dry_spell_window Window used for dry-spell analysis.
+#' @param source Climate data source.
+#' @param workers Number of parallel download workers.
+#'
+#' @return A list containing `rainfall` and `temperature`.
+#'
+#' @export
 get_climate_baseline <- function(
         boundary,
         date,
         baseline_years = 1991:2020,
         windows = c(30, 60, 90),
         dry_spell_window = 90,
-        source = "era5"
+        source = "era5",
+        workers = 4
 ) {
 
+    boundary <- read_boundary(boundary)
     date <- as.Date(date)
 
-    if (length(date) != 1L || is.na(date)) {
-        stop(
-            "`date` must be a single valid date.",
-            call. = FALSE
-        )
-    }
+    analysis_year <- as.integer(
+        format(date, "%Y")
+    )
 
-    if (length(baseline_years) < 2L) {
-        stop(
-            "At least two baseline years are required.",
-            call. = FALSE
+    years <- unique(
+        c(
+            baseline_years,
+            analysis_year
         )
-    }
+    )
 
     max_window <- max(
-        c(windows, dry_spell_window)
+        c(
+            windows,
+            dry_spell_window
+        )
     )
 
-    # Baseline years plus the current analysis year
-    years <- unique(
-        c(baseline_years, lubridate::year(date))
+    year_month <- baseline_year_months(
+        date = date,
+        years = years,
+        window_days = max_window
     )
 
-    rainfall <- purrr::map(
-        years,
-        function(year) {
 
-            end <- as.Date(sprintf(
-                "%04d-%s",
-                year,
-                format(date, "%m-%d")
-            ))
+    # Rainfall ------------------------------------------------------------
 
-            start <- end - (max_window - 1)
-
-            get_rainfall(
-                boundary = boundary,
-                start = start,
-                end = end,
-                source = source
-            )
-        }
+    rain_files <- download_climate_months(
+        boundary = boundary,
+        year_month = year_month,
+        source = source,
+        variable = "total_precipitation",
+        statistic = "daily_sum",
+        workers = workers
     )
 
-    temperature <- purrr::map(
-        years,
-        function(year) {
-
-            end <- as.Date(sprintf(
-                "%04d-%s",
-                year,
-                format(date, "%m-%d")
-            ))
-
-            start <- end - (max_window - 1)
-
-            get_temperature(
-                boundary = boundary,
-                start = start,
-                end = end,
-                source = source
-            )
-        }
+    rain_climate <- read_climate(
+        rain_files
     )
 
-    rainfall <- dplyr::bind_rows(rainfall)
-    temperature <- dplyr::bind_rows(temperature)
-
-    # Restore classes lost by bind_rows()
-    class(rainfall) <- c(
-        "sbr_rainfall",
-        "data.frame"
+    rainfall <- extract_rainfall(
+        rain_climate,
+        boundary
     )
 
-    structure(
-        list(
-            rainfall = rainfall,
-            temperature = temperature,
-            date = date,
-            baseline_years = baseline_years,
-            windows = windows,
-            dry_spell_window = dry_spell_window
-        ),
-        class = "sbr_climate_baseline"
+    attr(rainfall, "source") <- source
+    attr(rainfall, "boundary") <- boundary
+
+
+    # Temperature ---------------------------------------------------------
+
+    temp_files <- download_climate_months(
+        boundary = boundary,
+        year_month = year_month,
+        source = source,
+        variable = "2m_temperature",
+        statistic = "daily_mean",
+        workers = workers
+    )
+
+    temp_climate <- read_climate(
+        temp_files
+    )
+
+    temperature <- extract_temperature(
+        temp_climate,
+        boundary
+    )
+
+    attr(temperature, "source") <- source
+    attr(temperature, "boundary") <- boundary
+    attr(temperature, "statistic") <- "daily_mean"
+
+
+    # Return --------------------------------------------------------------
+
+    list(
+        rainfall = rainfall,
+        temperature = temperature
     )
 }
 

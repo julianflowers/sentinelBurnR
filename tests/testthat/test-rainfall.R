@@ -618,5 +618,39 @@ test_that("rainfall demo reproduces expected 90-day rainfall", {
 
 })
 
+test_that("analyse_climate respects dry spell arguments", {
 
+    dates <- seq(
+        as.Date("2019-01-01"),
+        as.Date("2021-12-31"),
+        by = "day"
+    )
 
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = rep(0, length(dates))
+    )
+
+    class(rainfall) <- c(
+        "sbr_rainfall",
+        "data.frame"
+    )
+
+    result <- analyse_climate(
+        rainfall = rainfall,
+        date = as.Date("2021-08-25"),
+        baseline_years = 2019:2020,
+        dry_spell_window = 60,
+        dry_threshold_mm = 2
+    )
+
+    expect_equal(
+        result$dry_spell$window_days,
+        60
+    )
+
+    expect_equal(
+        result$dry_spell$threshold_mm,
+        2
+    )
+})
