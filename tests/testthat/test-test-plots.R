@@ -11,7 +11,6 @@ test_that("plot_rgb returns ggplot", {
 
 })
 
-
 test_that("plot_severity returns ggplot", {
 
     x <- terra::rast(
@@ -25,8 +24,8 @@ test_that("plot_severity returns ggplot", {
     )
 
     terra::values(x) <- c(
-        0.05, 0.2,
-        0.4, 0.7
+        1, 3,
+        5, 7
     )
 
     names(x) <- "severity"
@@ -37,7 +36,24 @@ test_that("plot_severity returns ggplot", {
         p,
         "ggplot"
     )
+})
 
+test_that("plot_severity rejects unclassified raster", {
+
+    x <- terra::rast(
+        nrows = 2,
+        ncols = 2
+    )
+
+    terra::values(x) <- c(
+        0.05, 0.2,
+        0.4, 0.7
+    )
+
+    expect_error(
+        plot_severity(x),
+        "classified burn-severity raster"
+    )
 })
 
 
@@ -119,6 +135,27 @@ test_that("plot_climate rejects invalid metrics", {
             climate,
             metric = "humidity"
         )
+    )
+})
+
+test_that("plot_severity handles missing severity classes", {
+
+    x <- terra::rast(
+        nrows = 2,
+        ncols = 3,
+        xmin = 0,
+        xmax = 3,
+        ymin = 0,
+        ymax = 2
+    )
+
+    terra::values(x) <- 1:6
+
+    p <- plot_severity(x)
+
+    expect_s3_class(
+        p,
+        "ggplot"
     )
 })
 

@@ -482,7 +482,34 @@ plot_severity <- function(
         boundary = NULL
 ) {
 
+    ids <- sort(
+        unique(
+            terra::values(x)
+        )
+    )
+
+    ids <- ids[!is.na(ids)]
+
+    if (
+        length(ids) == 0L ||
+        any(!ids %in% seq_along(dnbr_labels))
+    ) {
+        stop(
+            "`x` must be a classified burn-severity raster ",
+            "with class values from 1 to ",
+            length(dnbr_labels),
+            ".",
+            call. = FALSE
+        )
+    }
+
     x <- terra::as.factor(x)
+
+    levels(x) <- data.frame(
+        ID = ids,
+        severity = dnbr_labels[ids]
+    )
+
 
     p <- ggplot2::ggplot() +
 
