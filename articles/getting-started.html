@@ -456,7 +456,7 @@ short-wave infrared reflectance.</li>
 <span><span class="co">#&gt; [1] "red"    "nir08"  "swir16"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$created</span></span>
-<span><span class="co">#&gt; [1] "2026-09-23 19:08:18 UTC"</span></span>
+<span><span class="co">#&gt; [1] "2026-09-23 19:30:38 UTC"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$package_version</span></span>
 <span><span class="co">#&gt; [1] "0.0.1"</span></span>
@@ -556,16 +556,16 @@ therefore remains an important part of the interpretation.</p>
 <p>The Sentinel-2 moisture anomaly indicates whether vegetation was
 unusually dry compared with previous years. It does not, by itself, tell
 us why the vegetation was dry.</p>
-<p>Meteorological data provide an independent line of evidence. Here we
-compare rainfall before the fire with the same period during the
-1991–2020 climate baseline.</p>
-<p>The demonstration data contain daily ERA5 rainfall extracted for the
-Dunwich area.</p>
+<p>Meteorological observations provide an independent line of evidence.
+<code>sentinelBurnR</code> can compare recent rainfall and temperature
+with the equivalent periods during a historical climate baseline. Here
+we use 1991–2020 as the reference period.</p>
+<p>For a full analysis, <code><a href="../reference/get_climate_baseline.html">get_climate_baseline()</a></code> downloads
+the required ERA5 data for both the analysis year and the baseline
+years. Only the months needed to calculate the requested climate windows
+are retrieved.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">boundary</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_boundary.html">read_boundary</a></span><span class="op">(</span><span class="va">aoi</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">climate_data</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/get_climate_baseline.html">get_climate_baseline</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">climate_data</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/get_climate_baseline.html">get_climate_baseline</a></span><span class="op">(</span></span>
 <span>    boundary <span class="op">=</span> <span class="va">aoi</span>,</span>
 <span>    date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2026-07-29"</span><span class="op">)</span>,</span>
 <span>    baseline_years <span class="op">=</span> <span class="fl">1991</span><span class="op">:</span><span class="fl">2020</span></span>
@@ -580,6 +580,10 @@ Dunwich area.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">climate</span></span></code></pre></div>
+<p>Downloading ERA5 data requires access to the Copernicus Climate Data
+Store. To keep this vignette reproducible without network access, the
+executable example below uses rainfall data bundled with the
+package.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rainfall</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"rainfall"</span><span class="op">)</span></span>
 <span></span>
@@ -590,40 +594,38 @@ Dunwich area.</p>
 <span>    windows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">60</span>, <span class="fl">90</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">rainfall_table</span> <span class="op">&lt;-</span> <span class="va">climate</span><span class="op">$</span><span class="va">summary</span> <span class="op">|&gt;</span></span>
+<span><span class="va">climate</span><span class="op">$</span><span class="va">summary</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>        `Period (days)` <span class="op">=</span> <span class="va">window_days</span>,</span>
 <span>        `2026 rainfall (mm)` <span class="op">=</span> <span class="va">current_mm</span>,</span>
 <span>        `1991–2020 median (mm)` <span class="op">=</span> <span class="va">baseline_median_mm</span>,</span>
-<span>        `Deficit (mm)` <span class="op">=</span> <span class="va">anomaly_mm</span>,</span>
+<span>        `Rainfall anomaly (mm)` <span class="op">=</span> <span class="va">anomaly_mm</span>,</span>
 <span>        `% of historical median` <span class="op">=</span> <span class="va">percent_of_normal</span>,</span>
 <span>        `Historical percentile` <span class="op">=</span> <span class="va">historical_percentile</span></span>
-<span>    <span class="op">)</span></span>
-<span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>    <span class="va">rainfall_table</span>,</span>
-<span>    digits <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>        <span class="st">"Rainfall before 29 July 2026 compared with"</span>,</span>
-<span>        <span class="st">"the equivalent periods in the 1991–2020 baseline."</span></span>
-<span>    <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<table style="width:100%;" class="table">
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>        digits <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>        caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
+<span>            <span class="st">"Rainfall before 29 July 2026 compared with"</span>,</span>
+<span>            <span class="st">"the equivalent periods in the 1991–2020 baseline."</span></span>
+<span>        <span class="op">)</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<table class="table">
 <caption>Rainfall before 29 July 2026 compared with the equivalent
 periods in the 1991–2020 baseline.</caption>
 <colgroup>
-<col width="12%">
-<col width="16%">
-<col width="19%">
 <col width="11%">
-<col width="20%">
-<col width="19%">
+<col width="15%">
+<col width="18%">
+<col width="18%">
+<col width="18%">
+<col width="18%">
 </colgroup>
 <thead><tr class="header">
 <th align="right">Period (days)</th>
 <th align="right">2026 rainfall (mm)</th>
 <th align="right">1991–2020 median (mm)</th>
-<th align="right">Deficit (mm)</th>
+<th align="right">Rainfall anomaly (mm)</th>
 <th align="right">% of historical median</th>
 <th align="right">Historical percentile</th>
 </tr></thead>
@@ -654,44 +656,65 @@ periods in the 1991–2020 baseline.</caption>
 </tr>
 </tbody>
 </table>
-<p>The historical percentile ranks the 2026 rainfall total against the
-30 equivalent periods in the 1991–2020 baseline. For example, the 90-day
-rainfall total was at approximately the 3rd percentile. The 30-day value
-was lower than all 30 baseline values and therefore has an empirical
-percentile of 0%. This should be interpreted as a ranking within the
-30-year sample, rather than as a literal estimate of a zero-percent
+<p>The percentage of normal rainfall compares the observed rainfall
+total with the median of the equivalent periods in the baseline years.
+Values below 100% indicate less rainfall than the historical median.</p>
+<p>The historical percentile provides a complementary measure. It ranks
+the current rainfall total against the equivalent periods in the 30
+baseline years. With a 30-year baseline, the percentile is an empirical
+ranking within a relatively small sample. A value of 0%, for example,
+means that the current value was below all 30 baseline values; it should
+not be interpreted as a literal estimate of a zero-percent
 climatological probability.</p>
-<p>Rainfall was substantially below the historical median during the
-period leading up to the fire. In the 30 days ending 29 July 2026, only
-about 6.8 mm of rain fell, compared with a 1991–2020 median of about
-62.3 mm – approximately 11% of the historical median.</p>
-<p>The rainfall deficit was also apparent over longer periods. About
-68.4 mm fell during the preceding 60 days and 94.3 mm during the
-preceding 90 days, compared with historical medians of approximately
-123.4 and 172.8 mm respectively.</p>
-<p>This provides independent meteorological evidence that the negative
-vegetation moisture anomaly seen by Sentinel-2 occurred during an
-unusually dry period.</p>
+<p>The same comparison can be visualised directly.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu">plot_climate</span><span class="op">(</span></span>
+<span>    <span class="va">climate</span>,</span>
+<span>    metric <span class="op">=</span> <span class="st">"rainfall"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/climate-rainfall-plot-1.png" class="r-plt" alt="" width="672"></p>
+<p>Rainfall substantially below the historical median provides
+meteorological evidence that a negative vegetation moisture anomaly
+occurred during an unusually dry period. The two measurements are
+independent: Sentinel-2 describes the condition of the vegetation,
+whereas ERA5 describes the meteorological conditions preceding the
+satellite observation.</p>
+<p>When temperature data are supplied to <code><a href="../reference/analyse_climate.html">analyse_climate()</a></code>,
+the same analysis also compares recent temperature with the historical
+baseline.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">climate</span><span class="op">$</span><span class="va">temperature</span></span>
+<span></span>
+<span><span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu">plot_climate</span><span class="op">(</span></span>
+<span>    <span class="va">climate</span>,</span>
+<span>    metric <span class="op">=</span> <span class="st">"temperature"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Temperature anomalies are expressed in degrees Celsius relative to
+the baseline, while the historical percentile describes where the
+current temperature lies among the equivalent periods in the baseline
+years. As with rainfall, these percentiles are empirical rankings within
+the baseline sample rather than estimates of climatological
+probability.</p>
 <div class="section level3">
 <h3 id="prolonged-dry-weather">Prolonged dry weather<a class="anchor" aria-label="anchor" href="#prolonged-dry-weather"></a>
 </h3>
 <p>Total rainfall does not tell us how rain was distributed through
 time. A similar total could result from frequent small showers or from a
-long period with almost no rain.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+long period with almost no rain. <code><a href="../reference/analyse_climate.html">analyse_climate()</a></code>
+therefore also examines the duration of dry spells.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">climate</span><span class="op">$</span><span class="va">dry_spell</span></span>
 <span><span class="co">#&gt;   window_days threshold_mm max_consecutive_dry_days days_since_rain dry_days</span></span>
 <span><span class="co">#&gt; 1          90            1                       32               3       68</span></span>
 <span><span class="co">#&gt;   dry_spell_start dry_spell_end</span></span>
 <span><span class="co">#&gt; 1      2026-06-24    2026-07-25</span></span></code></pre></div>
-<p>Using less than 1 mm of rainfall per day to define a dry day, 68 of
-the 90 days before 29 July were dry.</p>
-<p>The longest continuous dry spell lasted 32 days, from 24 June to 25
-July. Only three days had elapsed since the most recent day with at
-least 1 mm of rainfall.</p>
-<p>We can also compare the duration of this dry spell with the
-equivalent 90-day period during the 1991–2020 baseline.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<p>By default, a day with less than 1 mm of rainfall is treated as a dry
+day. The result reports the number of dry days in the analysis window,
+the longest consecutive dry spell, its start and end dates, and the
+number of days since the most recent day with at least 1 mm of rain.</p>
+<p>The current dry spell can also be compared with the equivalent period
+in each baseline year.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">climate</span><span class="op">$</span><span class="va">dry_spell_baseline</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"median_days"</span>,</span>
 <span>    <span class="st">"max_days"</span>,</span>
@@ -705,21 +728,17 @@ equivalent 90-day period during the 1991–2020 baseline.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $percentile</span></span>
 <span><span class="co">#&gt; [1] 96.66667</span></span></code></pre></div>
-<p>The median longest dry spell during the 1991–2020 baseline was 13.5
-days. The 32-day spell in 2026 was therefore more than twice the
-historical median.</p>
-<p>Only one of the 30 baseline years had a longer dry spell: 2018, when
-the longest spell lasted 36 days. The 2026 value has an empirical
-percentile of approximately 96.7%, meaning that it was longer than the
-corresponding dry spell in 29 of the 30 baseline years.</p>
-<p>Taken together, the rainfall and satellite observations provide two
-independent lines of evidence of unusually dry conditions before the
-fire. Rainfall was substantially below the historical median and a
-prolonged dry spell had occurred, while Sentinel-2 showed a negative
-vegetation moisture anomaly across much of the area.</p>
-<p>These observations describe the environmental conditions preceding
-the fire. They do not establish its cause or, by themselves, quantify
-wildfire risk.</p>
+<p>The baseline median describes the typical longest dry spell during
+the equivalent historical period. The percentile shows how the current
+longest dry spell ranks among the baseline years.</p>
+<p>Taken together, rainfall, temperature, dry-spell and satellite
+observations provide complementary evidence about the environmental
+conditions preceding a fire. Rainfall describes water input, temperature
+influences evaporative demand, and Sentinel-2 measures the condition of
+the vegetation itself.</p>
+<p>These observations describe environmental conditions. They do not
+establish the cause of a fire or, by themselves, quantify wildfire
+risk.</p>
 </div>
 <div class="section level3">
 <h3 id="landscape-context">Landscape context<a class="anchor" aria-label="anchor" href="#landscape-context"></a>
@@ -733,7 +752,7 @@ affect access, suppression and fuel continuity.</p>
 relationships. It does not calculate a wildfire risk score; instead, it
 reports measurable landscape characteristics that can be interpreted
 alongside vegetation, drought and climate information.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landcover</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"landcover"</span><span class="op">)</span></span>
 <span><span class="va">habitat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"habitat"</span><span class="op">)</span></span>
 <span><span class="va">transport</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"transport"</span><span class="op">)</span></span></code></pre></div>
@@ -741,7 +760,7 @@ alongside vegetation, drought and climate information.</p>
 heathland and coniferous land cover. Priority habitat polygons provide
 the heathland mapping, while coniferous cover is identified from OS
 land-cover classes.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">heath</span> <span class="op">&lt;-</span> <span class="va">habitat</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
 <span>        <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span></span>
@@ -762,7 +781,7 @@ land-cover classes.</p>
 <span>            <span class="op">)</span></span>
 <span>        <span class="op">)</span></span>
 <span>    <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landscape</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_landscape.html">analyse_landscape</a></span><span class="op">(</span></span>
 <span>    landcover <span class="op">=</span> <span class="va">landcover</span>,</span>
 <span>    category <span class="op">=</span> <span class="st">"lcb"</span>,</span>
@@ -830,7 +849,7 @@ close to the heathland boundary. This describes the spatial relationship
 between the two mapped cover types; it should not by itself be
 interpreted as a measure of wildfire probability or expected fire
 behaviour.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landscape</span><span class="op">$</span><span class="va">interface_bands</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>        Interface <span class="op">=</span> <span class="va">interface</span>,</span>
@@ -880,9 +899,11 @@ mapped transport features. A mapped road or track should not
 automatically be interpreted as an effective firebreak: its importance
 depends on characteristics such as width, surface, surrounding
 vegetation, condition and accessibility.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">aoi_sf</span> <span class="op">&lt;-</span> <span class="va">aoi</span><span class="op">$</span><span class="va">geometry</span></span>
+<span><span class="va">aoi_sf</span> <span class="op">&lt;-</span> <span class="va">aoi</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">sentinelBurnR</span><span class="fu">:::</span><span class="fu">aoi_to_spatvector</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
