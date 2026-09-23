@@ -158,9 +158,14 @@ vegetation and surface condition following fire.</p>
 </h2>
 <p>Load the area of interest and the Sentinel-2 collections:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span></span>
-<span><span class="va">aoi</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"aoi"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">demo_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>        <span class="st">"extdata"</span>,</span>
+<span>        <span class="st">"demo"</span>,</span>
+<span>        package <span class="op">=</span> <span class="st">"sentinelBurnR"</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="va">aoi</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">readRDS</a></span><span class="op">(</span></span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>, <span class="st">"demo_aoi.rds"</span><span class="op">)</span></span>
+<span>        <span class="op">)</span></span>
 <span></span>
 <span><span class="va">pre</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"pre"</span><span class="op">)</span></span>
 <span><span class="va">post</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"post"</span><span class="op">)</span></span></code></pre></div>
@@ -451,7 +456,7 @@ short-wave infrared reflectance.</li>
 <span><span class="co">#&gt; [1] "red"    "nir08"  "swir16"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$created</span></span>
-<span><span class="co">#&gt; [1] "2026-09-23 17:38:41 UTC"</span></span>
+<span><span class="co">#&gt; [1] "2026-09-23 19:08:18 UTC"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $provenance$processing$package_version</span></span>
 <span><span class="co">#&gt; [1] "0.0.1"</span></span>
@@ -557,6 +562,25 @@ compare rainfall before the fire with the same period during the
 <p>The demonstration data contain daily ERA5 rainfall extracted for the
 Dunwich area.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">boundary</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_boundary.html">read_boundary</a></span><span class="op">(</span><span class="va">aoi</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">climate_data</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/get_climate_baseline.html">get_climate_baseline</a></span><span class="op">(</span></span>
+<span>    boundary <span class="op">=</span> <span class="va">aoi</span>,</span>
+<span>    date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2026-07-29"</span><span class="op">)</span>,</span>
+<span>    baseline_years <span class="op">=</span> <span class="fl">1991</span><span class="op">:</span><span class="fl">2020</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">climate</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_climate.html">analyse_climate</a></span><span class="op">(</span></span>
+<span>    rainfall <span class="op">=</span> <span class="va">climate_data</span><span class="op">$</span><span class="va">rainfall</span>,</span>
+<span>    temperature <span class="op">=</span> <span class="va">climate_data</span><span class="op">$</span><span class="va">temperature</span>,</span>
+<span>    date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2026-07-29"</span><span class="op">)</span>,</span>
+<span>    baseline_years <span class="op">=</span> <span class="fl">1991</span><span class="op">:</span><span class="fl">2020</span>,</span>
+<span>    windows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">60</span>, <span class="fl">90</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">climate</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rainfall</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"rainfall"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">climate</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_climate.html">analyse_climate</a></span><span class="op">(</span></span>
@@ -654,7 +678,7 @@ unusually dry period.</p>
 <p>Total rainfall does not tell us how rain was distributed through
 time. A similar total could result from frequent small showers or from a
 long period with almost no rain.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">climate</span><span class="op">$</span><span class="va">dry_spell</span></span>
 <span><span class="co">#&gt;   window_days threshold_mm max_consecutive_dry_days days_since_rain dry_days</span></span>
 <span><span class="co">#&gt; 1          90            1                       32               3       68</span></span>
@@ -667,7 +691,7 @@ July. Only three days had elapsed since the most recent day with at
 least 1 mm of rainfall.</p>
 <p>We can also compare the duration of this dry spell with the
 equivalent 90-day period during the 1991–2020 baseline.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">climate</span><span class="op">$</span><span class="va">dry_spell_baseline</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"median_days"</span>,</span>
 <span>    <span class="st">"max_days"</span>,</span>
@@ -709,7 +733,7 @@ affect access, suppression and fuel continuity.</p>
 relationships. It does not calculate a wildfire risk score; instead, it
 reports measurable landscape characteristics that can be interpreted
 alongside vegetation, drought and climate information.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landcover</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"landcover"</span><span class="op">)</span></span>
 <span><span class="va">habitat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"habitat"</span><span class="op">)</span></span>
 <span><span class="va">transport</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/demo_data.html">demo_data</a></span><span class="op">(</span><span class="st">"transport"</span><span class="op">)</span></span></code></pre></div>
@@ -717,7 +741,7 @@ alongside vegetation, drought and climate information.</p>
 heathland and coniferous land cover. Priority habitat polygons provide
 the heathland mapping, while coniferous cover is identified from OS
 land-cover classes.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">heath</span> <span class="op">&lt;-</span> <span class="va">habitat</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
 <span>        <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span></span>
@@ -738,7 +762,7 @@ land-cover classes.</p>
 <span>            <span class="op">)</span></span>
 <span>        <span class="op">)</span></span>
 <span>    <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landscape</span> <span class="op">&lt;-</span> <span class="fu">sentinelBurnR</span><span class="fu">::</span><span class="fu"><a href="../reference/analyse_landscape.html">analyse_landscape</a></span><span class="op">(</span></span>
 <span>    landcover <span class="op">=</span> <span class="va">landcover</span>,</span>
 <span>    category <span class="op">=</span> <span class="st">"lcb"</span>,</span>
@@ -806,7 +830,7 @@ close to the heathland boundary. This describes the spatial relationship
 between the two mapped cover types; it should not by itself be
 interpreted as a measure of wildfire probability or expected fire
 behaviour.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">landscape</span><span class="op">$</span><span class="va">interface_bands</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>        Interface <span class="op">=</span> <span class="va">interface</span>,</span>
@@ -856,7 +880,7 @@ mapped transport features. A mapped road or track should not
 automatically be interpreted as an effective firebreak: its importance
 depends on characteristics such as width, surface, surrounding
 vegetation, condition and accessibility.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">aoi_sf</span> <span class="op">&lt;-</span> <span class="va">aoi</span><span class="op">$</span><span class="va">geometry</span></span>
 <span></span>
