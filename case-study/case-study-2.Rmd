@@ -19,7 +19,6 @@ sentinelBurnR::sbr_options()
 
 ```
 
-
 ```{r}
 
 ggmap::register_google
@@ -54,11 +53,7 @@ mins <- read_sf("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/servi
 
 mins_only <- mins |> filter(Name == "MINSMERE")
 
-mapview(mins_dun)
-
 mins_dun <- st_union(dunwich_heath_nt, mins_only)
-
-plot(mins_dun)
 
 mins_dun_buffer <- st_intersection( buffer, mins_dun) |> st_cast("POLYGON") |> st_union() |> st_as_sf()
 class(mins_dun_buffer)
@@ -89,18 +84,10 @@ plot(dunwich_heath)
 
 rspb_heath <- read_sf("https://services1.arcgis.com/h1C9f6qsGKmqXsVs/arcgis/rest/services/Heathland_extent_and_potential/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson") |> st_transform(27700) |> st_intersection(buffer)
 
-plot(rspb_heath)
-
 basemap <- ggmap::get_googlemap(center = c(lon = dunwich_coords[1], lat = dunwich_coords[2]), zoom = 13)
 
 
-mapview(forest_rides, popup = TRUE) +
-    mapview(water_sources, popup = TRUE, zcol = "featdesc") +
-    mapview(water_pipelines) +
-    mapview(dunwich_heath, zcol = "class") 
-
 ```
-
 
 # Habitat Networks (England) - Lowland Heathland
 
@@ -128,13 +115,13 @@ The habitat network maps seek to apply the best evidence and principles and to u
 Network Zones; • Land within close proximity to the existing habitat components that are more likely to be suitable for habitat re-creation for the particular habitat. These areas are primarily based on soils but in many cases has been refined by also using other data such as hydrology, altitude and proximity to the coast. This is termed the ‘Network Enhancement Zone 1’. • Land within close proximity to the existing habitat components that are unlikely to be suitable for habitat re-creation but where other types of habitat may be created or land management may be enhanced including delivery of suitable Green Infrastructure. This is termed the ‘Network Enhancement Zone 2’. • Land immediately adjoining existing habitat patches that are small or have excessive edge to area ratio where habitat creation is likely to help reduce the effects of habitat fragmentation. This is termed the ‘Fragmentation Action Zone’. • Land within relatively close proximity to the Network Enhancement Zones 1 \&amp;amp; 2 that are more likely to be suitable for habitat creation for the particular habitat and identifying possible locations for connecting and linking up networks across a landscape. This is termed the ‘Network Expansion Zone’.\
 Note: For some habitat networks not all of the habitat components or all the action zones are identified either because the data does not exist or the habitat does not lend itself to identifying particular types of action. Further details are outlined in the Habitat Network Mapping Guidance document. The Network boundary is drawn around the 4 habitat components using a variable buffering process with a generalised distance of 500m although 1km was used for Blanket Bog. As the boundary for each habitat network is tightly drawn around the existing patches of habitat this means that at a national scale the habitat network is composed of a series of smaller ‘networks’ that encapsulates one or more clusters of existing habitat patches. These may be considered as ‘network segments’. The Network Expansion Zone has been drawn around these segments to identify areas where additional action may be undertaken to build greater ecological resilience across the wider landscape. Attribution statement: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right [year].
 
-```{r}
+```{r, eval = FALSE}
 
 tree_sps <- st_as_sf(read_stars("~/Projects/sentinelBurnR/data-raw/FR_E_TreeSpeciesMap/Tree Species Map England.tif"))
 
 ```
 
-```{r nfi}
+```{r nfi, eval=FALSE}
 
 nfi <- read_sf("https://services2.arcgis.com/mHXjwgl3OARRqqD4/arcgis/rest/services/National_Forest_Inventory_England_2024/FeatureServer/0/query?f=json&where=1%3D1&outFields=*&geometryType=esriGeometryPolygon&geometry=%7B%22spatialReference%22%3A%7B%22latestWkid%22%3A27700%2C%22wkid%22%3A27700%7D%2C%22rings%22%3A%5B%5B%5B644691.1027929918%2C273858.3975955876%5D%2C%5B644994.4414345123%2C273888.1169615708%5D%2C%5B645422.243886955%2C274309.6627053854%5D%2C%5B645926.9144739708%2C274516.24581705075%5D%2C%5B646609.901256886%2C274605.73909581976%5D%2C%5B647266.036331939%2C274589.8738703701%5D%2C%5B647584.1974141379%2C274528.68474968034%5D%2C%5B647848.1709305402%2C274323.665815172%5D%2C%5B648725.0784386115%2C272435.8901982253%5D%2C%5B648725.6370733104%2C271253.6702060306%5D%2C%5B648678.0413969613%2C271290.72630772647%5D%2C%5B648268.2642241375%2C270774.5850882259%5D%2C%5B647890.1057752734%2C270554.0361090873%5D%2C%5B647524.2000474725%2C269974.582957041%5D%2C%5B647309.7960500221%2C269922.2575069076%5D%2C%5B646711.2003489591%2C269923.82168406463%5D%2C%5B645977.9736854532%2C269353.30668720126%5D%2C%5B645530.2838377286%2C269134.0611890268%5D%2C%5B645365.710055423%2C268962.18791332183%5D%2C%5B644855.9372714902%2C268770.2782730818%5D%2C%5B644743.837908571%2C268809.4944289469%5D%2C%5B644577.9978876145%2C269342.3574471022%5D%2C%5B644473.086291155%2C269453.8236906959%5D%2C%5B644456.4017348136%2C269713.73779495264%5D%2C%5B644640.7884277746%2C270888.9934745673%5D%2C%5B644611.4042426107%2C271956.80508042057%5D%2C%5B644751.0629173439%2C272387.43794867117%5D%2C%5B644691.1027929918%2C273858.3975955876%5D%5D%2C%5B%5B644658.8137073935%2C273877.8008407972%5D%2C%5B644658.6274958272%2C273878.88086788176%5D%2C%5B644660.7130653699%2C273879.9608949664%5D%2C%5B644667.6773779499%2C273880.10986421944%5D%2C%5B644670.1685884689%2C273877.8008407972%5D%2C%5B644666.6345931785%2C273877.8008407972%5D%2C%5B644664.6235082623%2C273877.8008407972%5D%2C%5B644661.9793040208%2C273877.8008407972%5D%2C%5B644658.8137073935%2C273877.8008407972%5D%5D%5D%2C%22type%22%3A%22esriGeometryPolygon%22%7D")
 
@@ -148,7 +135,7 @@ mapview(nfi, zcol = "IFT_IOA") +
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 nfi_buffer <- st_centroid(st_union(nfi)) |>
     st_buffer(3000) 
@@ -174,8 +161,6 @@ ggmap::get_map("Dunwich", zoom = 13, maptype = "satellite") |> ggmap::ggmap() +
 ```
 
 ```{r}
-
-plot
 
 spring_heath <- search_s2(
     aoi = read_aoi(mins_dun),
@@ -228,7 +213,6 @@ summer_heath_collection <- download_s2(
     )
 )
 
-glimpse(summer_heath_collection)
 
 ```
 
@@ -364,21 +348,36 @@ terra::plotRGB(visual_aug13)
 
 ```
 
-
 ```{r}
-climate <- get_humidity(
-    boundary = read_boundary(aoi$geometry),
-    start = "2026-04-01",
-    end   = "2026-08-31"
-)
+# climate <- get_humidity(
+#     boundary = read_boundary(aoi$geometry),
+#     start = "2026-04-01",
+#     end   = "2026-08-31"
+# )
 
-rainfall <- get_rainfall(boundary = read_boundary(aoi$geometry),
+rainfall <- get_rainfall(boundary = read_boundary(aoi),
                          start = "2025-04-01",
                          end   = "2026-08-31"
 )
 
 
+climate <- get_climate_baseline(boundary = aoi, date = "2026-07-29")
 
+date <- climate$rainfall$date
+rain <- climate$rainfall$precipitation_mm
+
+library(lubridate)
+
+clim <- data.frame(date, rain) |>
+    mutate(date = ymd(date), 
+           year = year(date))
+
+clim |> filter(year == 2020)
+
+clim |> distinct() |> nrow()
+
+ggplot() +
+    geom_line(aes(clim$date, clim$rain, group = ))
 
 rain <- data.frame(date = rainfall$date, rainfall = rainfall$precipitation_mm)
 

@@ -1210,6 +1210,18 @@ get_sbr_satellite <- function(
 
 
 # plot climate ------------------------------------------------------------
+#' Plot climate conditions
+#'
+#' Plot rainfall or temperature conditions from an
+#' `sbr_climate` analysis.
+#'
+#' @param x An `sbr_climate` object returned by
+#'   [analyse_climate()].
+#' @param metric Climate metric to plot. One of `"rainfall"`
+#'   or `"temperature"`.
+#'
+#' @return A `ggplot` object.
+#'
 #' @export
 plot_climate <- function(
         x,
@@ -1282,3 +1294,186 @@ plot_climate <- function(
         ggplot2::theme_minimal()
 }
 
+#' Plot rainfall history
+#'
+#' Compare rainfall in the analysis year with equivalent periods
+#' during a historical baseline.
+#'
+#' The plot can show either cumulative rainfall over the analysis
+#' period or rolling rainfall totals. Individual baseline years,
+#' the baseline median and interquartile range, and the current
+#' year are displayed for comparison.
+#'
+#' @param rainfall Daily rainfall data containing `date` and
+#'   `precipitation_mm`.
+#' @param date Analysis date.
+#' @param baseline_years Integer vector defining the historical
+#'   baseline years.
+#' @param period_days Number of days before `date` to display.
+#' @param statistic Rainfall statistic to display. One of
+#'   `"cumulative"` or `"rolling"`.
+#' @param window_days Rolling window length in days. Used when
+#'   `statistic = "rolling"`.
+#' @param show_years Logical. If `TRUE`, show individual baseline
+#'   years as faint lines.
+#'
+#' @return A `ggplot` object.
+#'
+#' @export
+plot_climate_history <- function(
+        rainfall,
+        date,
+        baseline_years = 1991:2020,
+        statistic = c("cumulative", "rolling"),
+        window_days = 30,
+        period_days = 90,
+        show_years = TRUE
+) {
+
+    statistic <- match.arg(statistic)
+
+    history <- prepare_rainfall_history(
+        rainfall = rainfall,
+        date = date,
+        baseline_years = baseline_years,
+        statistic = statistic,
+        period_days = period_days,
+        window_days = window_days
+    )
+
+    analysis_year <- as.integer(
+        format(
+            as.Date(date),
+            "%Y"
+        )
+    )
+
+    baseline <- history[
+        history$period == "baseline",
+        ,
+        drop = FALSE
+    ]
+
+    current <- history[
+        history$period == "current",
+        ,
+        drop = FALSE
+    ]
+
+    baseline_summary <- baseline |>
+        dplyr::group_by(
+            .data$plot_date
+        ) |>
+        dplyr::summarise(
+            median = stats::median(
+                .data$value,
+                na.rm = TRUE
+            ),
+            q25 = stats::quantile(
+                .data$value,
+                0.25,
+                na.rm = TRUE
+            ),
+            q75 = stats::quantile(
+                .data$value,
+                0.75,
+                na.rm = TRUE
+            ),
+            .groups = "drop"
+        )
+
+    if (statistic == "cumulative") {
+
+        y_label <- "Cumulative rainfall (mm)"
+
+        title <- sprintf(
+            "Cumulative rainfall during the %d days before the analysis date",
+            period_days
+        )
+
+    } else {
+
+        y_label <- sprintf(
+            "%d-day rolling rainfall (mm)",
+            window_days
+        )
+
+        title <- sprintf(
+            "%d-day rolling rainfall",
+            window_days
+        )
+    }
+
+    p <- ggplot2::ggplot()
+
+    p <- p +
+        ggplot2::geom_ribbon(
+            data = baseline_summary,
+            ggplot2::aes(
+                x = .data$plot_date,
+                ymin = .data$q25,
+                ymax = .data$q75
+            ),
+            fill = "grey70",
+            alpha = 0.35
+        )
+
+    if (isTRUE(show_years)) {
+
+        p <- p +
+            ggplot2::geom_line(
+                data = baseline,
+                ggplot2::aes(
+                    x = .data$plot_date,
+                    y = .data$value,
+                    group = .data$year
+                ),
+                colour = "black",
+                alpha = 0.12,
+                linewidth = 0.3
+            )
+    }
+
+    p +
+        ggplot2::geom_line(
+            data = baseline_summary,
+            ggplot2::aes(
+                x = .data$plot_date,
+                y = .data$median
+            ),
+            colour = "black",
+            linewidth = 0.9
+        ) +
+        ggplot2::geom_line(
+            data = current,
+            ggplot2::aes(
+                x = .data$plot_date,
+                y = .data$value
+            ),
+            colour = "red",
+            linewidth = 1
+        ) +
+        ggplot2::scale_x_date(
+            date_breaks = "1 month",
+            date_labels = "%b"
+        ) +
+        ggplot2::labs(
+            x = NULL,
+            y = sprintf(
+                "%d-day rainfall (mm)",
+                window_days),
+            title = title,
+            subtitle = sprintf(
+                "%d compared with the %d-%d baseline",
+                analysis_year,
+                min(baseline_years),
+                max(baseline_years)
+            ),
+            caption = paste(
+                    "Red: current year;",
+                    "black: baseline median;",
+                    "grey band: baseline interquartile range."
+                )
+            ) +
+        ggplot2::theme_minimal()
+}

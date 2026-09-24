@@ -654,3 +654,112 @@ test_that("analyse_climate respects dry spell arguments", {
         2
     )
 })
+
+test_that("prepare_rainfall_history calculates cumulative rainfall", {
+
+    dates <- seq(
+        as.Date("2020-05-01"),
+        as.Date("2020-05-10"),
+        by = "day"
+    )
+
+    rainfall <- data.frame(
+        date = dates,
+        precipitation_mm = rep(2, length(dates))
+    )
+
+    result <- prepare_rainfall_history(
+        rainfall = rainfall,
+        date = as.Date("2020-05-10"),
+        baseline_years = integer(),
+        period_days = 10,
+        statistic = "cumulative"
+    )
+
+    expect_equal(
+        result$value,
+        seq(2, 20, by = 2)
+    )
+})
+
+test_that("prepare_rainfall_history aligns baseline and current years", {
+
+    rainfall <- data.frame(
+        date = c(
+            seq(
+                as.Date("2019-05-01"),
+                as.Date("2019-05-10"),
+                by = "day"
+            ),
+            seq(
+                as.Date("2020-05-01"),
+                as.Date("2020-05-10"),
+                by = "day"
+            )
+        ),
+        precipitation_mm = 1
+    )
+
+    result <- prepare_rainfall_history(
+        rainfall = rainfall,
+        date = as.Date("2020-05-10"),
+        baseline_years = 2019,
+        period_days = 10
+    )
+
+    expect_equal(
+        sort(unique(result$year)),
+        c(2019, 2020)
+    )
+
+    expect_equal(
+        unique(result$plot_date[result$year == 2019]),
+        unique(result$plot_date[result$year == 2020])
+    )
+
+    expect_true(
+        all(
+            result$period[result$year == 2019] ==
+                "baseline"
+        )
+    )
+
+    expect_true(
+        all(
+            result$period[result$year == 2020] ==
+                "current"
+        )
+    )
+})
+
+test_that("plot_climate_history returns a ggplot", {
+
+    rainfall <- data.frame(
+        date = c(
+            seq(
+                as.Date("2019-05-01"),
+                as.Date("2019-05-10"),
+                by = "day"
+            ),
+            seq(
+                as.Date("2020-05-01"),
+                as.Date("2020-05-10"),
+                by = "day"
+            )
+        ),
+        precipitation_mm = 1
+    )
+
+    p <- plot_climate_history(
+        rainfall = rainfall,
+        date = as.Date("2020-05-10"),
+        baseline_years = 2019,
+        period_days = 10
+    )
+
+    expect_s3_class(
+        p,
+        "ggplot"
+    )
+})
+

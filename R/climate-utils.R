@@ -136,3 +136,179 @@ expand_bbox <- function(
     )
 
 }
+
+
+# prepare rainfall history ------------------------------------------------
+prepare_rainfall_history <- function(
+        rainfall,
+        date,
+        baseline_years,
+        period_days = 90,
+        statistic = c(
+            "cumulative",
+            "rolling"
+        ),
+        window_days = 30
+) {
+
+    statistic <- match.arg(statistic)
+    date <- as.Date(date)
+
+    required <- c(
+        "date",
+        "precipitation_mm"
+    )
+
+    missing <- setdiff(
+        required,
+        names(rainfall)
+    )
+
+    if (length(missing) > 0L) {
+        stop(
+            "`rainfall` must contain: ",
+            paste(required, collapse = ", "),
+            ".",
+            call. = FALSE
+        )
+    }
+
+    analysis_year <- as.integer(
+        format(date, "%Y")
+    )
+
+    years <- unique(
+        c(
+            baseline_years,
+            analysis_year
+        )
+    )
+
+    month_day <- format(
+        date,
+        "%m-%d"
+    )
+
+    out <- lapply(
+        years,
+        function(year) {
+
+            target <- as.Date(
+                sprintf(
+                    "%04d-%s",
+                    year,
+                    month_day
+                )
+            )
+
+            display_start <-
+                target - (period_days - 1)
+
+            if (statistic == "rolling") {
+                data_start <-
+                    display_start -
+                    (window_days - 1)
+            } else {
+                data_start <- display_start
+            }
+
+            x <- rainfall[
+                rainfall$date >= data_start &
+                    rainfall$date <= target,
+                ,
+                drop = FALSE
+            ]
+
+            if (nrow(x) == 0L) {
+                return(NULL)
+            }
+
+            x <- x[
+                order(x$date),
+                ,
+                drop = FALSE
+            ]
+
+            if (statistic == "cumulative") {
+
+                keep <- (
+                    x$date >= display_start &
+                        x$date <= target
+                )
+
+                x <- x[keep, , drop = FALSE]
+
+                value <- cumsum(
+                    x$precipitation_mm
+                )
+
+            } else {
+
+                value <- vapply(
+                    x$date,
+                    function(d) {
+
+                        start <-
+                            d - (window_days - 1)
+
+                        keep <- (
+                            x$date >= start &
+                                x$date <= d
+                        )
+
+                        dates <- x$date[keep]
+
+                        if (
+                            length(unique(dates)) <
+                            window_days
+                        ) {
+                            return(NA_real_)
+                        }
+
+                        sum(
+                            x$precipitation_mm[keep],
+                            na.rm = TRUE
+                        )
+                    },
+                    numeric(1)
+                )
+
+                keep <- (
+                    x$date >= display_start &
+                        x$date <= target
+                )
+
+                x <- x[keep, , drop = FALSE]
+                value <- value[keep]
+            }
+
+            data.frame(
+                date = x$date,
+                year = year,
+                value = value
+            )
+        }
+    )
+
+    out <- do.call(
+        rbind,
+        out
+    )
+
+    out$plot_date <- as.Date(
+        paste0(
+            "2000-",
+            format(out$date, "%m-%d")
+        )
+    )
+
+    out$period <- ifelse(
+        out$year == analysis_year,
+        "current",
+        "baseline"
+    )
+
+    rownames(out) <- NULL
+
+    out
+}
