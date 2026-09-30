@@ -378,12 +378,28 @@ climatological probability.
 
 The same comparison can be visualised directly.
 
-```{r climate-rainfall-plot, fig.width=7, fig.height=5}
-sentinelBurnR::plot_climate(
-    climate,
-    metric = "rainfall"
+```{r climate-history, fig.width=8, fig.height=5, out.width="100%"}
+
+sentinelBurnR::plot_climate_history(
+    rainfall = rainfall,
+    date = as.Date("2026-07-29"),
+    baseline_years = 1991:2020,
+    period_days = 90
 )
 ```
+
+
+The cumulative rainfall trajectory shows how rainfall developed during the
+90 days preceding the fire. Each faint line represents the equivalent
+period in one of the 1991--2020 baseline years. The black line shows the
+daily median of those years and the grey band their interquartile range.
+The red line shows rainfall during 2026.
+
+This comparison shows not only the rainfall deficit at the end of the
+period, but also when conditions began to diverge from the historical
+baseline. It therefore complements the 30-, 60- and 90-day summary
+statistics above.
+
 
 Rainfall substantially below the historical median provides
 meteorological evidence that a negative vegetation moisture anomaly
@@ -546,7 +562,6 @@ landscape$interface_bands |>
     )
 ```
 
-o be compared with the vegetation interface.
 In this demonstration area, very little of the heathland boundary near
 conifer coincides with mapped transport features. A mapped road or track
 should not automatically be interpreted as an effective firebreak: its

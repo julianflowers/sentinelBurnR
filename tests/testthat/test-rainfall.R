@@ -763,3 +763,127 @@ test_that("plot_climate_history returns a ggplot", {
     )
 })
 
+test_that(
+    "calc_humidity gives saturation at the dew point",
+    {
+
+        x <- calc_humidity(
+            temperature_c = 20,
+            dewpoint_c = 20
+        )
+
+        expect_equal(
+            x$relative_humidity,
+            100,
+            tolerance = 1e-8
+        )
+
+        expect_equal(
+            x$vpd_kpa,
+            0,
+            tolerance = 1e-8
+        )
+    }
+)
+
+test_that(
+    "calc_humidity returns sensible humidity values",
+    {
+
+        x <- calc_humidity(
+            temperature_c = 20,
+            dewpoint_c = 10
+        )
+
+        expect_gt(
+            x$relative_humidity,
+            50
+        )
+
+        expect_lt(
+            x$relative_humidity,
+            60
+        )
+
+        expect_gt(
+            x$vpd_kpa,
+            0
+        )
+    }
+)
+
+test_that(
+    "compare_humidity_window compares RH and VPD",
+    {
+
+        dates <- seq(
+            as.Date("2020-07-01"),
+            as.Date("2022-07-30"),
+            by = "day"
+        )
+
+        humidity <- data.frame(
+            date = dates,
+            relative_humidity = 80,
+            vpd_kpa = 0.4
+        )
+
+        # Make the current year deliberately
+        # drier than the baseline years
+        current <- humidity$date >=
+            as.Date("2022-07-01") &
+            humidity$date <=
+            as.Date("2022-07-30")
+
+        humidity$relative_humidity[current] <- 70
+        humidity$vpd_kpa[current] <- 0.6
+
+        result <-
+            sentinelBurnR:::compare_humidity_window(
+                humidity = humidity,
+                date = as.Date("2022-07-30"),
+                baseline_years = 2020:2021,
+                window_days = 30
+            )
+
+        expect_equal(
+            result$relative_humidity,
+            70
+        )
+
+        expect_equal(
+            result$baseline_relative_humidity,
+            80
+        )
+
+        expect_equal(
+            result$rh_anomaly,
+            -10
+        )
+
+        expect_equal(
+            result$vpd_kpa,
+            0.6
+        )
+
+        expect_equal(
+            result$baseline_vpd_kpa,
+            0.4
+        )
+
+        expect_equal(
+            result$vpd_anomaly_kpa,
+            0.2
+        )
+
+        expect_equal(
+            result$rh_percentile,
+            0
+        )
+
+        expect_equal(
+            result$vpd_percentile,
+            100
+        )
+    }
+)

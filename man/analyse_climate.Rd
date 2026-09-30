@@ -7,6 +7,7 @@
 analyse_climate(
   rainfall,
   temperature = NULL,
+  humidity = NULL,
   date,
   baseline_years,
   windows = c(30, 60, 90),

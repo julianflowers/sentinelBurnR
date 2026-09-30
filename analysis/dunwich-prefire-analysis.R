@@ -178,6 +178,10 @@ ndvi_july29 <- terra::resample(
 # burn <- analyse_burn(...)
 # burn_raster <- burn$burn
 
+burn <- analyse_burn(pre, post)
+
+burn_raster <- burn$burned
+
 burn_for_analysis <- terra::resample(
     burn_raster,
     ndmi_trend,
@@ -215,7 +219,7 @@ download_ngd <- function(
         stop("OS NGD API has a maximum limit of 100.")
     }
 
-    area_bng <- sf::st_transform(area, 27700)
+    area_bng <- sf::st_transform(st_as_sf(unwrap(aoi$packed_geometry)), 27700)
     bb <- sf::st_bbox(area_bng)
 
     bbox_string <- paste(

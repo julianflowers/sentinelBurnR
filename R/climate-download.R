@@ -344,11 +344,39 @@ get_climate_baseline <- function(
     attr(temperature, "statistic") <- "daily_mean"
 
 
+# dewpoint ----------------------------------------------------------------
+
+    dewpoint_files <- download_climate_months(
+        boundary = boundary,
+        year_month = year_month,
+        source = source,
+        variable = "2m_dewpoint_temperature",
+        statistic = "daily_mean",
+        workers = workers
+    )
+
+    dewpoint_climate <- read_climate(
+        dewpoint_files
+    )
+
+    humidity <- extract_humidity(
+        temperature = temp_climate,
+        dewpoint = dewpoint_climate,
+        boundary = boundary,
+        statistic = "daily_mean"
+    )
+
+    attr(humidity, "source") <- source
+    attr(humidity, "boundary") <- boundary
+
+
+
     # Return --------------------------------------------------------------
 
     list(
         rainfall = rainfall,
-        temperature = temperature
+        temperature = temperature,
+        humidity = humidity
     )
 }
 

@@ -170,6 +170,7 @@ compare_rainfall_window <- function(
 analyse_climate <- function(
         rainfall,
         temperature = NULL,
+        humidity = NULL,
         date,
         baseline_years,
         windows = c(30, 60, 90),
@@ -234,6 +235,23 @@ analyse_climate <- function(
             )
         }
 
+        humidity_summary <- NULL
+
+        if (!is.null(humidity)) {
+
+            humidity_summary <- purrr::map_dfr(
+                windows,
+                \(window) {
+                    compare_humidity_window(
+                        humidity = humidity,
+                        date = date,
+                        baseline_years = baseline_years,
+                        window_days = window
+                    )
+                }
+            )
+        }
+
         dry_spell <- summarise_dry_spell(
             rainfall = rainfall,
             date = date,
@@ -258,6 +276,7 @@ analyse_climate <- function(
             dry_spell = dry_spell,
             dry_spell_baseline = dry_spell_baseline,
             temperature = temperature_summary,
+            humidity = humidity_summary,
             source = attr(rainfall, "source")
         )
 
@@ -302,8 +321,22 @@ print.sbr_climate <- function(x, ...) {
 
     cat("\nRainfall:\n")
 
+    rain <- x$summary
+
+    numeric_cols <- vapply(
+        rain,
+        is.numeric,
+        logical(1)
+    )
+
+    rain[numeric_cols] <- lapply(
+        rain[numeric_cols],
+        round,
+        digits = 1
+    )
+
     print(
-        x$summary,
+        rain,
         row.names = FALSE
     )
 
@@ -354,6 +387,75 @@ print.sbr_climate <- function(x, ...) {
                 "Dry-spell percentile: %.1f%%\n",
                 dsb$percentile
             )
+        )
+    }
+
+
+
+    if (!is.null(x$humidity)) {
+
+        h <- x$humidity
+
+        cat("\nAtmospheric moisture:\n")
+
+        cat("\nRelative humidity (%):\n")
+
+        rh <- data.frame(
+            Window = paste0(
+                h$window_days,
+                " d"
+            ),
+            Current = round(
+                h$relative_humidity,
+                1
+            ),
+            Baseline = round(
+                h$baseline_relative_humidity,
+                1
+            ),
+            Anomaly = round(
+                h$rh_anomaly,
+                1
+            ),
+            Percentile = round(
+                h$rh_percentile,
+                1
+            )
+        )
+
+        print(
+            rh,
+            row.names = FALSE
+        )
+
+        cat("\nVapour pressure deficit (kPa):\n")
+
+        vpd <- data.frame(
+            Window = paste0(
+                h$window_days,
+                " d"
+            ),
+            Current = round(
+                h$vpd_kpa,
+                2
+            ),
+            Baseline = round(
+                h$baseline_vpd_kpa,
+                2
+            ),
+            Anomaly = round(
+                h$vpd_anomaly_kpa,
+                2
+            ),
+            Percentile = round(
+                h$vpd_percentile,
+                1
+            )
+        )
+
+        print(
+            vpd,
+            row.names = FALSE
         )
     }
 
@@ -655,4 +757,142 @@ compare_temperature_window <- function(
         n_baseline_years = nrow(baseline_complete)
     )
 }
+
+
+# compare_humidity window -------------------------------------------------------------
+
+compare_humidity_window <- function(
+        humidity,
+        date,
+        baseline_years,
+        window_days
+) {
+
+    date <- as.Date(date)
+
+    analysis_year <- as.integer(
+        format(date, "%Y")
+    )
+
+    month_day <- format(
+        date,
+        "%m-%d"
+    )
+
+    years <- c(
+        baseline_years,
+        analysis_year
+    )
+
+    values <- lapply(
+        years,
+        function(year) {
+
+            target <- as.Date(
+                sprintf(
+                    "%04d-%s",
+                    year,
+                    month_day
+                )
+            )
+
+            start <- target -
+                (window_days - 1)
+
+            x <- humidity[
+                humidity$date >= start &
+                    humidity$date <= target,
+                ,
+                drop = FALSE
+            ]
+
+            if (
+                length(unique(x$date)) <
+                window_days
+            ) {
+                return(NULL)
+            }
+
+            data.frame(
+                year = year,
+                relative_humidity =
+                    mean(
+                        x$relative_humidity,
+                        na.rm = TRUE
+                    ),
+                vpd_kpa =
+                    mean(
+                        x$vpd_kpa,
+                        na.rm = TRUE
+                    )
+            )
+        }
+    )
+
+    values <- do.call(
+        rbind,
+        values
+    )
+
+    current <- values[
+        values$year == analysis_year,
+        ,
+        drop = FALSE
+    ]
+
+    baseline <- values[
+        values$year %in% baseline_years,
+        ,
+        drop = FALSE
+    ]
+
+    baseline_rh <- stats::median(
+        baseline$relative_humidity,
+        na.rm = TRUE
+    )
+
+    baseline_vpd <- stats::median(
+        baseline$vpd_kpa,
+        na.rm = TRUE
+    )
+
+    data.frame(
+        window_days = window_days,
+
+        relative_humidity =
+            current$relative_humidity,
+
+        baseline_relative_humidity =
+            baseline_rh,
+
+        rh_anomaly =
+            current$relative_humidity -
+            baseline_rh,
+
+        rh_percentile =
+            mean(
+                baseline$relative_humidity <=
+                    current$relative_humidity,
+                na.rm = TRUE
+            ) * 100,
+
+        vpd_kpa =
+            current$vpd_kpa,
+
+        baseline_vpd_kpa =
+            baseline_vpd,
+
+        vpd_anomaly_kpa =
+            current$vpd_kpa -
+            baseline_vpd,
+
+        vpd_percentile =
+            mean(
+                baseline$vpd_kpa <=
+                    current$vpd_kpa,
+                na.rm = TRUE
+            ) * 100
+    )
+}
+
 

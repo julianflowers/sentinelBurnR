@@ -552,3 +552,105 @@ summarise_temperature_window <- function(
     )
 }
 
+#' Calculate relative humidity and vapour pressure deficit
+#'
+#' @param temperature_c Air temperature in degrees Celsius.
+#' @param dewpoint_c Dew-point temperature in degrees Celsius.
+#'
+#' @return A data frame containing `relative_humidity`
+#'   in percent and `vpd_kpa` in kPa.
+#'
+#' @export
+
+calc_humidity <- function(
+        temperature_c,
+        dewpoint_c
+) {
+
+    if (length(temperature_c) != length(dewpoint_c)) {
+        stop(
+            "`temperature_c` and `dewpoint_c` must have the same length.",
+            call. = FALSE
+        )
+    }
+
+    # Saturation vapour pressure (kPa)
+    es <- 0.6108 * exp(
+        (17.27 * temperature_c) /
+            (temperature_c + 237.3)
+    )
+
+    # Actual vapour pressure from dew point (kPa)
+    ea <- 0.6108 * exp(
+        (17.27 * dewpoint_c) /
+            (dewpoint_c + 237.3)
+    )
+
+    relative_humidity <- 100 * ea / es
+    vpd_kpa <- es - ea
+
+    data.frame(
+        relative_humidity = pmin(
+            100,
+            pmax(0, relative_humidity)
+        ),
+        vpd_kpa = pmax(
+            0,
+            vpd_kpa
+        )
+    )
+}
+
+extract_humidity <- function(
+        temperature,
+        dewpoint,
+        boundary,
+        statistic = "daily_mean"
+) {
+
+    temp <- extract_temperature(
+        temperature,
+        boundary,
+        statistic = statistic,
+        name = "temperature_c"
+    )
+
+    dew <- extract_temperature(
+        dewpoint,
+        boundary,
+        statistic = statistic,
+        name = "dewpoint_c"
+    )
+
+    x <- merge(
+        temp,
+        dew,
+        by = "date",
+        all = FALSE
+    )
+
+    humidity <- calc_humidity(
+        temperature_c = x$temperature_c,
+        dewpoint_c = x$dewpoint_c
+    )
+
+    x$relative_humidity <-
+        humidity$relative_humidity
+
+    x$vpd_kpa <-
+        humidity$vpd_kpa
+
+    class(x) <- c(
+        "sbr_humidity",
+        "data.frame"
+    )
+
+    attr(x, "source") <- "era5"
+    attr(x, "statistic") <- statistic
+
+    x
+}
+
+
+
+
