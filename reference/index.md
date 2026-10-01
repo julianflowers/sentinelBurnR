@@ -1,0 +1,110 @@
+# Package index
+
+## All functions
+
+- [`analyse_burn()`](analyse_burn.md) : Analyse burned area from pre-
+  and post-fire Sentinel-2 collections
+- [`analyse_climate()`](analyse_climate.md) : Analyse climate conditions
+- [`analyse_drought()`](analyse_drought.md) : Analyse vegetation
+  moisture anomaly
+- [`analyse_landscape()`](analyse_landscape.md) : Analyse landscape
+  structure
+- [`analyse_vegetation()`](analyse_vegetation.md) : Analyse vegetation
+  condition
+- [`antecedent_conditions()`](antecedent_conditions.md) : Summarise
+  antecedent vegetation conditions
+- [`antecedent_rainfall()`](antecedent_rainfall.md) : Calculate
+  antecedent rainfall
+- [`aoi()`](aoi.md) : Access AOI
+- [`build_composite()`](build_composite.md) : Build a median Sentinel-2
+  composite
+- [`build_timeseries_composites()`](build_timeseries_composites.md) :
+  Build dated Sentinel-2 composites
+- [`burn_area()`](burn_area.md) : Detect burned area from dNBR
+- [`burn_caption()`](burn_caption.md) : Create a caption describing a
+  burn analysis
+- [`burn_summary()`](burn_summary.md) : Summarise burn statistics
+- [`calc_dnbr()`](calc_dnbr.md) : Calculate differenced Normalized Burn
+  Ratio
+- [`calc_humidity()`](calc_humidity.md) : Calculate relative humidity
+  and vapour pressure deficit
+- [`calc_nbr()`](calc_nbr.md) : Calculate the Normalized Burn Ratio
+- [`calc_ndmi()`](calc_ndmi.md) : Calculate NDMI
+- [`calc_ndvi()`](calc_ndvi.md) : Calculate NDVI
+- [`calc_wind()`](calc_wind.md) : Calculate wind speed and direction
+- [`classify_burn_severity()`](classify_burn_severity.md) : Classify
+  burn severity from dNBR
+- [`create_aoi()`](create_aoi.md) : Create an Area of Interest
+- [`create_project()`](create_project.md) : Create a sentinelBurnR
+  project
+- [`demo_data()`](demo_data.md) : Load sentinelBurnR demo data
+- [`detect_burn()`](detect_burn.md) : Detect burned area from dNBR
+- [`detect_disturbance()`](detect_disturbance.md) : Detect disturbances
+  in a spectral index time series
+- [`disturbance_dates()`](disturbance_dates.md) : Select pre- and
+  post-disturbance dates
+- [`.normalised_difference()`](dot-normalised_difference.md) :
+  Calculates Normalized Differences
+- [`download_s2()`](download_s2.md) : Download Sentinel-2 assets
+- [`extract_rainfall()`](extract_rainfall.md) : Extract rainfall time
+  series
+- [`extract_wind()`](extract_wind.md) : Extract wind conditions
+- [`files()`](files.md) : Return downloaded files
+- [`files(`*`<sbr_collection>`*`)`](files.sbr_collection.md) : Access
+  collection files
+- [`geometry()`](geometry.md) : Return the geometry from an AOI
+- [`get_climate_baseline()`](get_climate_baseline.md) : Get climate data
+  for baseline analysis
+- [`get_humidity()`](get_humidity.md) : Retrieve humidity and vapour
+  pressure deficit for a boundary
+- [`get_rainfall()`](get_rainfall.md) : Retrieve rainfall for a boundary
+- [`get_temperature()`](get_temperature.md) : Retrieve temperature for a
+  boundary
+- [`index_anomaly()`](index_anomaly.md) : Calculate an index anomaly
+  from a historical baseline
+- [`index_trend()`](index_trend.md) : Calculate spatial trends in a
+  spectral index
+- [`palette_gallery()`](palette_gallery.md) : Display SentinelBurnR
+  colour palettes
+- [`palette_lookup()`](palette_lookup.md) : SentinelBurnR colour palette
+- [`plot_climate()`](plot_climate.md) : Plot climate conditions
+- [`plot_climate_history()`](plot_climate_history.md) : Plot rainfall
+  history
+- [`plot_drought()`](plot_drought.md) : Plot drought analysis
+- [`plot_fire_weather()`](plot_fire_weather.md) : Plot fire-weather
+  conditions
+- [`plot_index()`](plot_index.md) : Plot a continuous raster index
+- [`plot_rgb()`](plot_rgb.md) : Plot an RGB composite
+- [`plot_severity()`](plot_severity.md) : Plot Burn severity
+- [`plot_timeseries()`](plot_timeseries.md) : Plot a Sentinel-2 spectral
+  index time series
+- [`print(`*`<sbr_climate>`*`)`](print.sbr_climate.md) : Print climate
+  analysis
+- [`print(`*`<sbr_landscape>`*`)`](print.sbr_landscape.md) : Print a
+  landscape analysis
+- [`read_aoi()`](read_aoi.md) : Read an area of interest
+- [`read_band()`](read_band.md) : Read one asset from a downloaded
+  Sentinel-2 collection
+- [`read_boundary()`](read_boundary.md) : Read a boundary
+- [`read_boundary(`*`<sbr_aoi>`*`)`](read_boundary.sbr_aoi.md) : Read
+  boundary from an sbr_aoi
+- [`read_climate()`](read_climate.md) : Read climate data
+- [`read_visual()`](read_visual.md) : Read Sentinel-2 true-colour
+  imagery
+- [`sbr_cache_clean()`](sbr_cache_clean.md) : Clean cache
+- [`sbr_cache_info()`](sbr_cache_info.md) : Cache information
+- [`sbr_cache_prune()`](sbr_cache_prune.md) : Remove old cached files
+- [`sbr_options()`](sbr_options.md) : Configure sentinelBurnR
+- [`search_s2()`](search_s2.md) : Search Sentinel-2 imagery
+- [`seasonal_baseline()`](seasonal_baseline.md) : Calculate seasonal
+  baseline
+- [`select_timeseries()`](select_timeseries.md) : Select Sentinel-2
+  acquisitions for a time series
+- [`sentinel_timeseries()`](sentinel_timeseries.md) : Build a Sentinel-2
+  spectral index time series
+- [`summary(`*`<sbr_collection>`*`)`](summary.sbr_collection.md) :
+  Summarise a downloaded Sentinel-2 collection
+- [`summary(`*`<sbr_search>`*`)`](summary.sbr_search.md) : Summarise a
+  Sentinel-2 search
+- [`timeseries_change()`](timeseries_change.md) : Calculate change in a
+  spectral index through time
