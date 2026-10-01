@@ -147,6 +147,7 @@ compare_rainfall_window <- function(
 #'   rainfall anomalies, and dry-spell statistics.
 #' @param temperature Optional temperature data used to calculate
 #'   temperature summaries. If `NULL`, temperature analysis is omitted.
+#' @param humidity Humidity data use to calculate humidity summaries. If `NULL`, humidity analysis is omitted.
 #' @param date Date for which climate conditions are assessed.
 #' @param baseline_years Years used to define the historical climate
 #'   baseline.
@@ -267,6 +268,7 @@ analyse_climate <- function(
         window_days = dry_spell_window,
         threshold_mm = dry_threshold_mm
         )
+
 
         out <- list(
             date = date,
@@ -893,6 +895,68 @@ compare_humidity_window <- function(
                 na.rm = TRUE
             ) * 100
     )
+}
+
+
+
+#' Extract wind conditions
+#'
+#' Extracts ERA5 10 m wind components over a boundary and
+#' calculates wind speed and direction.
+#'
+#' @param u_wind SpatRaster containing the 10 m u wind component.
+#' @param v_wind SpatRaster containing the 10 m v wind component.
+#' @param boundary Analysis boundary.
+#' @param statistic ERA5 daily statistic used for the components.
+#'
+#' @return An `sbr_wind` data frame.
+#'
+#' @export
+extract_wind <- function(
+        u_wind,
+        v_wind,
+        boundary,
+        statistic = "daily_mean"
+) {
+
+    u <- extract_climate_values(
+        u_wind,
+        boundary
+    )
+
+    v <- extract_climate_values(
+        v_wind,
+        boundary
+    )
+
+    names(u)[names(u) == "value"] <- "u_ms"
+    names(v)[names(v) == "value"] <- "v_ms"
+
+    x <- merge(
+        u,
+        v,
+        by = "date",
+        all = FALSE
+    )
+
+    wind <- calc_wind(
+        u_ms = x$u_ms,
+        v_ms = x$v_ms
+    )
+
+    x$wind_speed_ms <- wind$wind_speed_ms
+    x$wind_direction_deg <- wind$wind_direction_deg
+
+    class(x) <- c(
+        "sbr_wind",
+        "data.frame"
+    )
+
+    attr(x, "source") <- "era5"
+    attr(x, "statistic") <- statistic
+    attr(x, "units") <- "m/s"
+
+    x
 }
 
 

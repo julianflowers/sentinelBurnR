@@ -1477,3 +1477,161 @@ plot_climate_history <- function(
             ) +
         ggplot2::theme_minimal()
 }
+
+#' Plot fire-weather conditions
+#'
+#' @param x An `sbr_fire_weather` object.
+#'
+#' @return A patchwork object containing fire-weather plots.
+#'
+#' @export
+plot_fire_weather <- function(x) {
+
+    if (!inherits(x, "sbr_fire_weather")) {
+        stop(
+            "`x` must be an sbr_fire_weather object.",
+            call. = FALSE
+        )
+    }
+
+    event <- attr(
+        x,
+        "event_datetime"
+    )
+
+    wind_arrows <- x[
+        seq(
+            1,
+            nrow(x),
+            by = 3
+        ),
+        ,
+        drop = FALSE
+    ]
+
+    theta <- (
+        wind_arrows$wind_direction_deg + 180
+    ) * pi / 180
+
+    wind_arrows$dx <- sin(theta)
+    wind_arrows$dy <- cos(theta)
+
+    wind_arrows <- x[
+        seq(
+            1,
+            nrow(x),
+            by = 3
+        ),
+        ,
+        drop = FALSE
+    ]
+
+    wind_arrows$angle <-
+        wind_arrows$wind_direction_deg + 180
+
+    p_temp <- ggplot2::ggplot(
+        x,
+        ggplot2::aes(
+            x = .data$datetime,
+            y = .data$temperature_c
+        )
+    ) +
+        ggplot2::geom_line(
+            linewidth = 0.8
+        ) +
+        ggplot2::labs(
+            y = "Temperature (\u00B0C)",
+            x = NULL
+        ) +
+        ggplot2::theme_minimal()
+
+    p_temp <- p_temp +
+        ggplot2::annotate(
+            "text",
+            x = event,
+            y = Inf,
+            label = "Fire reported",
+            angle = 90,
+            vjust = 1.5,
+            hjust = 1.1,
+            size = 3.5,
+            colour = "red",
+            fontface = "bold"
+        )
+
+    p_rh <- ggplot2::ggplot(
+        x,
+        ggplot2::aes(
+            x = .data$datetime,
+            y = .data$relative_humidity
+        )
+    ) +
+        ggplot2::geom_line(
+            linewidth = 0.8
+        ) +
+        ggplot2::geom_point(
+            size = 1.3
+        ) +
+        ggplot2::labs(
+            y = "Relative humidity (%)",
+            x = NULL
+        ) +
+        ggplot2::scale_y_continuous(
+            limits = c(0, 100)
+        ) +
+        ggplot2::theme_minimal()
+
+    p_wind <- ggplot2::ggplot(
+        x,
+        ggplot2::aes(
+            x = .data$datetime,
+            y = .data$wind_speed_kmh
+        )
+    ) +
+        ggplot2::geom_line(
+            linewidth = 0.8
+        ) +
+        ggplot2::geom_text(
+            data = wind_arrows,
+            ggplot2::aes(
+                x = .data$datetime,
+                y = .data$wind_speed_kmh,
+                angle = .data$angle
+            ),
+            label = "\u2191",
+            size = 6,
+            colour = "red",
+            fontface = "bold",
+            nudge_y = 1.5
+        ) +
+        ggplot2::labs(
+            y = "Wind speed (km/h)",
+            x = "Time (UTC)"
+        ) +
+        ggplot2::theme_minimal() +
+        ggplot2::scale_y_continuous(
+            expand = ggplot2::expansion(
+                mult = c(0.05, 0.18)
+            )
+        )
+
+    if (!is.null(event)) {
+
+        event_line <- ggplot2::geom_vline(
+            xintercept = as.numeric(event),
+            linetype = 2,
+            linewidth = 0.6
+        )
+
+        p_temp <- p_temp + event_line
+        p_rh <- p_rh + event_line
+        p_wind <- p_wind + event_line
+    }
+
+    patchwork::wrap_plots(
+        p_temp,
+        p_rh,
+        p_wind,
+        ncol = 1
+    )
+}

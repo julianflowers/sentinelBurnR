@@ -887,3 +887,331 @@ test_that(
         )
     }
 )
+
+test_that(
+    "calc_wind calculates wind speed and direction",
+    {
+
+        x <- calc_wind(
+            u_ms = c(
+                0,
+                -5,
+                0,
+                5
+            ),
+            v_ms = c(
+                -5,
+                0,
+                5,
+                0
+            )
+        )
+
+        expect_equal(
+            x$wind_speed_ms,
+            rep(5, 4)
+        )
+
+        expect_equal(
+            x$wind_direction_deg,
+            c(
+                0,
+                90,
+                180,
+                270
+            )
+        )
+    }
+)
+
+test_that(
+    "calc_wind checks component lengths",
+    {
+
+        expect_error(
+            calc_wind(
+                u_ms = 1:3,
+                v_ms = 1:2
+            ),
+            "same length"
+        )
+    }
+)
+
+test_that(
+    "extract_wind calculates wind speed",
+    {
+
+        u <- terra::rast(
+            nrows = 1,
+            ncols = 1,
+            xmin = 0,
+            xmax = 1,
+            ymin = 0,
+            ymax = 1,
+            crs = "EPSG:4326"
+        )
+
+        v <- u
+
+        terra::values(u) <- -3
+        terra::values(v) <- -4
+
+        names(u) <- "2026-07-01"
+        names(v) <- "2026-07-01"
+
+        boundary <- terra::as.polygons(
+            terra::ext(u),
+            crs = terra::crs(u)
+        )
+
+        result <- extract_wind(
+            u_wind = u,
+            v_wind = v,
+            boundary = boundary
+        )
+
+        expect_s3_class(
+            result,
+            "sbr_wind"
+        )
+
+        expect_equal(
+            result$wind_speed_ms,
+            5
+        )
+
+        expect_equal(
+            result$u_ms,
+            -3
+        )
+
+        expect_equal(
+            result$v_ms,
+            -4
+        )
+    }
+)
+
+test_that(
+    "era5_hourly_request creates hourly ERA5 request",
+    {
+
+        variables <- c(
+            "2m_temperature",
+            "2m_dewpoint_temperature",
+            "10m_u_component_of_wind",
+            "10m_v_component_of_wind"
+        )
+
+        request <-
+            sentinelBurnR:::era5_hourly_request(
+                variables
+            )
+
+        expect_equal(
+            request$dataset_short_name,
+            "reanalysis-era5-single-levels"
+        )
+
+        expect_equal(
+            request$product_type,
+            "reanalysis"
+        )
+
+        expect_equal(
+            request$variable,
+            variables
+        )
+
+        expect_equal(
+            request$data_format,
+            "netcdf"
+        )
+
+        expect_equal(
+            request$download_format,
+            "unarchived"
+        )
+    }
+)
+
+test_that(
+    "download_era5_hourly uses cached file",
+    {
+
+        outfile <- tempfile(
+            fileext = ".nc"
+        )
+
+        file.create(
+            outfile
+        )
+
+        result <-
+            sentinelBurnR:::download_era5_hourly(
+                boundary = NULL,
+                date = as.Date("2026-07-29"),
+                outfile = outfile
+            )
+
+        expect_identical(
+            result,
+            outfile
+        )
+    }
+)
+
+test_that(
+    "extract_fire_weather returns hourly fire weather",
+    {
+
+        r <- terra::rast(
+            nrows = 1,
+            ncols = 1,
+            nlyrs = 8,
+            xmin = 0,
+            xmax = 1,
+            ymin = 0,
+            ymax = 1,
+            crs = "EPSG:4326"
+        )
+
+        names(r) <- c(
+            "d2m_1", "d2m_2",
+            "t2m_1", "t2m_2",
+            "u10_1", "u10_2",
+            "v10_1", "v10_2"
+        )
+
+        terra::values(r) <- c(
+            283.15, 284.15,
+            293.15, 294.15,
+            -3, -3,
+            -4, -4
+        )
+
+        terra::time(r) <- rep(
+            as.POSIXct(
+                c(
+                    "2026-07-29 00:00:00",
+                    "2026-07-29 01:00:00"
+                ),
+                tz = "UTC"
+            ),
+            4
+        )
+
+        boundary <- terra::as.polygons(
+            terra::ext(r),
+            crs = terra::crs(r)
+        )
+
+        result <- extract_fire_weather(
+            climate = r,
+            boundary = boundary
+        )
+
+        expect_s3_class(
+            result,
+            "sbr_fire_weather"
+        )
+
+        expect_equal(
+            nrow(result),
+            2
+        )
+
+        expect_equal(
+            result$temperature_c,
+            c(20, 21)
+        )
+
+        expect_equal(
+            result$dewpoint_c,
+            c(10, 11)
+        )
+
+        expect_equal(
+            result$wind_speed_ms,
+            c(5, 5)
+        )
+
+        expect_true(
+            all(
+                result$relative_humidity > 0 &
+                    result$relative_humidity <= 100
+            )
+        )
+
+        expect_true(
+            all(result$vpd_kpa > 0)
+        )
+    }
+)
+
+test_that(
+    "wind_direction_label converts degrees to compass directions",
+    {
+
+        expect_equal(
+            wind_direction_label(
+                c(
+                    0, 45, 90, 135,
+                    180, 225, 270, 315
+                )
+            ),
+            c(
+                "N", "NE", "E", "SE",
+                "S", "SW", "W", "NW"
+            )
+        )
+    }
+)
+
+        expect_equal(
+            wind_direction_label(
+                c(350, 10)
+            ),
+            c("N", "N")
+        )
+
+
+test_that(
+    "plot_fire_weather handles event datetime",
+    {
+
+        x <- data.frame(
+            datetime = as.POSIXct(
+                c(
+                    "2026-07-29 09:00:00",
+                    "2026-07-29 10:00:00",
+                    "2026-07-29 11:00:00"
+                ),
+                tz = "UTC"
+            ),
+            temperature_c = c(20, 22, 24),
+            relative_humidity = c(70, 65, 60),
+            wind_speed_kmh = c(10, 15, 20),
+            wind_direction_deg = c(180, 200, 220)
+        )
+
+        class(x) <- c(
+            "sbr_fire_weather",
+            "data.frame"
+        )
+
+        attr(x, "event_datetime") <-
+            as.POSIXct(
+                "2026-07-29 10:00:00",
+                tz = "UTC"
+            )
+
+        p <- plot_fire_weather(x)
+
+        expect_s3_class(
+            p,
+            "patchwork"
+        )
+    }
+)

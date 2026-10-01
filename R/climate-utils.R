@@ -312,3 +312,67 @@ prepare_rainfall_history <- function(
 
     out
 }
+
+
+# wind direction ----------------------------------------------------------
+
+#' Calculate wind speed and direction
+#'
+#' Calculates wind speed and meteorological wind direction
+#' from eastward (u) and northward (v) wind components.
+#'
+#' @param u_ms Numeric vector of eastward wind components in m/s.
+#' @param v_ms Numeric vector of northward wind components in m/s.
+#'
+#' @return A data frame containing:
+#' \describe{
+#'   \item{wind_speed_ms}{Wind speed in m/s.}
+#'   \item{wind_direction_deg}{Meteorological direction from which
+#'   the wind is blowing, in degrees clockwise from north.}
+#' }
+#'
+#' @export
+calc_wind <- function(
+        u_ms,
+        v_ms
+) {
+
+    if (length(u_ms) != length(v_ms)) {
+        stop(
+            "`u_ms` and `v_ms` must have the same length.",
+            call. = FALSE
+        )
+    }
+
+    wind_speed_ms <- sqrt(
+        u_ms^2 + v_ms^2
+    )
+
+    wind_direction_deg <- (
+        atan2(
+            -u_ms,
+            -v_ms
+        ) *
+            180 / pi
+    ) %% 360
+
+    data.frame(
+        wind_speed_ms = wind_speed_ms,
+        wind_direction_deg = wind_direction_deg
+    )
+}
+
+wind_direction_label <- function(x) {
+
+    labels <- c(
+        "N", "NE", "E", "SE",
+        "S", "SW", "W", "NW"
+    )
+
+    i <- floor(
+        ((x + 22.5) %% 360) / 45
+    ) + 1
+
+    labels[i]
+}
+

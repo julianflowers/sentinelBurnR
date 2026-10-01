@@ -369,8 +369,6 @@ get_climate_baseline <- function(
     attr(humidity, "source") <- source
     attr(humidity, "boundary") <- boundary
 
-
-
     # Return --------------------------------------------------------------
 
     list(
@@ -378,5 +376,419 @@ get_climate_baseline <- function(
         temperature = temperature,
         humidity = humidity
     )
+}
+
+
+# era5 hourly data --------------------------------------------------------
+
+
+era5_hourly_request <- function(
+        variables
+) {
+
+    list(
+        dataset_short_name = "reanalysis-era5-single-levels",
+        product_type = "reanalysis",
+        variable = variables,
+        data_format = "netcdf",
+        download_format = "unarchived"
+    )
+}
+
+download_era5_hourly <- function(
+        boundary,
+        date,
+        outfile,
+        variables = c(
+            "2m_temperature",
+            "2m_dewpoint_temperature",
+            "10m_u_component_of_wind",
+            "10m_v_component_of_wind"
+        ),
+        bbox = NULL
+) {
+
+    date <- as.Date(date)
+
+    if (file.exists(outfile)) {
+        return(outfile)
+    }
+
+    request <- era5_hourly_request(
+        variables = variables
+    )
+
+    request$year <- format(
+        date,
+        "%Y"
+    )
+
+    request$month <- format(
+        date,
+        "%m"
+    )
+
+    request$day <- format(
+        date,
+        "%d"
+    )
+
+    request$time <- sprintf(
+        "%02d:00",
+        0:23
+    )
+
+    if (is.null(bbox)) {
+        bbox <- era5_bbox(
+            boundary
+        )
+    }
+
+    request$area <- bbox
+    request$target <- basename(
+        outfile
+    )
+
+    dir.create(
+        dirname(outfile),
+        recursive = TRUE,
+        showWarnings = FALSE
+    )
+
+    ecmwfr::wf_request(
+        request = request,
+        transfer = TRUE,
+        path = dirname(outfile),
+        verbose = TRUE
+    )
+
+    if (!file.exists(outfile)) {
+        stop(
+            "ERA5 hourly download failed: ",
+            outfile,
+            call. = FALSE
+        )
+    }
+
+    outfile
+}
+
+
+# fire weather ------------------------------------------------------------
+
+
+extract_fire_weather <- function(
+        climate,
+        boundary
+) {
+
+    if (!inherits(climate, "SpatRaster")) {
+        stop(
+            "`climate` must be a SpatRaster.",
+            call. = FALSE
+        )
+    }
+
+    vars <- c(
+        "d2m",
+        "t2m",
+        "u10",
+        "v10"
+    )
+
+    missing <- vars[
+        !vapply(
+            vars,
+            \(v) any(
+                startsWith(
+                    names(climate),
+                    paste0(v, "_")
+                )
+            ),
+            logical(1)
+        )
+    ]
+
+    if (length(missing) > 0) {
+        stop(
+            "Missing fire-weather variables: ",
+            paste(
+                missing,
+                collapse = ", "
+            ),
+            call. = FALSE
+        )
+    }
+
+    extract_variable <- function(
+        prefix,
+        name
+    ) {
+
+        i <- which(
+            startsWith(
+                names(climate),
+                paste0(prefix, "_")
+            )
+        )
+
+        r <- climate[[i]]
+
+        values <- extract_hourly_climate_values(
+            r,
+            boundary
+        )
+
+        names(values)[
+            names(values) == "value"
+        ] <- name
+
+        values
+    }
+
+    dew <- extract_variable(
+        "d2m",
+        "dewpoint_c"
+    )
+
+    temp <- extract_variable(
+        "t2m",
+        "temperature_c"
+    )
+
+    u <- extract_variable(
+        "u10",
+        "u_ms"
+    )
+
+    v <- extract_variable(
+        "v10",
+        "v_ms"
+    )
+
+    # ERA5 temperatures are Kelvin
+    dew$dewpoint_c <-
+        dew$dewpoint_c - 273.15
+
+    temp$temperature_c <-
+        temp$temperature_c - 273.15
+
+    x <- Reduce(
+        \(x, y) merge(
+            x,
+            y,
+            by = "datetime",
+            all = FALSE
+        ),
+        list(
+            temp,
+            dew,
+            u,
+            v
+        )
+    )
+
+    humidity <- calc_humidity(
+        temperature_c = x$temperature_c,
+        dewpoint_c = x$dewpoint_c
+    )
+
+    wind <- calc_wind(
+        u_ms = x$u_ms,
+        v_ms = x$v_ms
+    )
+
+    x$relative_humidity <-
+        humidity$relative_humidity
+
+    x$vpd_kpa <-
+        humidity$vpd_kpa
+
+    x$wind_speed_ms <-
+        wind$wind_speed_ms
+
+    x$wind_speed_kmh <-
+        x$wind_speed_ms * 3.6
+
+    x$wind_direction_deg <-
+        wind$wind_direction_deg
+
+    x$wind_direction <-
+        wind_direction_label(
+            x$wind_direction_deg
+        )
+
+    class(x) <- c(
+        "sbr_fire_weather",
+        "data.frame"
+    )
+
+    attr(x, "source") <- "era5"
+
+    x
+}
+
+extract_hourly_climate_values <- function(
+        climate,
+        boundary
+) {
+
+    boundary <- read_boundary(
+        boundary
+    )
+
+    boundary <- terra::project(
+        boundary,
+        terra::crs(climate)
+    )
+
+    values <- terra::extract(
+        climate,
+        boundary,
+        fun = mean,
+        na.rm = TRUE
+    )
+
+    values <- values[
+        1,
+        -1,
+        drop = TRUE
+    ]
+
+    datetime <- terra::time(
+        climate
+    )
+
+    data.frame(
+        datetime = as.POSIXct(
+            datetime,
+            tz = "UTC"
+        ),
+        value = as.numeric(
+            values
+        )
+    )
+}
+
+# get fire weather -------------------------------------------------------
+
+
+get_fire_weather <- function(
+        boundary,
+        start,
+        end,
+        event_datetime = NULL,
+        cache = cache_climate()
+) {
+
+    start <- as.POSIXct(
+        start,
+        tz = "UTC")
+
+    end <- as.POSIXct(
+        end,
+        tz = "UTC")
+
+    if (!is.null(event_datetime)) {
+        event_datetime <- as.POSIXct(
+            event_datetime,
+            tz = "UTC"
+        )
+    }
+
+    dates <- seq(
+        as.Date(start),
+        as.Date(end),
+        by = "day"
+    )
+
+    if (end <= start) {
+        stop(
+            "`end` must be later than `start`.",
+            call. = FALSE
+        )
+    }
+
+    bbox <- era5_bbox(
+        read_boundary(boundary)
+    )
+
+    files <- vapply(
+        dates,
+        function(date) {
+
+            date <- as.Date(
+                date,
+                origin = "1970-01-01"
+            )
+
+            outfile <- file.path(
+                cache,
+                paste0(
+                    "era5_fire_weather_",
+                    format(date, "%Y%m%d"),
+                    ".nc"
+                )
+            )
+
+            download_era5_hourly(
+                boundary = boundary,
+                date = date,
+                outfile = outfile,
+                bbox = bbox
+            )
+        },
+        character(1)
+    )
+
+    weather <- lapply(
+        files,
+        function(file) {
+
+            climate <- terra::rast(
+                file
+            )
+
+            extract_fire_weather(
+                climate = climate,
+                boundary = boundary
+            )
+        }
+    )
+
+    weather <- do.call(
+        rbind,
+        weather
+    )
+
+    weather <- weather[
+        weather$datetime >= start &
+            weather$datetime <= end,
+        ,
+        drop = FALSE
+    ]
+
+    rownames(weather) <- NULL
+
+    attr(weather, "start") <-
+        start
+
+    attr(weather, "end") <-
+        end
+
+    attr(weather, "boundary") <-
+        boundary
+
+
+    attr(weather, "event_datetime") <-
+        event_datetime
+
+
+    class(weather) <- c(
+        "sbr_fire_weather",
+        "data.frame"
+    )
+
+    weather
 }
 

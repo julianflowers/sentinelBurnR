@@ -24,6 +24,8 @@ rainfall anomalies, and dry-spell statistics.}
 \item{temperature}{Optional temperature data used to calculate
 temperature summaries. If \code{NULL}, temperature analysis is omitted.}
 
+\item{humidity}{Humidity data use to calculate humidity summaries. If \code{NULL}, humidity analysis is omitted.}
+
 \item{date}{Date for which climate conditions are assessed.}
 
 \item{baseline_years}{Years used to define the historical climate

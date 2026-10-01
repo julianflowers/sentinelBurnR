@@ -25,7 +25,8 @@ Imports:
     scales,
     tibble, 
     jpeg,
-    ggmap
+    ggmap,
+    patchwork
 Suggests: 
     knitr,
     rmarkdown,
