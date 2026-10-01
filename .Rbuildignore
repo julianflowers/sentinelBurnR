@@ -11,3 +11,5 @@
 ^data-raw$
 ^analysis$
 ^case-study$
+^_pkgdown\.yml$
+^pkgdown$

@@ -670,80 +670,130 @@ extract_hourly_climate_values <- function(
     )
 }
 
-# get fire weather -------------------------------------------------------
-
-
+#' Get hourly fire-weather conditions
+#'
+#' Downloads ERA5 hourly temperature, dewpoint temperature,
+#' and 10 m wind components for a specified time window and
+#' derives relative humidity, VPD, wind speed, and wind direction.
+#'
+#' @param boundary Spatial boundary.
+#' @param start Start of the fire-weather window.
+#' @param end End of the fire-weather window.
+#' @param event_datetime Optional event time, such as the reported
+#'   fire time.
+#' @param tz Time zone used for `start`, `end`, and `event_datetime`.
+#' @param cache Directory used for cached ERA5 downloads.
+#'
+#' @return An object of class `sbr_fire_weather`.
+#'
+#' @export
 get_fire_weather <- function(
         boundary,
         start,
         end,
         event_datetime = NULL,
+        tz = "UTC",
         cache = cache_climate()
 ) {
 
-    start <- as.POSIXct(
+    # Interpret supplied times in the requested local timezone
+
+    start_local <- as.POSIXct(
         start,
-        tz = "UTC")
+        tz = tz
+    )
 
-    end <- as.POSIXct(
+    end_local <- as.POSIXct(
         end,
-        tz = "UTC")
+        tz = tz
+    )
 
-    if (!is.null(event_datetime)) {
-        event_datetime <- as.POSIXct(
-            event_datetime,
-            tz = "UTC"
+    if (is.na(start_local) || is.na(end_local)) {
+        stop(
+            "`start` and `end` must be valid date-times.",
+            call. = FALSE
         )
     }
 
-    dates <- seq(
-        as.Date(start),
-        as.Date(end),
-        by = "day"
-    )
-
-    if (end <= start) {
+    if (end_local <= start_local) {
         stop(
             "`end` must be later than `start`.",
             call. = FALSE
         )
     }
 
-    bbox <- era5_bbox(
-        read_boundary(boundary)
+    if (!is.null(event_datetime)) {
+
+        event_local <- as.POSIXct(
+            event_datetime,
+            tz = tz
+        )
+
+        if (is.na(event_local)) {
+            stop(
+                "`event_datetime` must be a valid date-time.",
+                call. = FALSE
+            )
+        }
+
+    } else {
+
+        event_local <- NULL
+    }
+
+    # ERA5 timestamps are UTC. Changing tzone changes how the
+    # same instant is represented; it does not change the instant.
+
+    start_utc <- start_local
+    end_utc <- end_local
+
+    attr(start_utc, "tzone") <- "UTC"
+    attr(end_utc, "tzone") <- "UTC"
+
+    # Determine which UTC calendar days are required
+
+    dates <- seq(
+        as.Date(
+            start_utc,
+            tz = "UTC"
+        ),
+        as.Date(
+            end_utc,
+            tz = "UTC"
+        ),
+        by = "day"
     )
 
-    files <- vapply(
+    # Calculate ERA5 bounding box once
+
+    bbox <- era5_bbox(
+        boundary
+    )
+
+    # Download/extract each required day
+
+    weather <- lapply(
         dates,
         function(date) {
-
-            date <- as.Date(
-                date,
-                origin = "1970-01-01"
-            )
 
             outfile <- file.path(
                 cache,
                 paste0(
                     "era5_fire_weather_",
-                    format(date, "%Y%m%d"),
+                    format(
+                        date,
+                        "%Y%m%d"
+                    ),
                     ".nc"
                 )
             )
 
-            download_era5_hourly(
+            file <- download_era5_hourly(
                 boundary = boundary,
                 date = date,
                 outfile = outfile,
                 bbox = bbox
             )
-        },
-        character(1)
-    )
-
-    weather <- lapply(
-        files,
-        function(file) {
 
             climate <- terra::rast(
                 file
@@ -761,28 +811,40 @@ get_fire_weather <- function(
         weather
     )
 
+    # Restrict ERA5 observations to requested interval
+
     weather <- weather[
-        weather$datetime >= start &
-            weather$datetime <= end,
+        weather$datetime >= start_utc &
+            weather$datetime <= end_utc,
         ,
         drop = FALSE
     ]
 
     rownames(weather) <- NULL
 
+    # Display returned timestamps in requested timezone
+
+    attr(
+        weather$datetime,
+        "tzone"
+    ) <- tz
+
+    # Store user-facing metadata in local time
+
     attr(weather, "start") <-
-        start
+        start_local
 
     attr(weather, "end") <-
-        end
+        end_local
+
+    attr(weather, "event_datetime") <-
+        event_local
+
+    attr(weather, "timezone") <-
+        tz
 
     attr(weather, "boundary") <-
         boundary
-
-
-    attr(weather, "event_datetime") <-
-        event_datetime
-
 
     class(weather) <- c(
         "sbr_fire_weather",
@@ -791,4 +853,3 @@ get_fire_weather <- function(
 
     weather
 }
-

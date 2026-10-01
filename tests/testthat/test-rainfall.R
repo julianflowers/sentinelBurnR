@@ -1215,3 +1215,50 @@ test_that(
         )
     }
 )
+
+test_that(
+    "local fire-weather times convert correctly to UTC",
+    {
+        x <- as.POSIXct(
+            "2026-07-29 18:00",
+            tz = "Europe/London"
+        )
+
+        y <- x
+        attr(y, "tzone") <- "UTC"
+
+        expect_equal(
+            format(
+                y,
+                "%Y-%m-%d %H:%M",
+                tz = "UTC"
+            ),
+            "2026-07-29 17:00"
+        )
+    }
+)
+
+test_that(
+    "Europe/London handles summer and winter time",
+    {
+        summer <- as.POSIXct(
+            "2026-07-29 18:00",
+            tz = "Europe/London"
+        )
+
+        winter <- as.POSIXct(
+            "2026-12-29 18:00",
+            tz = "Europe/London"
+        )
+
+        expect_equal(
+            format(summer, "%H:%M", tz = "UTC"),
+            "17:00"
+        )
+
+        expect_equal(
+            format(winter, "%H:%M", tz = "UTC"),
+            "18:00"
+        )
+    }
+)
