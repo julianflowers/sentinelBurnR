@@ -207,3 +207,253 @@ test_that("composite cache key does not require downloaded files", {
     expect_length(key, 1)
 })
 
+test_that("sbr_cache_prune filters downloads by asset", {
+
+    root <- withr::local_tempdir()
+
+    downloads <- file.path(root, "downloads")
+    temp <- file.path(root, "temp")
+    composites <- file.path(root, "composites")
+
+    dir.create(downloads)
+    dir.create(temp)
+    dir.create(composites)
+
+    scene <- file.path(
+        downloads,
+        "S2A_31UCT_20260716_0_L2A"
+    )
+
+    dir.create(scene)
+
+    visual <- file.path(scene, "visual.tif")
+    red <- file.path(scene, "red.tif")
+
+    writeLines("visual", visual)
+    writeLines("red", red)
+
+    testthat::local_mocked_bindings(
+        cache_downloads = function() downloads,
+        cache_temp = function() temp,
+        cache_composites = function() composites
+    )
+
+    result <- sbr_cache_prune(
+        max_age = NULL,
+        asset = "visual",
+        temp = FALSE,
+        dry_run = TRUE
+    )
+
+    expect_equal(
+        result,
+        visual
+    )
+
+    expect_true(
+        file.exists(visual)
+    )
+
+    expect_true(
+        file.exists(red)
+    )
+})
+
+test_that("sbr_cache_prune filters downloads by year", {
+
+    root <- withr::local_tempdir()
+
+    downloads <- file.path(root, "downloads")
+    temp <- file.path(root, "temp")
+    composites <- file.path(root, "composites")
+
+    dir.create(downloads)
+    dir.create(temp)
+    dir.create(composites)
+
+    scene_2025 <- file.path(
+        downloads,
+        "S2A_31UCT_20250716_0_L2A"
+    )
+
+    scene_2026 <- file.path(
+        downloads,
+        "S2A_31UCT_20260716_0_L2A"
+    )
+
+    dir.create(scene_2025)
+    dir.create(scene_2026)
+
+    file_2025 <- file.path(
+        scene_2025,
+        "red.tif"
+    )
+
+    file_2026 <- file.path(
+        scene_2026,
+        "red.tif"
+    )
+
+    writeLines("2025", file_2025)
+    writeLines("2026", file_2026)
+
+    testthat::local_mocked_bindings(
+        cache_downloads = function() downloads,
+        cache_temp = function() temp,
+        cache_composites = function() composites
+    )
+
+    result <- sbr_cache_prune(
+        max_age = NULL,
+        year = 2025,
+        temp = FALSE,
+        dry_run = TRUE
+    )
+
+    expect_equal(
+        result,
+        file_2025
+    )
+
+    expect_true(
+        file.exists(file_2025)
+    )
+
+    expect_true(
+        file.exists(file_2026)
+    )
+})
+
+test_that("sbr_cache_prune combines asset and year filters", {
+
+    root <- withr::local_tempdir()
+
+    downloads <- file.path(root, "downloads")
+    temp <- file.path(root, "temp")
+    composites <- file.path(root, "composites")
+
+    dir.create(downloads)
+    dir.create(temp)
+    dir.create(composites)
+
+    scene_2025 <- file.path(
+        downloads,
+        "S2A_31UCT_20250716_0_L2A"
+    )
+
+    scene_2026 <- file.path(
+        downloads,
+        "S2A_31UCT_20260716_0_L2A"
+    )
+
+    dir.create(scene_2025)
+    dir.create(scene_2026)
+
+    visual_2025 <- file.path(
+        scene_2025,
+        "visual.tif"
+    )
+
+    red_2025 <- file.path(
+        scene_2025,
+        "red.tif"
+    )
+
+    visual_2026 <- file.path(
+        scene_2026,
+        "visual.tif"
+    )
+
+    writeLines("visual 2025", visual_2025)
+    writeLines("red 2025", red_2025)
+    writeLines("visual 2026", visual_2026)
+
+    testthat::local_mocked_bindings(
+        cache_downloads = function() downloads,
+        cache_temp = function() temp,
+        cache_composites = function() composites
+    )
+
+    result <- sbr_cache_prune(
+        max_age = NULL,
+        asset = "visual",
+        year = 2025,
+        temp = FALSE,
+        dry_run = TRUE
+    )
+
+    expect_equal(
+        result,
+        visual_2025
+    )
+
+    expect_true(
+        file.exists(visual_2025)
+    )
+
+    expect_true(
+        file.exists(red_2025)
+    )
+
+    expect_true(
+        file.exists(visual_2026)
+    )
+})
+
+test_that("sbr_cache_prune removes only matching files", {
+
+    root <- withr::local_tempdir()
+
+    downloads <- file.path(root, "downloads")
+    temp <- file.path(root, "temp")
+    composites <- file.path(root, "composites")
+
+    dir.create(downloads)
+    dir.create(temp)
+    dir.create(composites)
+
+    scene <- file.path(
+        downloads,
+        "S2A_31UCT_20260716_0_L2A"
+    )
+
+    dir.create(scene)
+
+    visual <- file.path(scene, "visual.tif")
+    red <- file.path(scene, "red.tif")
+
+    writeLines("visual", visual)
+    writeLines("red", red)
+
+    testthat::local_mocked_bindings(
+        cache_downloads = function() downloads,
+        cache_temp = function() temp,
+        cache_composites = function() composites
+    )
+
+    result <- sbr_cache_prune(
+        max_age = NULL,
+        asset = "visual",
+        temp = FALSE,
+        dry_run = FALSE
+    )
+
+    expect_equal(
+        result,
+        visual
+    )
+
+    expect_false(
+        file.exists(visual)
+    )
+
+    expect_true(
+        file.exists(red)
+    )
+
+    # Directory must remain because red.tif is still present.
+    expect_true(
+        dir.exists(scene)
+    )
+})
+

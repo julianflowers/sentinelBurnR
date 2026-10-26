@@ -61,8 +61,7 @@ s2_assets <- c(
 s2_scl_keep <- c(
     4L,  # vegetation
     5L,  # bare soil
-    6L,  # water
-    7L   # unclassified
+    6L # water
 )
 
 s2_burn_assets <- c(

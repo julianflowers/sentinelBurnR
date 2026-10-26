@@ -12,7 +12,8 @@ build_composite <- function(
         collection,
         assets = s2_burn_assets,
         cache = TRUE,
-        overwrite = FALSE
+        overwrite = FALSE,
+        mask_clouds = FALSE
 ) {
 
     if (!inherits(collection, "sbr_collection")) {
@@ -29,7 +30,9 @@ build_composite <- function(
 
         cache_file <- composite_cache_file(
             collection,
-            assets
+            assets,
+            mask_clouds = mask_clouds,
+            scl_keep = s2_scl_keep
         )
 
         if (
@@ -57,12 +60,14 @@ build_composite <- function(
     scl_masks <- NULL
     asset_table <- files(collection)
 
-    if ("scl" %in% asset_table$asset && any(assets != "scl")) {
-        scl_stacks <- if ("scl" %in% assets) {
-            band_stacks[["scl"]]
-        } else {
-            read_band(collection, "scl")
+    if (mask_clouds && any(assets != "scl")) {
+        if (!"scl" %in% asset_table$asset) {
+            stop(
+                "Cloud masking requested but SCL is missing.",
+                call. = FALSE
+            )
         }
+
 
         #message("Reading SCL...")
 

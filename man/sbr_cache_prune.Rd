@@ -9,6 +9,8 @@ sbr_cache_prune(
   downloads = TRUE,
   temp = TRUE,
   composites = FALSE,
+  asset = NULL,
+  year = NULL,
   dry_run = TRUE
 )
 }
@@ -20,6 +22,13 @@ sbr_cache_prune(
 \item{temp}{Prune temporary files.}
 
 \item{composites}{Prune composites cache.}
+
+\item{asset}{Optional character vector of Sentinel-2 asset names
+to prune, for example \code{"visual"} or \code{"red"}. Applies to the
+downloads cache only.}
+
+\item{year}{Optional numeric or integer vector of acquisition
+years to prune, for example \code{2025} or \code{2020:2024}.}
 
 \item{dry_run}{If TRUE, report what would be deleted.}
 }

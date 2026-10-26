@@ -8,7 +8,8 @@ build_composite(
   collection,
   assets = s2_burn_assets,
   cache = TRUE,
-  overwrite = FALSE
+  overwrite = FALSE,
+  mask_clouds = FALSE
 )
 }
 \arguments{

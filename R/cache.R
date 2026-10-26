@@ -127,28 +127,27 @@ sbr_cache_clean <- function(
 
 # cache info --------------------------------------------------------------
 #' Cache information
-#'
+#' @param breakdown Character. Level of cache detail to report.
+#'   One of `"cache"`, `"asset"`, or `"year"`.
 #' @export
-sbr_cache_info <- function() {
+sbr_cache_info <- function(
+        breakdown = c("cache", "asset", "year")
+) {
 
-    root <- cache_path()
+    breakdown <- match.arg(breakdown)
 
     dirs <- c(
-
         raw = cache_raw(),
-
         downloads = cache_downloads(),
-
         temp = cache_temp(),
-
         composite = cache_composites()
-
     )
 
-    size <- function(path) {
+    file_size <- function(path) {
 
-        if (!dir.exists(path))
+        if (!dir.exists(path)) {
             return(0)
+        }
 
         files <- list.files(
             path,
@@ -156,70 +155,186 @@ sbr_cache_info <- function() {
             full.names = TRUE
         )
 
-        if (length(files) == 0)
+        if (length(files) == 0) {
             return(0)
+        }
 
         sum(
             file.info(files)$size,
             na.rm = TRUE
         )
-
     }
 
-    sizes <- vapply(
-        dirs,
-        size,
-        numeric(1)
-    )
+    format_size <- function(bytes) {
 
-    total <- sum(sizes)
+        if (bytes >= 1024^3) {
+            sprintf("%.1f GB", bytes / 1024^3)
+        } else {
+            sprintf("%.1f MB", bytes / 1024^2)
+        }
+    }
 
-    cat("\n")
+    # ------------------------------------------------------
+    # Cache-level summary
+    # ------------------------------------------------------
 
-    cat("---------------------------------\n")
+    if (breakdown == "cache") {
 
-    cat("sentinelBurnR cache\n\n")
+        sizes <- vapply(
+            dirs,
+            file_size,
+            numeric(1)
+        )
 
-    for (nm in names(sizes)) {
+        total <- sum(sizes)
+
+        cat("\n")
+        cat("---------------------------------\n")
+        cat("sentinelBurnR cache\n\n")
+
+        for (nm in names(sizes)) {
+
+            cat(
+                sprintf(
+                    "%-12s %10s\n",
+                    nm,
+                    format_size(sizes[[nm]])
+                )
+            )
+        }
+
+        cat("\n")
 
         cat(
-
             sprintf(
-
-                "%-12s %7.1f MB\n",
-
-                nm,
-
-                sizes[[nm]] /
-                    1024^2
-
+                "%-12s %10s\n",
+                "TOTAL",
+                format_size(total)
             )
-
         )
 
+        cat("---------------------------------\n")
+
+        return(
+            invisible(sizes)
+        )
     }
 
-    cat("\n")
+    # ------------------------------------------------------
+    # Download-level summaries
+    # ------------------------------------------------------
 
-    cat(
+    path <- cache_downloads()
 
-        sprintf(
-
-            "%-12s %7.1f MB\n",
-
-            "TOTAL",
-
-            total /
-                1024^2
-
-        )
-
+    files <- list.files(
+        path,
+        recursive = TRUE,
+        full.names = TRUE
     )
 
-    cat("---------------------------------\n")
+    if (length(files) == 0) {
+        message("Download cache is empty.")
+        return(invisible(NULL))
+    }
 
-    invisible(sizes)
+    info <- file.info(files)
 
+    x <- data.frame(
+        file = files,
+        size = info$size,
+        stringsAsFactors = FALSE
+    )
+
+    x <- x[
+        !is.na(x$size) &
+            !info$isdir,
+        ,
+        drop = FALSE
+    ]
+
+    x$asset <- tools::file_path_sans_ext(
+        basename(x$file)
+    )
+
+    scene <- basename(
+        dirname(x$file)
+    )
+
+    # Scene names contain dates such as:
+    # S2B_31UCT_20260716_0_L2A
+
+    date_string <- sub(
+        "^.*_([0-9]{8})_[0-9]+_L2A$",
+        "\\1",
+        scene
+    )
+
+    x$year <- suppressWarnings(
+        as.integer(
+            substr(
+                date_string,
+                1,
+                4
+            )
+        )
+    )
+
+    if (breakdown == "asset") {
+
+        out <- stats::aggregate(
+            size ~ asset,
+            data = x,
+            FUN = sum
+        )
+
+        counts <- table(x$asset)
+
+        out$files <- as.integer(
+            counts[out$asset]
+        )
+
+        out$size_gb <- out$size / 1024^3
+
+        out <- out[
+            order(
+                out$size,
+                decreasing = TRUE
+            ),
+        ]
+
+        out$size <- NULL
+
+    } else {
+
+        out <- stats::aggregate(
+            size ~ year,
+            data = x,
+            FUN = sum
+        )
+
+        counts <- table(x$year)
+
+        out$files <- as.integer(
+            counts[as.character(out$year)]
+        )
+
+        out$size_gb <- out$size / 1024^3
+
+        out <- out[
+            order(out$year),
+        ]
+
+        out$size <- NULL
+    }
+
+    rownames(out) <- NULL
+
+    print(
+        out,
+        row.names = FALSE
+    )
+
+    invisible(out)
 }
 
 #' Remove old cached files
@@ -231,166 +346,288 @@ sbr_cache_info <- function() {
 #' @param temp Prune temporary files.
 #' @param composites Prune composites cache.
 #' @param dry_run If TRUE, report what would be deleted.
-#'
+#' @param asset Optional character vector of Sentinel-2 asset names
+#'   to prune, for example `"visual"` or `"red"`. Applies to the
+#'   downloads cache only.
+#' @param year Optional numeric or integer vector of acquisition
+#'   years to prune, for example `2025` or `2020:2024`.
 #' @return Invisibly returns a data frame describing deleted files.
 #'
 #' @export
 
 sbr_cache_prune <- function(
-
-    max_age = 30,
-
-    downloads = TRUE,
-
-    temp = TRUE,
-
-    composites = FALSE,
-
-    dry_run = TRUE
-
+        max_age = 30,
+        downloads = TRUE,
+        temp = TRUE,
+        composites = FALSE,
+        asset = NULL,
+        year = NULL,
+        dry_run = TRUE
 ) {
 
-    dirs <- character()
+    if (!is.null(max_age)) {
 
-    if (downloads)
-        dirs <- c(dirs, cache_downloads())
+        if (
+            length(max_age) != 1 ||
+            !is.numeric(max_age) ||
+            is.na(max_age) ||
+            max_age < 0
+        ) {
+            stop(
+                "`max_age` must be NULL or a non-negative number.",
+                call. = FALSE
+            )
+        }
+    }
 
-    if (temp)
-        dirs <- c(dirs, cache_temp())
+    if (!is.null(year)) {
 
-    if(composites)
-        dirs <- c(dirs, cache_composites())
+        if (
+            !is.numeric(year) ||
+            anyNA(year)
+        ) {
+            stop(
+                "`year` must be NULL or a numeric year.",
+                call. = FALSE
+            )
+        }
+
+        year <- as.integer(year)
+    }
+
+    if (!is.null(asset)) {
+        asset <- as.character(asset)
+    }
+
+    paths <- character()
+
+    if (downloads) {
+        paths <- c(
+            paths,
+            cache_downloads()
+        )
+    }
+
+    if (temp) {
+        paths <- c(
+            paths,
+            cache_temp()
+        )
+    }
+
+    if (composites) {
+        paths <- c(
+            paths,
+            cache_composites()
+        )
+    }
+
+    if (length(paths) == 0) {
+        message("No cache components selected.")
+        return(invisible(character()))
+    }
 
     files <- unlist(
-
         lapply(
+            paths,
+            function(path) {
 
-            dirs,
+                if (!dir.exists(path)) {
+                    return(character())
+                }
 
-            list.files,
-
-            recursive = TRUE,
-
-            full.names = TRUE
-
-        )
-
+                list.files(
+                    path,
+                    recursive = TRUE,
+                    full.names = TRUE
+                )
+            }
+        ),
+        use.names = FALSE
     )
 
     if (length(files) == 0) {
-
-        message("Cache is empty.")
-
-        return(invisible(NULL))
-
+        message("No cached files found.")
+        return(invisible(character()))
     }
 
     info <- file.info(files)
 
-    age_days <-
+    keep <- !info$isdir
 
-        as.numeric(
+    # ------------------------------------------------------
+    # Age filter
+    # ------------------------------------------------------
 
-            Sys.time() -
+    if (!is.null(max_age)) {
 
-                info$mtime,
+        cutoff <- Sys.time() -
+            max_age * 24 * 60 * 60
 
-            units = "days"
+        keep <- keep &
+            info$mtime < cutoff
+    }
 
+    # ------------------------------------------------------
+    # Asset filter
+    #
+    # Only meaningful for files inside downloads.
+    # ------------------------------------------------------
+
+    if (!is.null(asset)) {
+
+        download_root <- normalizePath(
+            cache_downloads(),
+            mustWork = FALSE
         )
 
-    prune <- age_days > max_age
+        normalized <- normalizePath(
+            files,
+            mustWork = FALSE
+        )
 
-    if (!any(prune)) {
+        in_downloads <- startsWith(
+            normalized,
+            paste0(
+                download_root,
+                .Platform$file.sep
+            )
+        )
 
-        message(
+        file_asset <- tools::file_path_sans_ext(
+            basename(files)
+        )
 
-            "No cached files older than ",
+        keep <- keep &
+            in_downloads &
+            file_asset %in% asset
+    }
 
-            max_age,
+    # ------------------------------------------------------
+    # Year filter
+    # ------------------------------------------------------
 
-            " days."
+    if (!is.null(year)) {
 
+        scene <- basename(
+            dirname(files)
+        )
+
+        date_string <- sub(
+            "^.*_([0-9]{8})_[0-9]+_L2A$",
+            "\\1",
+            scene
+        )
+
+        file_year <- suppressWarnings(
+            as.integer(
+                substr(
+                    date_string,
+                    1,
+                    4
+                )
+            )
+        )
+
+        keep <- keep &
+            !is.na(file_year) &
+            file_year %in% year
+    }
+
+    remove <- files[keep]
+
+    if (length(remove) == 0) {
+        message("No cache files match the pruning criteria.")
+        return(invisible(character()))
+    }
+
+    bytes <- sum(
+        file.info(remove)$size,
+        na.rm = TRUE
+    )
+
+    cat(
+        sprintf(
+            "%d files matched (%.2f GB).\n",
+            length(remove),
+            bytes / 1024^3
+        )
+    )
+
+    if (dry_run) {
+
+        cat(
+            "Dry run only; no files removed.\n"
         )
 
         return(
-
-            invisible(
-
-                info[FALSE, ]
-
-            )
-
+            invisible(remove)
         )
-
     }
 
-    victims <- files[prune]
+    remove_size <- file.info(remove)$size
 
-    reclaimed <-
+    ok <- file.remove(remove)
 
-        sum(
-
-            info$size[prune],
-
-            na.rm = TRUE
-
+    if (!all(ok)) {
+        warning(
+            sum(!ok),
+            " file(s) could not be removed.",
+            call. = FALSE
         )
+    }
+
+    removed_bytes <- sum(
+        remove_size[ok],
+        na.rm = TRUE
+    )
+
+    # Remove directories left empty by pruning.
+
+    if (downloads) {
+
+        dirs <- list.dirs(
+            cache_downloads(),
+            recursive = TRUE,
+            full.names = TRUE
+        )
+
+        dirs <- dirs[
+            dirs != cache_downloads()
+        ]
+
+        dirs <- dirs[
+            order(
+                nchar(dirs),
+                decreasing = TRUE
+            )
+        ]
+
+        for (dir in dirs) {
+
+            if (
+                length(
+                    list.files(
+                        dir,
+                        all.files = TRUE,
+                        no.. = TRUE
+                    )
+                ) == 0
+            ) {
+                unlink(dir)
+            }
+        }
+    }
 
     cat(
-
         sprintf(
-
-            "%d file(s), %.1f MB\n",
-
-            length(victims),
-
-            reclaimed / 1024^2
-
+            "%d files removed (%.2f GB).\n",
+            sum(ok),
+            removed_bytes / 1024^3
         )
-
     )
 
-    if (!dry_run) {
-
-        unlink(
-
-            victims,
-
-            recursive = FALSE,
-
-            force = TRUE
-
-        )
-
-        message("Cache pruned.")
-
-    } else {
-
-        message(
-
-            "Dry run only. Set dry_run = FALSE to delete."
-
-        )
-
-    }
-
-    invisible(
-
-        data.frame(
-
-            file = victims,
-
-            size = info$size[prune],
-
-            modified = info$mtime[prune],
-
-            age_days = age_days[prune]
-
-        )
-
-    )
-
+    invisible(remove[ok])
 }
 
 cache_size <- function(path) {
@@ -439,7 +676,9 @@ cache_climate <- function() {
 
 composite_cache_key <- function(
         collection,
-        assets
+        assets,
+        mask_clouds = FALSE,
+        scl_keep = s2_scl_keep
 ) {
 
     f <- files(collection)
@@ -469,7 +708,7 @@ composite_cache_key <- function(
     required <- unique(
         c(
             assets,
-            if ("scl" %in% f$asset) "scl"
+            if (mask_clouds) "scl"
         )
     )
 
@@ -507,6 +746,15 @@ composite_cache_key <- function(
     hash_text(
         paste(
             paste0("version=", composite_cache_version),
+            paste0("mask_clouds=", mask_clouds),
+            paste0(
+                "scl_keep=",
+                if (mask_clouds) {
+                    paste(sort(unique(scl_keep)), collapse = ",")
+                } else {
+                    "none"
+                }
+            ),
             paste(assets, collapse = ","),
             aoi_key,
             paste(source_key, collapse = "|"),
@@ -543,12 +791,16 @@ cache_composites <- function() {
 
 composite_cache_file <- function(
         collection,
-        assets
+        assets,
+        mask_clouds = TRUE,
+        scl_keep = s2_scl_keep
 ) {
 
     key <- composite_cache_key(
         collection,
-        assets
+        assets,
+        mask_clouds = mask_clouds,
+        scl_keep = scl_keep
     )
 
     file.path(

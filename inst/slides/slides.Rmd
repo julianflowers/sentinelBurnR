@@ -1,0 +1,36 @@
+---
+title: "dunwich fire"
+author: "Julian Flowers"
+date: "`r Sys.Date()`"
+output: powerpoint_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## **Dunwich wildfire**
+
+### *What can the data tell us?*
+
+```{r}
+png(
+    "figures/pre-post-burn.png",
+    width = 1920,
+    height = 1080,
+    res = 180
+)
+
+par(mar = c(0, 0, 0, 0))
+
+# terra::plotRGB(
+#     rgb_before_s,
+#     r = 1,
+#     g = 2,
+#     b = 3,
+#     scale = 1,
+#     axes = FALSE
+# )
+
+dev.off()
+```

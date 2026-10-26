@@ -4,7 +4,11 @@
 \alias{sbr_cache_info}
 \title{Cache information}
 \usage{
-sbr_cache_info()
+sbr_cache_info(breakdown = c("cache", "asset", "year"))
+}
+\arguments{
+\item{breakdown}{Character. Level of cache detail to report.
+One of \code{"cache"}, \code{"asset"}, or \code{"year"}.}
 }
 \description{
 Cache information
