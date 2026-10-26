@@ -47,6 +47,8 @@
 <span>  downloads <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  temp <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  composites <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  asset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  year <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dry_run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -69,6 +71,17 @@
 
 <dt id="arg-composites">composites<a class="anchor" aria-label="anchor" href="#arg-composites"></a></dt>
 <dd><p>Prune composites cache.</p></dd>
+
+
+<dt id="arg-asset">asset<a class="anchor" aria-label="anchor" href="#arg-asset"></a></dt>
+<dd><p>Optional character vector of Sentinel-2 asset names
+to prune, for example <code>"visual"</code> or <code>"red"</code>. Applies to the
+downloads cache only.</p></dd>
+
+
+<dt id="arg-year">year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>
+<dd><p>Optional numeric or integer vector of acquisition
+years to prune, for example <code>2025</code> or <code>2020:2024</code>.</p></dd>
 
 
 <dt id="arg-dry-run">dry_run<a class="anchor" aria-label="anchor" href="#arg-dry-run"></a></dt>

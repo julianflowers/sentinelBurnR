@@ -10,6 +10,8 @@ sbr_cache_prune(
   downloads = TRUE,
   temp = TRUE,
   composites = FALSE,
+  asset = NULL,
+  year = NULL,
   dry_run = TRUE
 )
 ```
@@ -31,6 +33,16 @@ sbr_cache_prune(
 - composites:
 
   Prune composites cache.
+
+- asset:
+
+  Optional character vector of Sentinel-2 asset names to prune, for
+  example `"visual"` or `"red"`. Applies to the downloads cache only.
+
+- year:
+
+  Optional numeric or integer vector of acquisition years to prune, for
+  example `2025` or `2020:2024`.
 
 - dry_run:
 

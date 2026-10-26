@@ -41,6 +41,8 @@
 - [`detect_burn()`](detect_burn.md) : Detect burned area from dNBR
 - [`detect_disturbance()`](detect_disturbance.md) : Detect disturbances
   in a spectral index time series
+- [`detect_patch_disturbance()`](detect_patch_disturbance.md) : Detect
+  persistent vegetation disturbance in patch time series
 - [`disturbance_dates()`](disturbance_dates.md) : Select pre- and
   post-disturbance dates
 - [`.normalised_difference()`](dot-normalised_difference.md) :
@@ -55,6 +57,8 @@
 - [`geometry()`](geometry.md) : Return the geometry from an AOI
 - [`get_climate_baseline()`](get_climate_baseline.md) : Get climate data
   for baseline analysis
+- [`get_fire_weather()`](get_fire_weather.md) : Get hourly fire-weather
+  conditions
 - [`get_humidity()`](get_humidity.md) : Retrieve humidity and vapour
   pressure deficit for a boundary
 - [`get_rainfall()`](get_rainfall.md) : Retrieve rainfall for a boundary
@@ -108,3 +112,5 @@
   Sentinel-2 search
 - [`timeseries_change()`](timeseries_change.md) : Calculate change in a
   spectral index through time
+- [`valid_observation_count()`](valid_observation_count.md) : Count
+  valid Sentinel-2 observations
