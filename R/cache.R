@@ -1,9 +1,13 @@
 cache_path <- function() {
 
-    path <- tools::R_user_dir(
-        "sentinelBurnR",
-        which = "cache"
-    )
+    path <- getOption("sbr.cache_dir")
+
+    if (is.null(path)) {
+        path <- tools::R_user_dir(
+            "sentinelBurnR",
+            which = "cache"
+        )
+    }
 
     dir.create(
         path,
@@ -654,10 +658,7 @@ cache_size <- function(path) {
 cache_climate <- function() {
 
     path <- file.path(
-        tools::R_user_dir(
-            "sentinelBurnR",
-            "cache"
-        ),
+        cache_path(),
         "climate"
     )
 

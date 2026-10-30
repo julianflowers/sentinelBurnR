@@ -870,13 +870,8 @@ get_sbr_basemap <- function(
 # sbr basemap cache -------------------------------------------------------
 sbr_basemap_cache_dir <- function() {
 
-    dir <- tools::R_user_dir(
-        "sentinelBurnR",
-        which = "cache"
-    )
-
     dir <- file.path(
-        dir,
+        cache_path(),
         "basemaps"
     )
 
