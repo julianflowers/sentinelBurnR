@@ -54,6 +54,8 @@
 - [`files()`](files.md) : Return downloaded files
 - [`files(`*`<sbr_collection>`*`)`](files.sbr_collection.md) : Access
   collection files
+- [`filter_patches_by_area()`](filter_patches_by_area.md) : Filter
+  raster patches by minimum area
 - [`geometry()`](geometry.md) : Return the geometry from an AOI
 - [`get_climate_baseline()`](get_climate_baseline.md) : Get climate data
   for baseline analysis
@@ -106,6 +108,8 @@
   acquisitions for a time series
 - [`sentinel_timeseries()`](sentinel_timeseries.md) : Build a Sentinel-2
   spectral index time series
+- [`summarise_disturbance_area()`](summarise_disturbance_area.md) :
+  Summarise disturbance classifications by patch area
 - [`summary(`*`<sbr_collection>`*`)`](summary.sbr_collection.md) :
   Summarise a downloaded Sentinel-2 collection
 - [`summary(`*`<sbr_search>`*`)`](summary.sbr_search.md) : Summarise a

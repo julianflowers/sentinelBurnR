@@ -41,6 +41,7 @@
 <url><loc>/reference/extract_wind.html</loc></url>
 <url><loc>/reference/files.html</loc></url>
 <url><loc>/reference/files.sbr_collection.html</loc></url>
+<url><loc>/reference/filter_patches_by_area.html</loc></url>
 <url><loc>/reference/geometry.html</loc></url>
 <url><loc>/reference/get_climate_baseline.html</loc></url>
 <url><loc>/reference/get_fire_weather.html</loc></url>
@@ -78,6 +79,7 @@
 <url><loc>/reference/seasonal_baseline.html</loc></url>
 <url><loc>/reference/select_timeseries.html</loc></url>
 <url><loc>/reference/sentinel_timeseries.html</loc></url>
+<url><loc>/reference/summarise_disturbance_area.html</loc></url>
 <url><loc>/reference/summary.sbr_collection.html</loc></url>
 <url><loc>/reference/summary.sbr_search.html</loc></url>
 <url><loc>/reference/theme_sbr_map.html</loc></url>

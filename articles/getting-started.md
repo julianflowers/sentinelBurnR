@@ -410,7 +410,7 @@ vegetation
 #> [1] "red"    "nir08"  "swir16"
 #> 
 #> $provenance$processing$created
-#> [1] "2026-10-26 20:47:51 UTC"
+#> [1] "2026-10-30 10:56:19 UTC"
 #> 
 #> $provenance$processing$package_version
 #> [1] "0.0.1"
